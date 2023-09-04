@@ -28,23 +28,15 @@ def get_object_memos(
         SpanAnnotationORM,
     ],
     user_id: Optional[int] = None,
-) -> Union[Optional[MemoRead], List[MemoRead]]:
-    if db_obj.object_handle is None:
-        if user_id is None:
-            return []
-        return None
+) -> List[MemoRead]:
+    if db_obj.object_handle is None and user_id is None:
+        return []
 
     memo_as_in_db_dtos = [
         MemoInDB.from_orm(memo_db_obj)
         for memo_db_obj in db_obj.object_handle.attached_memos
         if user_id is None or memo_db_obj.user_id == user_id
     ]
-
-    if user_id is not None:
-        if len(memo_as_in_db_dtos) == 0:
-            return None
-        elif len(memo_as_in_db_dtos) > 1:
-            logger.error("More than one Memo for the specified User!")
 
     object_types = {
         SourceDocumentORM: AttachedObjectType.source_document,
@@ -63,8 +55,5 @@ def get_object_memos(
         )
         for memo_as_in_db_dto in memo_as_in_db_dtos
     ]
-
-    if user_id is not None:
-        return memos[0]
 
     return memos

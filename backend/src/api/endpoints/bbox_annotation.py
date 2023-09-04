@@ -165,15 +165,15 @@ async def get_memos(
 @router.get(
     "/{bbox_id}/memo/{user_id}",
     tags=tags,
-    response_model=Optional[MemoRead],
-    summary="Returns the Memo attached to the BBoxAnnotation of the User with the given ID",
+    response_model=List[MemoRead],
+    summary="Returns the Memos attached to the BBoxAnnotation of the User with the given ID",
     description=(
-        "Returns the Memo attached to the BBoxAnnotation with the given ID of the User with the"
+        "Returns the Memos attached to the BBoxAnnotation with the given ID of the User with the"
         " given ID if it exists."
     ),
 )
-async def get_user_memo(
+async def get_user_memos(
     *, db: Session = Depends(get_db_session), bbox_id: int, user_id: int
-) -> Optional[MemoRead]:
+) -> List[MemoRead]:
     db_obj = crud_bbox_anno.read(db=db, id=bbox_id)
     return get_object_memos(db_obj=db_obj, user_id=user_id)
