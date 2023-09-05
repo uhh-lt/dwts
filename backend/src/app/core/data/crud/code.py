@@ -6,8 +6,10 @@ from app.core.data.crud.current_code import crud_current_code
 from app.core.data.crud.user import SYSTEM_USER_ID
 from app.core.data.dto.action import ActionType
 from app.core.data.dto.code import CodeCreate, CodeRead, CodeUpdate
-from app.core.data.dto.current_code import CurrentCodeCreate
-from app.core.data.orm.code import CodeORM
+from app.core.data.dto.current_code import CurrentCodeCreate, CurrentCodeUpdate
+from app.core.data.dto.memo import AttachedObjectType
+from app.core.data.dto.object_handle import ObjectHandleCreate
+from app.core.data.orm.code import CodeORM, CurrentCodeORM
 from app.util.color import get_next_color
 from config import conf
 from fastapi.encoders import jsonable_encoder
@@ -74,6 +76,60 @@ class CRUDCode(CRUDBase[CodeORM, CodeCreate, CodeUpdate]):
         __create_recursively(conf.system_codes)
 
         return created
+
+    def merge_codes(
+        self,
+        db: Session,
+        *,
+        codes_to_merge: List[int],
+        merge_into_code: Union[int, CodeCreate],
+        remove_merged_codes: bool = True,
+    ) -> CodeORM:
+        if isinstance(merge_into_code, CodeCreate):
+            merge_into_code_db_obj = self.create(db=db, create_dto=merge_into_code)
+        else:
+            merge_into_code_db_obj = self.read(db=db, id=merge_into_code)
+
+        current_codes_to_merge: List[CurrentCodeORM] = []
+        for code_id in codes_to_merge:
+            code_to_merge = self.read(db, id=code_id)
+            cc = code_to_merge.current_code
+            if cc is not None:
+                current_codes_to_merge.append(cc)
+
+        # first move the memos of the codes to be merged to the code to merge into
+        # create or get the object handle for the code to merge into. (we have to do
+        # this first because after the current code pointer is moved we cannot directlz
+        # access the memos of the code to merge into)
+        from app.core.data.crud.object_handle import (
+            crud_object_handle,  # avoid circular imports.
+        )
+
+        oh_db_obj = crud_object_handle.create(
+            db=db, create_dto=ObjectHandleCreate(code_id=merge_into_code_db_obj.id)
+        )
+        for cc in current_codes_to_merge:
+            memos = crud_memo.get_object_memos(db_obj=cc.code)
+            for memo in memos:
+                crud_memo.reattach_memo(
+                    db=db,
+                    memo_id=memo.id,
+                    attach_to_oh=oh_db_obj,
+                    attach_to_object_id=merge_into_code_db_obj.id,
+                    attach_to_object_type=AttachedObjectType.code,
+                )
+
+        # merge the codes by moving the current code pointer to the code to merge into
+        for cc in current_codes_to_merge:
+            update_dto = CurrentCodeUpdate(code_id=merge_into_code_db_obj.id)
+            crud_current_code.update(db=db, id=cc.id, update_dto=update_dto)
+
+        if remove_merged_codes:
+            # remove the codes to be merged
+            for cid in codes_to_merge:
+                self.remove(db=db, id=cid)
+
+        return merge_into_code_db_obj
 
     def read_by_name(self, db: Session, code_name: str) -> List[CodeORM]:
         return db.query(self.model).filter(self.model.name == code_name).all()

@@ -344,6 +344,12 @@ class ElasticSearchMemoUpdate(BaseModel, UpdateDTOBase):
     starred: Optional[bool] = Field(
         description="Starred flag of the Memo", default=None
     )
+    attached_object_id: Optional[int] = Field(
+        description="The ID of the Object the Memo is attached to"
+    )
+    attached_object_type: Optional[AttachedObjectType] = Field(
+        description=("The type of the Object the Memo is " "attached to")
+    )
 
 
 class ElasticMemoHit(ElasticSearchMemoRead):

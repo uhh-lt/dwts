@@ -37,7 +37,8 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreate, MemoUpdate]):
         self, db: Session, *, id: int, update_dto: MemoUpdate
     ) -> Optional[MemoORM]:
         updated_memo = super().update(db, id=id, update_dto=update_dto)
-        self.__update_memo_in_elasticsearch(updated_memo)
+        if updated_memo is not None:
+            self.__update_memo_in_elasticsearch(updated_memo)
         return updated_memo
 
     def read_by_user_and_project(
@@ -415,7 +416,7 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreate, MemoUpdate]):
         ],
         user_id: Optional[int] = None,
     ) -> List[MemoRead]:
-        if db_obj.object_handle is None and user_id is None:
+        if db_obj.object_handle is None:
             return []
 
         memo_as_in_db_dtos = [
@@ -446,6 +447,81 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreate, MemoUpdate]):
 
         return memos
 
+    def reattach_memo(
+        self,
+        db: Session,
+        *,
+        memo_id: int,
+        attach_to_oh: ObjectHandleORM,
+        attach_to_object_id: int,
+        attach_to_object_type: AttachedObjectType,
+    ) -> Optional[MemoORM]:
+        memo = self.read(db=db, id=memo_id)
+        if memo.attached_to_id == attach_to_oh.id:
+            return memo
+        before_state = self._get_action_state_from_orm(db_obj=memo)
+
+        if (
+            (
+                attach_to_object_type == AttachedObjectType.annotation_document
+                and attach_to_object_id != attach_to_oh.annotation_document_id
+            )
+            or (
+                attach_to_object_type == AttachedObjectType.source_document
+                and attach_to_object_id != attach_to_oh.source_document_id
+            )
+            or (
+                attach_to_object_type == AttachedObjectType.document_tag
+                and attach_to_object_id != attach_to_oh.document_tag_id
+            )
+            or (
+                attach_to_object_type == AttachedObjectType.project
+                and attach_to_object_id != attach_to_oh.project_id
+            )
+            or (
+                attach_to_object_type == AttachedObjectType.code
+                and attach_to_object_id != attach_to_oh.code_id
+            )
+            or (
+                attach_to_object_type == AttachedObjectType.span_annotation
+                and attach_to_object_id != attach_to_oh.span_annotation_id
+            )
+            or (
+                attach_to_object_type == AttachedObjectType.span_group
+                and attach_to_object_id != attach_to_oh.span_group_id
+            )
+            or (
+                attach_to_object_type == AttachedObjectType.bbox_annotation
+                and attach_to_object_id != attach_to_oh.bbox_annotation_id
+            )
+        ):
+            raise ValueError(
+                f"ObjectHandle {attach_to_oh.id} is not attached to the correct"
+                f"object of type {attach_to_object_type} with ID {attach_to_object_id}!"
+            )
+
+        memo.attached_to_id = attach_to_oh.id
+
+        db.commit()
+        db.refresh(memo)
+
+        # create the action manually since we are not using the crud base update
+        after_state = self._get_action_state_from_orm(db_obj=memo)
+        self._create_action(
+            db_obj=memo,
+            action_type=ActionType.UPDATE,
+            before_state=before_state,
+            after_state=after_state,
+        )
+
+        self.__update_memo_in_elasticsearch(
+            memo_orm=memo,
+            attach_to_object_id=attach_to_object_id,
+            attach_to_object_type=attach_to_object_type,
+        )
+
+        return memo
+
     @staticmethod
     def __add_memo_to_elasticsearch(
         memo_orm: MemoORM,
@@ -468,6 +544,8 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreate, MemoUpdate]):
     @staticmethod
     def __update_memo_in_elasticsearch(
         memo_orm: MemoORM,
+        attach_to_object_id: Optional[int] = None,
+        attach_to_object_type: Optional[AttachedObjectType] = None,
     ):
         update_es_dto = ElasticSearchMemoUpdate(
             memo_id=memo_orm.id,
@@ -475,6 +553,10 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreate, MemoUpdate]):
             content=memo_orm.content,
             starred=memo_orm.starred,
         )
+
+        if attach_to_object_type is not None and attach_to_object_id is not None:
+            update_es_dto.attached_object_id = attach_to_object_id
+            update_es_dto.attached_object_type = attach_to_object_type
 
         ElasticSearchService().update_memo_in_index(
             proj_id=memo_orm.project_id, update=update_es_dto
