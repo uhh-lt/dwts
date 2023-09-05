@@ -273,10 +273,10 @@ const useGetMemo = (sdocId: number | undefined, userId: number | undefined) =>
   useQuery<MemoRead, Error>(
     [QueryKey.MEMO_SDOC, sdocId, userId],
     () =>
-      SourceDocumentService.getUserMemo({
+      SourceDocumentService.getUserMemos({
         sdocId: sdocId!,
         userId: userId!,
-      }),
+      }).then((memos) => memos[0]),
     {
       retry: false,
       enabled: !!sdocId && !!userId,

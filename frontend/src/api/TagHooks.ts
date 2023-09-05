@@ -132,7 +132,7 @@ const useGetMemos = (tagId: number | undefined) =>
 const useGetMemo = (tagId: number | undefined, userId: number | undefined) =>
   useQuery<MemoRead, Error>(
     [QueryKey.MEMO_TAG, tagId, userId],
-    () => DocumentTagService.getUserMemo({ tagId: tagId!, userId: userId! }),
+    () => DocumentTagService.getUserMemos({ tagId: tagId!, userId: userId! }).then((memos) => memos[0]),
     {
       retry: false,
       enabled: !!tagId && !!userId,

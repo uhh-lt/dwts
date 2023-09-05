@@ -217,7 +217,7 @@ const useGetMemos = (spanId: number | undefined) =>
 const useGetMemo = (spanId: number | undefined, userId: number | undefined) =>
   useQuery<MemoRead, Error>(
     [QueryKey.MEMO_SPAN_ANNOTATION, spanId, userId],
-    () => SpanAnnotationService.getUserMemo({ spanId: spanId!, userId: userId! }),
+    () => SpanAnnotationService.getUserMemos({ spanId: spanId!, userId: userId! }).then((memos) => memos[0]),
     { enabled: !!spanId && !!userId, retry: false }
   );
 

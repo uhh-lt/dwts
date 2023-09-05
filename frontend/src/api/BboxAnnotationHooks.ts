@@ -196,7 +196,7 @@ const useGetMemos = (bboxId: number | undefined) =>
 const useGetMemo = (bboxId: number | undefined, userId: number | undefined) =>
   useQuery<MemoRead, Error>(
     [QueryKey.MEMO_BBOX_ANNOTATION, bboxId, userId],
-    () => BboxAnnotationService.getUserMemo({ bboxId: bboxId!, userId: userId! }),
+    () => BboxAnnotationService.getUserMemos({ bboxId: bboxId!, userId: userId! }).then((memos) => memos[0]),
     { enabled: !!bboxId && !!userId, retry: false }
   );
 

@@ -176,10 +176,10 @@ const useGetMemo = (projectId: number | undefined, userId: number | undefined) =
   useQuery<MemoRead, Error>(
     [QueryKey.MEMO_PROJECT, projectId, userId],
     () =>
-      ProjectService.getUserMemo({
+      ProjectService.getUserMemos({
         projId: projectId!,
         userId: userId!,
-      }),
+      }).then((memos) => memos[0]),
     {
       retry: false,
       enabled: !!projectId && !!userId,

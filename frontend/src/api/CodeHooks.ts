@@ -21,7 +21,7 @@ const useGetMemos = (codeId: number | undefined) =>
 const useGetMemo = (codeId: number | undefined, userId: number | undefined) =>
   useQuery<MemoRead, Error>(
     [QueryKey.MEMO_CODE, codeId, userId],
-    () => CodeService.getUserMemo({ codeId: codeId!, userId: userId! }),
+    () => CodeService.getUserMemos({ codeId: codeId!, userId: userId! }).then((memos) => memos[0]),
     {
       retry: false,
       enabled: !!codeId && !!userId,
