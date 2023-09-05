@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from api.dependencies import get_current_user, get_db_session
-from api.util import get_object_memos
 from app.core.data.crud.document_tag import crud_document_tag
 from app.core.data.crud.memo import crud_memo
 from app.core.data.dto.document_tag import (
@@ -152,7 +151,7 @@ async def get_memos(
 ) -> List[MemoRead]:
     # TODO Flo: only if the user has access?
     db_obj = crud_document_tag.read(db=db, id=tag_id)
-    return get_object_memos(db_obj=db_obj)
+    return crud_memo.get_object_memos(db_obj=db_obj)
 
 
 @router.get(
@@ -169,7 +168,7 @@ async def get_user_memos(
     *, db: Session = Depends(get_db_session), tag_id: int, user_id: int
 ) -> List[MemoRead]:
     db_obj = crud_document_tag.read(db=db, id=tag_id)
-    return get_object_memos(db_obj=db_obj, user_id=user_id)
+    return crud_memo.get_object_memos(db_obj=db_obj, user_id=user_id)
 
 
 @router.get(

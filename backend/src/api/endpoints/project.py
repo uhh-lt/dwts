@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional
 
 from api.dependencies import get_current_user, get_db_session, skip_limit_params
-from api.util import get_object_memos
 from app.core.data.crud.action import crud_action
 from app.core.data.crud.code import crud_code
 from app.core.data.crud.document_tag import crud_document_tag
@@ -455,7 +454,7 @@ async def get_memos(
     *, db: Session = Depends(get_db_session), proj_id: int
 ) -> List[MemoRead]:
     db_obj = crud_project.read(db=db, id=proj_id)
-    return get_object_memos(db_obj=db_obj)
+    return crud_memo.get_object_memos(db_obj=db_obj)
 
 
 @router.get(
@@ -472,7 +471,7 @@ async def get_user_memos(
     *, db: Session = Depends(get_db_session), proj_id: int, user_id: int
 ) -> List[MemoRead]:
     db_obj = crud_project.read(db=db, id=proj_id)
-    return get_object_memos(db_obj=db_obj, user_id=user_id)
+    return crud_memo.get_object_memos(db_obj=db_obj, user_id=user_id)
 
 
 @router.get(

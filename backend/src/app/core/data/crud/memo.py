@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import srsly
 from app.core.data.crud.crud_base import CRUDBase
@@ -400,6 +400,51 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreate, MemoUpdate]):
             raise NotImplementedError(
                 f"Unknown AttachedObjectType: {type(attached_to)}"
             )
+
+    @staticmethod
+    def get_object_memos(
+        db_obj: Union[
+            SourceDocumentORM,
+            AnnotationDocumentORM,
+            DocumentTagORM,
+            CodeORM,
+            ProjectORM,
+            BBoxAnnotationORM,
+            SpanAnnotationORM,
+            SpanGroupORM,
+        ],
+        user_id: Optional[int] = None,
+    ) -> List[MemoRead]:
+        if db_obj.object_handle is None and user_id is None:
+            return []
+
+        memo_as_in_db_dtos = [
+            MemoInDB.from_orm(memo_db_obj)
+            for memo_db_obj in db_obj.object_handle.attached_memos
+            if user_id is None or memo_db_obj.user_id == user_id
+        ]
+
+        object_types = {
+            SourceDocumentORM: AttachedObjectType.source_document,
+            AnnotationDocumentORM: AttachedObjectType.annotation_document,
+            DocumentTagORM: AttachedObjectType.document_tag,
+            CodeORM: AttachedObjectType.code,
+            ProjectORM: AttachedObjectType.project,
+            BBoxAnnotationORM: AttachedObjectType.bbox_annotation,
+            SpanAnnotationORM: AttachedObjectType.span_annotation,
+            SpanGroupORM: AttachedObjectType.span_group,
+        }
+
+        memos = [
+            MemoRead(
+                **memo_as_in_db_dto.dict(exclude={"attached_to"}),
+                attached_object_id=db_obj.id,
+                attached_object_type=object_types[type(db_obj)],
+            )
+            for memo_as_in_db_dto in memo_as_in_db_dtos
+        ]
+
+        return memos
 
     @staticmethod
     def __add_memo_to_elasticsearch(

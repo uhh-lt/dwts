@@ -1,7 +1,6 @@
 from typing import List, Optional, Union
 
 from api.dependencies import get_current_user, get_db_session, resolve_code_param
-from api.util import get_object_memos
 from app.core.data.crud.memo import crud_memo
 from app.core.data.crud.span_annotation import crud_span_anno
 from app.core.data.dto.code import CodeRead
@@ -230,7 +229,7 @@ async def get_memos(
 ) -> List[MemoRead]:
     # TODO Flo: only if the user has access?
     db_obj = crud_span_anno.read(db=db, id=span_id)
-    return get_object_memos(db_obj=db_obj)
+    return crud_memo.get_object_memos(db_obj=db_obj)
 
 
 @router.get(
@@ -247,4 +246,4 @@ async def get_user_memos(
     *, db: Session = Depends(get_db_session), span_id: int, user_id: int
 ) -> List[MemoRead]:
     db_obj = crud_span_anno.read(db=db, id=span_id)
-    return get_object_memos(db_obj=db_obj, user_id=user_id)
+    return crud_memo.get_object_memos(db_obj=db_obj, user_id=user_id)
