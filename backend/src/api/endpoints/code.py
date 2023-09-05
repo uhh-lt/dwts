@@ -87,6 +87,30 @@ async def delete_by_id(
     return CodeRead.from_orm(db_obj)
 
 
+@router.patch(
+    "/merge/",
+    tags=tags,
+    response_model=CodeRead,
+    summary="Merges multiple Codes into another Code",
+    description="Merges multiple Codes into another Code with the given ID.",
+)
+async def merge_codes(
+    *,
+    db: Session = Depends(get_db_session),
+    code_ids_to_merge: List[int],
+    merge_into_code: Union[int, CodeCreate],
+    remove_merged_codes: bool = True,
+) -> Optional[CodeRead]:
+    # TODO Flo: only if the user has access?
+    db_obj = crud_code.merge_codes(
+        db=db,
+        codes_to_merge=code_ids_to_merge,
+        merge_into_code=merge_into_code,
+        remove_merged_codes=remove_merged_codes,
+    )
+    return CodeRead.from_orm(db_obj)
+
+
 @router.put(
     "/{code_id}/memo",
     tags=tags,
