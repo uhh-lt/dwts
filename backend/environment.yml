@@ -1,12 +1,22 @@
 name: dwts
 channels:
   - conda-forge
+  - pytorch
   - defaults
 dependencies:
-  - alembic=1.12.1
-  - anyio=3.7.1
-  - beautifulsoup4=4.11.1
-  - black=23.9.1
+  - python=3.11.6
+  - conda-forge::pip=23.3.2
+  - pytorch::pytorch=2.1.2
+  - conda-forge::cudatoolkit=11.8.0
+  - conda-forge::transformers=4.36.2
+  - conda-forge::sentence-transformers>=2.2.2
+  - pydantic=2.5.3
+  - fastapi=0.108.0
+  - srsly=2.4.8
+  - tqdm=4.66.1
+  - sqlalchemy=2.0.25
+  - psycopg2-binary=2.9
+  - redis-py=4.3
   - celery=5.2
   - cssselect=1.2.0
   - debugpy=1.8.0
@@ -47,5 +57,9 @@ dependencies:
   - tqdm=4.66.1
   - twisted=22.10.0
   - uvicorn=0.23.2
+  - alembic=1.12.1
+  - anyio=3.7.1
+  - beautifulsoup4=4.11.1
+  - black=23.9.1
   - pip:
       - -r requirements.txt
