@@ -475,3 +475,16 @@ class RepoService(metaclass=SingletonMeta):
             **extra_data,
         )
         return dst_path, create_dto
+
+    def get_trained_models_path(self, proj_id: int) -> Path:
+        return self.get_project_repo_root_path(proj_id=proj_id).joinpath(
+            "trained_models"
+        )
+
+    def get_trained_model_path(self, proj_id: int, model_name: str) -> Path:
+        return self.get_trained_models_path(proj_id=proj_id).joinpath(model_name)
+
+    def trained_model_exists(self, proj_id: int, model_name: str) -> bool:
+        return self.get_trained_model_path(
+            proj_id=proj_id, model_name=model_name
+        ).exists()
