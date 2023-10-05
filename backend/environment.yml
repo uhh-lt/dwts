@@ -5,6 +5,11 @@ channels:
 dependencies:
   - python=3.10
   - conda-forge::pip=23.2.1
+  - pytorch::pytorch=1.12
+  - conda-forge::cudatoolkit=11.6
+  - conda-forge::transformers=4.33.3
+  - conda-forge::sentence-transformers=2.14.5
+  - conda-forge::sentence-transformers=2.2.2
   - pydantic=1.8
   - fastapi=0.85
   - srsly=2.4.8
