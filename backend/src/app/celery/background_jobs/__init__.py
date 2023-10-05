@@ -31,12 +31,6 @@ execute_video_preprocessing_pipeline_task = (
     "app.celery.background_jobs.tasks.execute_video_preprocessing_pipeline_task"
 )
 
-find_similar_images_task = "app.celery.background_jobs.tasks.find_similar_images_task"
-find_similar_sentences_task = (
-    "app.celery.background_jobs.tasks.find_similar_sentences_task"
-)
-find_similar_sentences_with_embedding_with_threshold_task = "app.celery.background_jobs.tasks.find_similar_sentences_with_embedding_with_threshold_task"
-
 
 def import_uploaded_archive_apply_async(
     archive_file_path: Path, project_id: int
@@ -106,31 +100,4 @@ def execute_video_preprocessing_pipeline_apply_async(
 ) -> None:
     Signature(
         execute_video_preprocessing_pipeline_task, kwargs={"cargos": cargos}
-    ).apply_async()
-
-
-def find_similar_images_apply_async(
-    proj_id: int, query: int, top_k: int
-) -> AsyncResult:
-    return Signature(
-        find_similar_images_task,
-        kwargs={"proj_id": proj_id, "query": query, "top_k": top_k},
-    ).apply_async()
-
-
-def find_similar_sentences_apply_async(
-    proj_id: int, query: str, top_k: int
-) -> AsyncResult:
-    return Signature(
-        find_similar_sentences_task,
-        kwargs={"proj_id": proj_id, "query": query, "top_k": top_k},
-    ).apply_async()
-
-
-def find_similar_sentences_with_embedding_with_threshold_apply_async(
-    proj_id: int, queries: List[str], top_k: int
-) -> AsyncResult:
-    return Signature(
-        find_similar_sentences_with_embedding_with_threshold_task,
-        kwargs={"proj_id": proj_id, "queries": queries, "top_k": top_k},
     ).apply_async()

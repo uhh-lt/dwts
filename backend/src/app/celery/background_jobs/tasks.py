@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from app.celery.background_jobs.crawl import start_crawler_job_
 from app.celery.background_jobs.export import start_export_job_
