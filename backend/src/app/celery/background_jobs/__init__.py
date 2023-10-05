@@ -8,6 +8,22 @@ from app.core.data.export.export_service import ExportService
 from app.preprocessing.pipeline.model.pipeline_cargo import PipelineCargo
 
 
+def start_trainer_job_async(
+    trainer_job_id: str,
+) -> None:
+    from app.celery.background_jobs.tasks import start_trainer_job_task
+    
+    start_trainer_job_task.apply_async(kwargs={"trainer_job_id": trainer_job_id})
+
+
+def use_trainer_model_async(
+    trainer_job_id: str,
+) -> Any:
+    from app.celery.background_jobs.tasks import use_trainer_model_task
+
+    return use_trainer_model_task.apply_async(kwargs={"trainer_job_id": trainer_job_id})
+
+
 def import_uploaded_archive_apply_async(
     archive_file_path: Path, project_id: int
 ) -> Any:

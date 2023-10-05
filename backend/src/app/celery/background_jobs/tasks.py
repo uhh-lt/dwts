@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import List, Path
 from typing import Tuple
 
 from app.celery.background_jobs.crawl import start_crawler_job_
@@ -10,10 +10,32 @@ from app.celery.background_jobs.preprocess import (
     execute_video_preprocessing_pipeline_,
     import_uploaded_archive_,
 )
+from app.celery.background_jobs.trainer import (
+    start_trainer_job_,
+    use_trainer_model_task_,
+)
 from app.celery.celery_worker import celery_worker
 from app.core.data.dto.crawler_job import CrawlerJobRead
 from app.core.data.dto.export_job import ExportJobRead
 from app.preprocessing.pipeline.model.pipeline_cargo import PipelineCargo
+
+
+@celery_worker.task(
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 0, "countdown": 5},
+)
+def start_trainer_job_task(trainer_job_id: str) -> None:
+    start_trainer_job_(trainer_job_id=trainer_job_id)
+
+
+@celery_worker.task(
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 0, "countdown": 5},
+)
+def use_trainer_model_task(trainer_job_id: str) -> List[float]:
+    return use_trainer_model_task_(trainer_job_id=trainer_job_id)
 
 
 @celery_worker.task(acks_late=True)
