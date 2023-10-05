@@ -50,6 +50,7 @@ from api.endpoints import (
     span_annotation,
     span_group,
     timeline_analysis,
+    trainer,
     user,
     whiteboard,
 )
@@ -272,6 +273,7 @@ app.include_router(analysis_table.router)
 app.include_router(whiteboard.router)
 app.include_router(project_metadata.router)
 app.include_router(timeline_analysis.router)
+app.include_router(trainer.router)
 
 
 def main() -> None:
