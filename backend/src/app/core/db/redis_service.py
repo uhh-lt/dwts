@@ -12,6 +12,11 @@ from app.core.data.dto.crawler_job import (
 )
 from app.core.data.dto.export_job import ExportJobCreate, ExportJobRead, ExportJobUpdate
 from app.core.data.dto.feedback import FeedbackCreate, FeedbackRead
+from app.core.data.dto.trainer_job import (
+    TrainerJobCreate,
+    TrainerJobRead,
+    TrainerJobUpdate,
+)
 from app.util.singleton_meta import SingletonMeta
 from config import conf
 
@@ -192,6 +197,76 @@ class RedisService(metaclass=SingletonMeta):
             return [
                 job
                 for job in all_crawler_jobs
+                if job.parameters.project_id == project_id
+            ]
+
+    def store_trainer_job(
+        self, trainer_job: Union[TrainerJobCreate, TrainerJobRead]
+    ) -> TrainerJobRead:
+        client = self._get_client("trainer")
+
+        if isinstance(trainer_job, TrainerJobCreate):
+            key = self._generate_random_key()
+            tj = TrainerJobRead(
+                id=key,
+                created=datetime.now(),
+                updated=datetime.now(),
+                **trainer_job.dict(),
+            )
+        elif isinstance(trainer_job, TrainerJobRead):
+            key = trainer_job.id
+            tj = trainer_job
+
+        if client.set(key.encode("utf-8"), tj.json()) != 1:
+            msg = "Cannot store TrainerJob!"
+            logger.error(msg)
+            raise RuntimeError(msg)
+        logger.debug(f"Successfully stored TrainerJob {key}!")
+        return tj
+
+    def load_trainer_job(self, key: str) -> TrainerJobRead:
+        client = self._get_client("trainer")
+
+        tj = client.get(key.encode("utf-8"))
+        if tj is None:
+            msg = f"TrainerJob with ID {key} does not exist!"
+            logger.error(msg)
+            raise KeyError(msg)
+        logger.debug(f"Successfully loaded TrainerJob {key}")
+        return TrainerJobRead.parse_raw(tj)
+
+    def update_trainer_job(self, key: str, update: TrainerJobUpdate) -> TrainerJobRead:
+        tj = self.load_trainer_job(key=key)
+        data = tj.dict()
+        data.update(**update.dict())
+        tj = TrainerJobRead(**data, updated=datetime.now())
+        tj = self.store_trainer_job(trainer_job=tj)
+        logger.debug(f"Updated TrainerJob {key}")
+        return tj
+
+    def delete_trainer_job(self, key: str) -> TrainerJobRead:
+        tj = self.load_trainer_job(key=key)
+        client = self._get_client("trainer")
+        if client.delete(key.encode("utf-8")) != 1:
+            msg = f"Cannot delete TrainerJob {key}"
+            logger.error(msg)
+            raise RuntimeError(msg)
+        logger.debug(f"Deleted TrainerJob {key}")
+        return tj
+
+    def get_all_trainer_jobs(
+        self, project_id: Optional[int] = None
+    ) -> List[TrainerJobRead]:
+        client = self._get_client("trainer")
+        all_trainer_jobs: List[TrainerJobRead] = [
+            self.load_trainer_job(str(key, "utf-8")) for key in client.keys()
+        ]
+        if project_id is None:
+            return all_trainer_jobs
+        else:
+            return [
+                job
+                for job in all_trainer_jobs
                 if job.parameters.project_id == project_id
             ]
 
