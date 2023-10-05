@@ -6,9 +6,6 @@ from app.core.data.dto.crawler_job import CrawlerJobParameters, CrawlerJobRead
 from app.core.data.dto.export_job import ExportJobParameters, ExportJobRead
 from app.core.data.export.export_service import ExportService
 from app.preprocessing.pipeline.model.pipeline_cargo import PipelineCargo
-
-# noinspection PyUnresolvedReferences,PyProtectedMember
-from celery import Signature
 from celery.canvas import Signature
 from celery.result import AsyncResult
 
@@ -30,6 +27,26 @@ execute_audio_preprocessing_pipeline_task = (
 execute_video_preprocessing_pipeline_task = (
     "app.celery.background_jobs.tasks.execute_video_preprocessing_pipeline_task"
 )
+start_trainer_job_task = "app.celery.background_jobs.tasks.start_trainer_job_task"
+use_trainer_model_task = "app.celery.background_jobs.tasks.use_trainer_model_task"
+
+
+def start_trainer_job_async(
+    trainer_job_id: str,
+) -> None:
+    start_trainer_job = Signature(
+        start_trainer_job_task, kwargs={"trainer_job_id": trainer_job_id}
+    )
+    start_trainer_job.apply_async()
+
+
+def use_trainer_model_async(
+    trainer_job_id: str,
+) -> AsyncResult:
+    use_trainer_model = Signature(
+        use_trainer_model_task, kwargs={"trainer_job_id": trainer_job_id}
+    )
+    return use_trainer_model.apply_async()
 
 
 def import_uploaded_archive_apply_async(
