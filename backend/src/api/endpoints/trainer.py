@@ -23,9 +23,10 @@ ts: TrainerService = TrainerService()
 )
 async def start_trainer_job(
     *,
+    db: Session = Depends(get_db_session),
     parameters: TrainerJobParameters,
 ) -> Optional[TrainerJobRead]:
-    return ts.create_and_start_trainer_job_async(trainer_params=parameters)
+    return ts.create_and_start_trainer_job_async(db=db, trainer_params=parameters)
 
 
 @router.get(
@@ -37,9 +38,10 @@ async def start_trainer_job(
 )
 async def use_trainer_model(
     *,
+    db: Session = Depends(get_db_session),
     trainer_job_id: str,
 ) -> List[float]:
-    return ts.use_trainer_model(trainer_job_id=trainer_job_id)
+    return ts.use_trainer_model(db=db, trainer_job_id=trainer_job_id)
 
 
 @router.get(

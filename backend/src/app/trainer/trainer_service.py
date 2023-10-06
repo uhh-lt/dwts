@@ -3,6 +3,7 @@ from typing import List
 
 import torch
 from app.celery.background_jobs import start_trainer_job_async, use_trainer_model_async
+from app.core.data.crud.project import crud_project
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.trainer_job import (
     TrainerJobCreate,
@@ -16,6 +17,7 @@ from datasets import load_dataset
 from loguru import logger
 from sentence_transformers import InputExample, SentenceTransformer
 from sentence_transformers.losses import CosineSimilarityLoss
+from sqlalchemy.orm import Session
 from torch.utils.data import DataLoader
 
 
@@ -27,8 +29,11 @@ class TrainerService(metaclass=SingletonMeta):
         return super(TrainerService, cls).__new__(cls)
 
     def create_and_start_trainer_job_async(
-        self, trainer_params: TrainerJobParameters
+        self, *, db: Session, trainer_params: TrainerJobParameters
     ) -> TrainerJobRead:
+        # make sure the project exists!
+        crud_project.read(db=db, id=trainer_params.project_id)
+
         create_dto = TrainerJobCreate(parameters=trainer_params)
         trainer_job_read = self.redis.store_trainer_job(create_dto)
         logger.info(f"Created and prepared trainer job: {trainer_job_read}")
@@ -37,7 +42,12 @@ class TrainerService(metaclass=SingletonMeta):
 
         return trainer_job_read
 
-    def use_trainer_model(self, trainer_job_id: str) -> List[float]:
+    def use_trainer_model(self, *, db: Session, trainer_job_id: str) -> List[float]:
+        # make sure the trainer job exists!
+        trainer_job = self.redis.load_trainer_job(trainer_job_id)
+        # make sure the project exists!
+        crud_project.read(db=db, id=trainer_job.parameters.project_id)
+
         return use_trainer_model_async(trainer_job_id=trainer_job_id).get()
 
     def _start_trainer_job_sync(self, trainer_job_id: str) -> TrainerJobRead:
