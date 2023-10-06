@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+import torch
 from app.celery.background_jobs import start_trainer_job_async, use_trainer_model_async
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.trainer_job import (
@@ -66,7 +67,12 @@ class TrainerService(metaclass=SingletonMeta):
 
         model = SentenceTransformer(trainer_job.saved_model_path)
 
-        return model.encode(["Hello World!"])[0].tolist()
+        toy_emb = model.encode(["Hello World!"])[0].tolist()
+
+        del model
+        torch.cuda.empty_cache()
+
+        return toy_emb
 
     def __prepare_sbert_training_data(self) -> DataLoader:
         logger.info("Loading dataset...")
@@ -132,5 +138,8 @@ class TrainerService(metaclass=SingletonMeta):
         model.save(path=str(out_p), model_name=model_name)
 
         trainer_job.saved_model_path = str(out_p)
+
+        del model, train_loss, train_dataloader
+        torch.cuda.empty_cache()
 
         return trainer_job
