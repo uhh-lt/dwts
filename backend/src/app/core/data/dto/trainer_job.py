@@ -8,7 +8,10 @@ from pydantic import BaseModel, Field
 
 class TrainerJobParameters(BaseModel):
     project_id: int = Field(description="The ID of the Project.")
-    base_model_name: str = Field(description="The name of the base model.")
+    base_model_name: str = Field(
+        description="The name of the base model.",
+        default="sentence-transformers/clip-ViT-B-32-multilingual-v1",
+    )
     model_name: str = Field(description="The name of the new model.")
 
 
