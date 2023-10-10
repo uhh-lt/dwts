@@ -42,7 +42,7 @@ services:
       - --host
       - 0.0.0.0
       - --port
-      - '8080'
+      - "8080"
       - --scheme
       - http
     image: semitechnologies/weaviate:1.21.3
@@ -53,10 +53,10 @@ services:
     restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25
-      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
       DEFAULT_VECTORIZER_MODULE: "none"
-      CLUSTER_HOSTNAME: 'node1'
+      CLUSTER_HOSTNAME: "node1"
       LOG_LEVEL: "info"
     networks:
       - dwts_demo_network
@@ -229,6 +229,10 @@ services:
       DWISE_BACKEND_CONFIG: ${DWISE_BACKEND_CONFIG:-/dwts_code/src/configs/default.yaml}
       API_PRODUCTION_MODE: ${API_PRODUCTION_MODE:-0}
       API_PRODUCTION_WORKERS: ${API_PRODUCTION_WORKERS:-10}
+      SYSTEM_USER_FIRST_NAME: ${SYSTEM_USER_FIRST_NAME}
+      SYSTEM_USER_LAST_NAME: ${SYSTEM_USER_LAST_NAME}
+      SYSTEM_USER_EMAIL: ${SYSTEM_USER_EMAIL}
+      SYSTEM_USER_PASSWORD: ${SYSTEM_USER_PASSWORD}
     volumes:
       - ../backend/src:/dwts_code/src
       - ./backend_repo:/tmp/dwts

@@ -8,6 +8,12 @@ api:
       algo: ${oc.env:JWT_ALGO, HS256}
       secret: ${oc.env:JWT_SECRET, ""}
 
+system_user:
+  first_name: ${oc.env:SYSTEM_USER_FIRST_NAME, "SYSTEM"}
+  last_name: ${oc.env:SYSTEM_USER_LAST_NAME, "USER"}
+  email: ${oc.env:SYSTEM_USER_EMAIL, "SYSTEM@DWTS.ORG"}
+  password: ${oc.env:SYSTEM_USER_PASSWORD, "SYSTEM"}
+
 ray:
   protocol: ${oc.env:RAY_PROTOCOL, http}
   host: ${oc.env:RAY_HOST, localhost}
