@@ -31,11 +31,6 @@ class APIIngress:
         self.whisper: Application = kwargs["whisper_model_handle"]
         self.dbert: Application = kwargs["dbert_model_handle"]
         self.spacy: Application = kwargs["spacy_model_handle"]
-        logger.info("xxxxxxJJJJJ")
-        logger.info("xxxxxxJJJJJ")
-        logger.info("xxxxxxJJJJJ")
-        logger.info("xxxxxxJJJJJ")
-        logger.info("xxxxxxJJJJJ")
 
     @api.get("/classify", response_model=DbertOutput)
     async def classify(self, dbert_input: DbertInput):
