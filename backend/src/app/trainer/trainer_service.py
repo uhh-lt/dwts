@@ -1,7 +1,9 @@
 import os
 from typing import List
 
+import online_triplet_loss.losses as otl
 import torch
+import torch.nn as nn
 from app.celery.background_jobs import start_trainer_job_async, use_trainer_model_async
 from app.core.data.crud.project import crud_project
 from app.core.data.dto.background_job_base import BackgroundJobStatus
@@ -153,3 +155,25 @@ class TrainerService(metaclass=SingletonMeta):
         torch.cuda.empty_cache()
 
         return trainer_job
+
+    #########################################################
+    #      Concept Over Time Anaylsis related functions     #
+    #########################################################
+
+    def __create_probing_layers_network(
+        self,
+        num_layers: int = 5,
+        input_dim: int = 64,
+        hidden_dim: int = 64,
+        output_dim: int = 64,
+    ) -> nn.Sequential:
+        layers = []
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(torch.nn.Linear(input_dim, hidden_dim))
+            elif i == num_layers - 1:
+                layers.append(torch.nn.Linear(hidden_dim, output_dim))
+            else:
+                layers.append(torch.nn.Linear(hidden_dim, hidden_dim))
+            layers.append(torch.nn.ReLU())
+        return torch.nn.Sequential(*layers)
