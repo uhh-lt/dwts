@@ -40,6 +40,11 @@ export type { ColumnInfo_AnnotatedSegmentsColumns_ } from "./models/ColumnInfo_A
 export type { ColumnInfo_SearchColumns_ } from "./models/ColumnInfo_SearchColumns_";
 export type { ColumnInfo_TimelineAnalysisColumns_ } from "./models/ColumnInfo_TimelineAnalysisColumns_";
 export type { ColumnInfo_WordFrequencyColumns_ } from "./models/ColumnInfo_WordFrequencyColumns_";
+export type { COTAConcept } from "./models/COTAConcept";
+export type { COTACreate } from "./models/COTACreate";
+export type { COTARead } from "./models/COTARead";
+export type { COTASentence } from "./models/COTASentence";
+export type { COTAUpdate } from "./models/COTAUpdate";
 export type { CrawlerJobParameters } from "./models/CrawlerJobParameters";
 export type { CrawlerJobRead } from "./models/CrawlerJobRead";
 export { DateGroupBy } from "./models/DateGroupBy";
@@ -138,6 +143,8 @@ export type { TimelineAnalysisResultNew } from "./models/TimelineAnalysisResultN
 export type { TimelineAnalysisResultType } from "./models/TimelineAnalysisResultType";
 export type { TimelineAnalysisSettings } from "./models/TimelineAnalysisSettings";
 export type { TimelineAnalysisUpdate } from "./models/TimelineAnalysisUpdate";
+export type { TrainerJobParameters } from "./models/TrainerJobParameters";
+export type { TrainerJobRead } from "./models/TrainerJobRead";
 export type { UserAuthorizationHeaderData } from "./models/UserAuthorizationHeaderData";
 export type { UserCreate } from "./models/UserCreate";
 export type { UserRead } from "./models/UserRead";
@@ -157,6 +164,7 @@ export { AnnotationDocumentService } from "./services/AnnotationDocumentService"
 export { AuthenticationService } from "./services/AuthenticationService";
 export { BboxAnnotationService } from "./services/BboxAnnotationService";
 export { CodeService } from "./services/CodeService";
+export { ConceptOverTimeAnalysisService } from "./services/ConceptOverTimeAnalysisService";
 export { CrawlerService } from "./services/CrawlerService";
 export { DocumentTagService } from "./services/DocumentTagService";
 export { ExportService } from "./services/ExportService";
@@ -172,5 +180,6 @@ export { SourceDocumentService } from "./services/SourceDocumentService";
 export { SpanAnnotationService } from "./services/SpanAnnotationService";
 export { SpanGroupService } from "./services/SpanGroupService";
 export { TimelineAnalysisService } from "./services/TimelineAnalysisService";
+export { TrainerService } from "./services/TrainerService";
 export { UserService } from "./services/UserService";
 export { WhiteboardService } from "./services/WhiteboardService";
