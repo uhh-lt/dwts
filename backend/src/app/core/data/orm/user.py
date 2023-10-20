@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.core.data.orm.analysis_table import AnalysisTableORM
     from app.core.data.orm.annotation_document import AnnotationDocumentORM
     from app.core.data.orm.code import CodeORM
+    from app.core.data.orm.concept_over_time_analysis import ConceptOverTimeAnalysisORM
     from app.core.data.orm.memo import MemoORM
     from app.core.data.orm.object_handle import ObjectHandleORM
     from app.core.data.orm.project import ProjectORM
@@ -60,6 +61,10 @@ class UserORM(ORMBase):
 
     whiteboards: Mapped[List["WhiteboardORM"]] = relationship(
         "WhiteboardORM", back_populates="user", passive_deletes=True
+    )
+
+    cotas: Mapped[List["ConceptOverTimeAnalysisORM"]] = relationship(
+        "ConceptOverTimeAnalysisORM", back_populates="user", passive_deletes=True
     )
 
     actions: Mapped[List["ActionORM"]] = relationship(
