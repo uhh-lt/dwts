@@ -1,5 +1,7 @@
 mammoth==1.6.0
 pymupdf==1.23.4
+rope==1.9.0
+online_triplet_loss==0.0.6
 Scrapy==2.10.0
 scrapy-playwright==0.0.31
 Twisted==22.10.0
