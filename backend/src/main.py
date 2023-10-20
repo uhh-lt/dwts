@@ -35,6 +35,7 @@ from api.endpoints import (
     authentication,
     bbox_annotation,
     code,
+    concept_over_time_analysis,
     crawler,
     document_tag,
     export,
@@ -274,6 +275,7 @@ app.include_router(whiteboard.router)
 app.include_router(project_metadata.router)
 app.include_router(timeline_analysis.router)
 app.include_router(trainer.router)
+app.include_router(concept_over_time_analysis.router)
 
 
 def main() -> None:
