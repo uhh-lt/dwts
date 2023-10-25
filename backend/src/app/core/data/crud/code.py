@@ -11,10 +11,13 @@ from app.core.data.dto.current_code import CurrentCodeCreate, CurrentCodeUpdate
 from app.core.data.dto.memo import AttachedObjectType
 from app.core.data.dto.object_handle import ObjectHandleCreate
 from app.core.data.orm.code import CodeORM, CurrentCodeORM
+from app.core.db.sql_service import SQLService
 from app.util.color import get_next_color
 from config import conf
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
+
+sqls: SQLService = SQLService()
 
 
 class CRUDCode(CRUDBase[CodeORM, CodeCreate, CodeUpdate]):
@@ -106,31 +109,34 @@ class CRUDCode(CRUDBase[CodeORM, CodeCreate, CodeUpdate]):
             crud_object_handle,  # avoid circular imports.
         )
 
-        oh_db_obj = crud_object_handle.create(
-            db=db, create_dto=ObjectHandleCreate(code_id=merge_into_code_db_obj.id)
-        )
-        for cc in current_codes_to_merge:
-            memos = crud_memo.get_object_memos(db_obj=cc.code)
-            for memo in memos:
-                crud_memo.reattach_memo(
-                    db=db,
-                    memo_id=memo.id,
-                    attach_to_oh=oh_db_obj,
-                    attach_to_object_id=merge_into_code_db_obj.id,
-                    attach_to_object_type=AttachedObjectType.code,
-                )
+        with sqls.db_session() as nested:
+            oh_db_obj = crud_object_handle.create(
+                db=nested,
+                create_dto=ObjectHandleCreate(code_id=merge_into_code_db_obj.id),
+            )
+            for cc in current_codes_to_merge:
+                code_db_obj = crud_code.read(db=nested, id=cc.code_id)
+                memos = crud_memo.get_object_memos(db_obj=code_db_obj)
+                for memo in memos:
+                    crud_memo.reattach_memo(
+                        db=nested,
+                        memo_id=memo.id,
+                        attach_to_oh=oh_db_obj,
+                        attach_to_object_id=merge_into_code_db_obj.id,
+                        attach_to_object_type=AttachedObjectType.code,
+                    )
 
-        # merge the codes by moving the current code pointer to the code to merge into
-        for cc in current_codes_to_merge:
-            update_dto = CurrentCodeUpdate(code_id=merge_into_code_db_obj.id)
-            crud_current_code.update(db=db, id=cc.id, update_dto=update_dto)
+            # merge the codes by moving the current code pointer to the code to merge into
+            for cc in current_codes_to_merge:
+                update_dto = CurrentCodeUpdate(code_id=merge_into_code_db_obj.id)
+                crud_current_code.update(db=nested, id=cc.id, update_dto=update_dto)
 
-        if remove_merged_codes:
-            # remove the codes to be merged
-            for cid in codes_to_merge:
-                self.remove(db=db, id=cid)
+            if remove_merged_codes:
+                # remove the codes to be merged
+                for cid in codes_to_merge:
+                    self.remove(db=nested, id=cid)
 
-        return merge_into_code_db_obj
+            return merge_into_code_db_obj
 
     def read_by_name(self, db: Session, code_name: str) -> List[CodeORM]:
         return db.query(self.model).filter(self.model.name == code_name).all()
