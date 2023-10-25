@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import srsly
 from app.core.data.crud.crud_base import CRUDBase
 from app.core.data.crud.current_code import crud_current_code
+from app.core.data.crud.memo import crud_memo
 from app.core.data.crud.user import SYSTEM_USER_ID
 from app.core.data.dto.action import ActionType
 from app.core.data.dto.code import CodeCreate, CodeRead, CodeUpdate
