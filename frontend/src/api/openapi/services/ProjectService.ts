@@ -576,12 +576,18 @@ export class ProjectService {
   }
 
   /**
-   * Returns the Memo attached to the Project of the User with the given ID
-   * Returns the Memo attached to the Project with the given ID of the User with the given ID if it exists.
+   * Returns the Memos attached to the Project of the User with the given ID
+   * Returns the Memos attached to the Project with the given ID of the User with the given ID if it exists.
    * @returns MemoRead Successful Response
    * @throws ApiError
    */
-  public static getUserMemo({ projId, userId }: { projId: number; userId: number }): CancelablePromise<MemoRead> {
+  public static getUserMemos({
+    projId,
+    userId,
+  }: {
+    projId: number;
+    userId: number;
+  }): CancelablePromise<Array<MemoRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/project/{proj_id}/memo/{user_id}",

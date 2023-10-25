@@ -290,12 +290,18 @@ export class SpanAnnotationService {
   }
 
   /**
-   * Returns the Memo attached to the SpanAnnotation of the User with the given ID
-   * Returns the Memo attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.
+   * Returns the Memos attached to the SpanAnnotation of the User with the given ID
+   * Returns the Memos attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.
    * @returns MemoRead Successful Response
    * @throws ApiError
    */
-  public static getUserMemo({ spanId, userId }: { spanId: number; userId: number }): CancelablePromise<MemoRead> {
+  public static getUserMemos({
+    spanId,
+    userId,
+  }: {
+    spanId: number;
+    userId: number;
+  }): CancelablePromise<Array<MemoRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/span/{span_id}/memo/{user_id}",

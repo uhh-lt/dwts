@@ -566,12 +566,18 @@ export class SourceDocumentService {
   }
 
   /**
-   * Returns the Memo attached to the SourceDocument of the User with the given ID
-   * Returns the Memo attached to the SourceDocument with the given ID of the User with the given ID if it exists.
+   * Returns the Memos attached to the SourceDocument of the User with the given ID
+   * Returns the Memos attached to the SourceDocument with the given ID of the User with the given ID if it exists.
    * @returns MemoRead Successful Response
    * @throws ApiError
    */
-  public static getUserMemo({ sdocId, userId }: { sdocId: number; userId: number }): CancelablePromise<MemoRead> {
+  public static getUserMemos({
+    sdocId,
+    userId,
+  }: {
+    sdocId: number;
+    userId: number;
+  }): CancelablePromise<Array<MemoRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/sdoc/{sdoc_id}/memo/{user_id}",

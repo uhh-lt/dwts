@@ -192,12 +192,12 @@ export class DocumentTagService {
   }
 
   /**
-   * Returns the Memo attached to the SpanAnnotation of the User with the given ID
-   * Returns the Memo attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.
+   * Returns the Memos attached to the DocumentTag of the User with the given ID
+   * Returns the Memos attached to the DocumentTag with the given ID of the User with the given ID if it exists.
    * @returns MemoRead Successful Response
    * @throws ApiError
    */
-  public static getUserMemo({ tagId, userId }: { tagId: number; userId: number }): CancelablePromise<MemoRead> {
+  public static getUserMemos({ tagId, userId }: { tagId: number; userId: number }): CancelablePromise<Array<MemoRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/doctag/{tag_id}/memo/{user_id}",

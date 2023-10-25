@@ -48,7 +48,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-    "update-api": "node updateAPI.js -p 5500",
+    "update-api": "node updateAPI.js -p 33120",
     "generate": "openapi --input src/openapi.json --useOptions --output src/api/openapi",
     "generate-dev": "node generateAPI.js"
   },

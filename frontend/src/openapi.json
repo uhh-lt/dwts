@@ -1053,9 +1053,9 @@
     "/project/{proj_id}/memo/{user_id}": {
       "get": {
         "tags": ["project"],
-        "summary": "Returns the Memo attached to the Project of the User with the given ID",
-        "description": "Returns the Memo attached to the Project with the given ID of the User with the given ID if it exists.",
-        "operationId": "get_user_memo",
+        "summary": "Returns the Memos attached to the Project of the User with the given ID",
+        "description": "Returns the Memos attached to the Project with the given ID of the User with the given ID if it exists.",
+        "operationId": "get_user_memos",
         "parameters": [
           { "required": true, "schema": { "title": "Proj Id", "type": "integer" }, "name": "proj_id", "in": "path" },
           { "required": true, "schema": { "title": "User Id", "type": "integer" }, "name": "user_id", "in": "path" }
@@ -1063,7 +1063,15 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemoRead" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Project-Get User Memos",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MemoRead" }
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -1783,9 +1791,9 @@
     "/sdoc/{sdoc_id}/memo/{user_id}": {
       "get": {
         "tags": ["sourceDocument"],
-        "summary": "Returns the Memo attached to the SourceDocument of the User with the given ID",
-        "description": "Returns the Memo attached to the SourceDocument with the given ID of the User with the given ID if it exists.",
-        "operationId": "get_user_memo",
+        "summary": "Returns the Memos attached to the SourceDocument of the User with the given ID",
+        "description": "Returns the Memos attached to the SourceDocument with the given ID of the User with the given ID if it exists.",
+        "operationId": "get_user_memos",
         "parameters": [
           { "required": true, "schema": { "title": "Sdoc Id", "type": "integer" }, "name": "sdoc_id", "in": "path" },
           { "required": true, "schema": { "title": "User Id", "type": "integer" }, "name": "user_id", "in": "path" }
@@ -1793,7 +1801,15 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemoRead" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Sourcedocument-Get User Memos",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MemoRead" }
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -2038,9 +2054,9 @@
     "/doctag/{tag_id}/memo/{user_id}": {
       "get": {
         "tags": ["documentTag"],
-        "summary": "Returns the Memo attached to the SpanAnnotation of the User with the given ID",
-        "description": "Returns the Memo attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.",
-        "operationId": "get_user_memo",
+        "summary": "Returns the Memos attached to the DocumentTag of the User with the given ID",
+        "description": "Returns the Memos attached to the DocumentTag with the given ID of the User with the given ID if it exists.",
+        "operationId": "get_user_memos",
         "parameters": [
           { "required": true, "schema": { "title": "Tag Id", "type": "integer" }, "name": "tag_id", "in": "path" },
           { "required": true, "schema": { "title": "User Id", "type": "integer" }, "name": "user_id", "in": "path" }
@@ -2048,7 +2064,15 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemoRead" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Documenttag-Get User Memos",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MemoRead" }
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -2755,9 +2779,9 @@
     "/span/{span_id}/memo/{user_id}": {
       "get": {
         "tags": ["spanAnnotation"],
-        "summary": "Returns the Memo attached to the SpanAnnotation of the User with the given ID",
-        "description": "Returns the Memo attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.",
-        "operationId": "get_user_memo",
+        "summary": "Returns the Memos attached to the SpanAnnotation of the User with the given ID",
+        "description": "Returns the Memos attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.",
+        "operationId": "get_user_memos",
         "parameters": [
           { "required": true, "schema": { "title": "Span Id", "type": "integer" }, "name": "span_id", "in": "path" },
           { "required": true, "schema": { "title": "User Id", "type": "integer" }, "name": "user_id", "in": "path" }
@@ -2765,7 +2789,15 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemoRead" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Spanannotation-Get User Memos",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MemoRead" }
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -3181,9 +3213,9 @@
     "/bbox/{bbox_id}/memo/{user_id}": {
       "get": {
         "tags": ["bboxAnnotation"],
-        "summary": "Returns the Memo attached to the BBoxAnnotation of the User with the given ID",
-        "description": "Returns the Memo attached to the BBoxAnnotation with the given ID of the User with the given ID if it exists.",
-        "operationId": "get_user_memo",
+        "summary": "Returns the Memos attached to the BBoxAnnotation of the User with the given ID",
+        "description": "Returns the Memos attached to the BBoxAnnotation with the given ID of the User with the given ID if it exists.",
+        "operationId": "get_user_memos",
         "parameters": [
           { "required": true, "schema": { "title": "Bbox Id", "type": "integer" }, "name": "bbox_id", "in": "path" },
           { "required": true, "schema": { "title": "User Id", "type": "integer" }, "name": "user_id", "in": "path" }
@@ -3191,7 +3223,15 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemoRead" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Bboxannotation-Get User Memos",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MemoRead" }
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -3317,6 +3357,37 @@
         "security": [{ "OAuth2PasswordBearer": [] }]
       }
     },
+    "/code/merge/": {
+      "patch": {
+        "tags": ["code"],
+        "summary": "Merges multiple Codes into another Code",
+        "description": "Merges multiple Codes into another Code with the given ID.",
+        "operationId": "merge_codes",
+        "parameters": [
+          {
+            "required": false,
+            "schema": { "title": "Remove Merged Codes", "type": "boolean", "default": true },
+            "name": "remove_merged_codes",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Body_code-merge_codes" } } },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CodeRead" } } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
     "/code/{code_id}/memo": {
       "get": {
         "tags": ["code"],
@@ -3374,9 +3445,9 @@
     "/code/{code_id}/memo/{user_id}": {
       "get": {
         "tags": ["code"],
-        "summary": "Returns the Memo attached to the SpanAnnotation of the User with the given ID",
-        "description": "Returns the Memo attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.",
-        "operationId": "get_user_memo",
+        "summary": "Returns the Memos attached to the SpanAnnotation of the User with the given ID",
+        "description": "Returns the Memos attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.",
+        "operationId": "get_user_memos",
         "parameters": [
           { "required": true, "schema": { "title": "Code Id", "type": "integer" }, "name": "code_id", "in": "path" },
           { "required": true, "schema": { "title": "User Id", "type": "integer" }, "name": "user_id", "in": "path" }
@@ -3384,7 +3455,15 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemoRead" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Code-Get User Memos",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MemoRead" }
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -5303,6 +5382,18 @@
           "scope": { "title": "Scope", "type": "string", "default": "" },
           "client_id": { "title": "Client Id", "type": "string" },
           "client_secret": { "title": "Client Secret", "type": "string" }
+        }
+      },
+      "Body_code-merge_codes": {
+        "title": "Body_code-merge_codes",
+        "required": ["code_ids_to_merge", "merge_into_code"],
+        "type": "object",
+        "properties": {
+          "code_ids_to_merge": { "title": "Code Ids To Merge", "type": "array", "items": { "type": "integer" } },
+          "merge_into_code": {
+            "title": "Merge Into Code",
+            "anyOf": [{ "type": "integer" }, { "$ref": "#/components/schemas/CodeCreate" }]
+          }
         }
       },
       "Body_project-upload_project_sdoc": {

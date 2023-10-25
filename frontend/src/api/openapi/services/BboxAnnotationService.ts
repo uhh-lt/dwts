@@ -199,12 +199,18 @@ export class BboxAnnotationService {
   }
 
   /**
-   * Returns the Memo attached to the BBoxAnnotation of the User with the given ID
-   * Returns the Memo attached to the BBoxAnnotation with the given ID of the User with the given ID if it exists.
+   * Returns the Memos attached to the BBoxAnnotation of the User with the given ID
+   * Returns the Memos attached to the BBoxAnnotation with the given ID of the User with the given ID if it exists.
    * @returns MemoRead Successful Response
    * @throws ApiError
    */
-  public static getUserMemo({ bboxId, userId }: { bboxId: number; userId: number }): CancelablePromise<MemoRead> {
+  public static getUserMemos({
+    bboxId,
+    userId,
+  }: {
+    bboxId: number;
+    userId: number;
+  }): CancelablePromise<Array<MemoRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/bbox/{bbox_id}/memo/{user_id}",

@@ -1,6 +1,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Body_code_merge_codes } from "../models/Body_code_merge_codes";
 import type { CodeCreate } from "../models/CodeCreate";
 import type { CodeRead } from "../models/CodeRead";
 import type { CodeUpdate } from "../models/CodeUpdate";
@@ -115,6 +116,33 @@ export class CodeService {
   }
 
   /**
+   * Merges multiple Codes into another Code
+   * Merges multiple Codes into another Code with the given ID.
+   * @returns CodeRead Successful Response
+   * @throws ApiError
+   */
+  public static mergeCodes({
+    requestBody,
+    removeMergedCodes = true,
+  }: {
+    requestBody: Body_code_merge_codes;
+    removeMergedCodes?: boolean;
+  }): CancelablePromise<CodeRead> {
+    return __request(OpenAPI, {
+      method: "PATCH",
+      url: "/code/merge/",
+      query: {
+        remove_merged_codes: removeMergedCodes,
+      },
+      body: requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+
+  /**
    * Returns the Memo attached to the Code
    * Returns the Memo attached to the Code with the given ID if it exists.
    * @returns MemoRead Successful Response
@@ -161,12 +189,18 @@ export class CodeService {
   }
 
   /**
-   * Returns the Memo attached to the SpanAnnotation of the User with the given ID
-   * Returns the Memo attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.
+   * Returns the Memos attached to the SpanAnnotation of the User with the given ID
+   * Returns the Memos attached to the SpanAnnotation with the given ID of the User with the given ID if it exists.
    * @returns MemoRead Successful Response
    * @throws ApiError
    */
-  public static getUserMemo({ codeId, userId }: { codeId: number; userId: number }): CancelablePromise<MemoRead> {
+  public static getUserMemos({
+    codeId,
+    userId,
+  }: {
+    codeId: number;
+    userId: number;
+  }): CancelablePromise<Array<MemoRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/code/{code_id}/memo/{user_id}",

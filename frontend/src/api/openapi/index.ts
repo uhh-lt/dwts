@@ -25,6 +25,7 @@ export type { BBoxAnnotationReadResolvedCode } from "./models/BBoxAnnotationRead
 export type { BBoxAnnotationUpdateWithCodeId } from "./models/BBoxAnnotationUpdateWithCodeId";
 export type { Body_analysis_code_frequencies } from "./models/Body_analysis_code_frequencies";
 export type { Body_authentication_login } from "./models/Body_authentication_login";
+export type { Body_code_merge_codes } from "./models/Body_code_merge_codes";
 export type { Body_project_upload_project_sdoc } from "./models/Body_project_upload_project_sdoc";
 export type { CodeCreate } from "./models/CodeCreate";
 export type { CodeFrequency } from "./models/CodeFrequency";
