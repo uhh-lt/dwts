@@ -50,21 +50,6 @@ jobs:
   run-unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: false
-
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: false
       - name: Set Swap Space to 10GB
         uses: pierotofy/set-swap-space@master
         with:
@@ -82,7 +67,7 @@ jobs:
           export RAY_CONFIG="./config_test_no_gpu.yaml"
           docker compose -f compose-test.yml up -d --quiet-pull
           echo Waiting for containers to start...
-          sleep 240
+          sleep 30
           cd ..
       - name: Run CRUD tests
         run: |

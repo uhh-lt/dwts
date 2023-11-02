@@ -119,6 +119,7 @@ def __init_services__(
     from app.preprocessing.ray_model_service import RayModelService
 
     RayModelService()
+
     # import and init SimSearchService
     from app.core.search.simsearch_service import SimSearchService
 

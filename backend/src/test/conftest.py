@@ -2,14 +2,19 @@ import os
 import random
 import string
 
+# Allow app to detect if it's running inside tests
+import sys
+
 import pytest
 from app.core.startup import startup
+
+sys._called_from_test = True
 
 # Flo: just do it once. We have to check because if we start the main function, unvicorn will import this
 # file once more manually, so it would be executed twice.
 STARTUP_DONE = bool(int(os.environ.get("STARTUP_DONE", "0")))
 if not STARTUP_DONE:
-    startup(reset_data=True)
+    startup(reset_data=True, enable_ray=False)
     os.environ["STARTUP_DONE"] = "1"
 
 from app.core.data.crud.code import crud_code

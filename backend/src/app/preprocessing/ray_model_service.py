@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Dict, List
 
 import requests
@@ -28,6 +29,11 @@ from requests import Response
 
 class RayModelService(metaclass=SingletonMeta):
     def __new__(cls, *args, **kwargs):
+        running_in_test = hasattr(sys, "_called_from_test")
+        if running_in_test:
+            # When running in tests, don't use the ray service at all
+            return super(RayModelService, cls).__new__(cls)
+
         cls.base_url = f"{conf.ray.protocol}://" f"{conf.ray.host}:" f"{conf.ray.port}"
         logger.info(f"RayModelService base_url: {cls.base_url}")
 
@@ -41,16 +47,17 @@ class RayModelService(metaclass=SingletonMeta):
                 )
                 logger.error(msg)
                 raise Exception(msg)
+
+            cls.base_routes: List[str] = list(response.json().keys())
+            logger.info(
+                f"RayModelService detected the following base routes:"
+                f"\n{cls.base_routes}"
+            )
+
         except Exception as e:
             msg = f"Error while starting the RayModelService! Exception: {str(e)}"
             logger.error(msg)
             raise SystemExit(msg)
-
-        cls.base_routes: List[str] = list(response.json().keys())
-        logger.info(
-            f"RayModelService detected the following base routes:"
-            f"\n{cls.base_routes}"
-        )
 
         return super(RayModelService, cls).__new__(cls)
 
