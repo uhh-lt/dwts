@@ -43,6 +43,11 @@ from app.core.data.dto.project import ProjectCreate
 from app.core.data.dto.user import UserCreate, UserRead
 
 
+def pytest_sessionfinish():
+    # Make sure the next test session starts with a clean database
+    SQLService().drop_database()
+
+
 # Always use the asyncio backend for async tests
 @pytest.fixture
 def anyio_backend():

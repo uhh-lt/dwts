@@ -8,7 +8,6 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy_utils import create_database, database_exists, drop_database
 
-from app.core.data.orm.orm_base import ORMBase
 from app.core.db.import_all_orms import *  # noqa: F401, F403
 from app.util.singleton_meta import SingletonMeta
 from config import conf
@@ -47,20 +46,9 @@ class SQLService(metaclass=SingletonMeta):
     def __del__(self):
         self.__engine.dispose()
 
-    # This method is unused and only left here for historic reference
-    def _create_database_and_tables(self, drop_if_exists: bool = False) -> None:
-        logger.info("Setting up PostgresSQL DB and tables...")
-        if drop_if_exists and database_exists(self.__engine.url):
-            logger.warning("Dropping existing DB!")
-            drop_database(self.__engine.url)
-
-            self.create_database_if_not_exists()
-
-            # create all tables from SQLAlchemy ORM Models
-            ORMBase.metadata.create_all(self.__engine)
-            logger.debug("Created Tables!")
-
-        logger.info("Done setting up PostgresSQL DB and tables!")
+    def drop_database(self):
+        logger.warning("Dropping existing DB!")
+        drop_database(self.__engine.url)
 
     def create_database_if_not_exists(self):
         if not database_exists(self.__engine.url):
