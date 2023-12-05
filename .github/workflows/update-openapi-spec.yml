@@ -10,6 +10,10 @@ on:
 jobs:
   update-openapi-spec:
     runs-on: ubuntu-latest
+    env:
+      API_PRODUCTION_WORKERS: 0
+      RAY_ENABLED: False
+      API_EXPOSED: 5500
     steps:
       - uses: actions/checkout@v3
       - name: Checkout PR
@@ -24,9 +28,6 @@ jobs:
           chmod -R a+rwx backend_repo/ models_cache/ spacy_models/
           python monkey_patch_docker_compose_for_backend_tests.py --disable_ray
           export GID=$(id -g)
-          export API_PRODUCTION_WORKERS=0
-          export RAY_ENABLED=False
-          export API_EXPOSED=5500
           docker compose -f compose-test.yml up -d --quiet-pull
           echo Waiting for containers to start...
       - name: Setup node

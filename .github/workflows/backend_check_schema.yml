@@ -9,6 +9,10 @@ on:
 jobs:
   check-schema:
     runs-on: ubuntu-latest
+    env:
+      API_PRODUCTION_WORKERS: 0
+      RAY_ENABLED: False
+      COMPOSE_PROFILES: ""
     steps:
       - uses: actions/checkout@v3
       - name: Start Docker Containers
@@ -19,8 +23,6 @@ jobs:
           chmod -R a+rwx backend_repo/ models_cache/ spacy_models/
           python monkey_patch_docker_compose_for_backend_tests.py --disable_ray
           export GID=$(id -g)
-          export API_PRODUCTION_WORKERS=0
-          export RAY_CONFIG="./config_test_no_gpu.yaml"
           docker compose -f compose-test.yml up -d --quiet-pull postgres
           echo Waiting for containers to start...
           sleep 10
