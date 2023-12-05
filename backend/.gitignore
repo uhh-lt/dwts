@@ -12,6 +12,7 @@ backend/logs
 
 # Local configuration
 .env
+.env.testing
 
 # npm stuff for python readability
 src/node_modules
