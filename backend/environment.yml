@@ -2,13 +2,14 @@ name: dwts
 channels:
   - conda-forge
   - pytorch
+  - nvidia
   - defaults
 dependencies:
   - python=3.11.6
   - conda-forge::pip=23.3.2
-  - pytorch::pytorch=2.1.2
-  - conda-forge::cudatoolkit=11.8.0
-  - conda-forge::transformers=4.36.2
+  - pytorch::pytorch>=2.1
+  - pytorch::pytorch-cuda=11.7
+  - conda-forge::transformers>=4.3
   - conda-forge::sentence-transformers>=2.2.2
   - pydantic=2.5.3
   - fastapi=0.108.0
