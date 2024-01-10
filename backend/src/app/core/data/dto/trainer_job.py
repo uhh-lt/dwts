@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import Optional
 
+from pydantic import BaseModel, Field
+
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.dto_base import UpdateDTOBase
-from pydantic import BaseModel, Field
 
 
 class TrainerJobParameters(BaseModel):
@@ -12,7 +13,7 @@ class TrainerJobParameters(BaseModel):
         description="The name of the base model.",
         default="sentence-transformers/clip-ViT-B-32-multilingual-v1",
     )
-    model_name: str = Field(description="The name of the new model.")
+    new_model_name: str = Field(description="The name of the new model.")
 
 
 # Properties shared across all DTOs
