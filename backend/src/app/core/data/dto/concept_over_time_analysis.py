@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
@@ -188,11 +187,6 @@ class COTARefinementJobBase(BackgroundJobBase):
 
 
 class COTARefinementJobCreate(COTARefinementJobBase):
-    id: str = Field(
-        description="ID of the COTARefinementJob",
-        default_factory=lambda: str(uuid.uuid4()),
-    )
-
     cota: COTARead = Field(description="COTA that is used in the COTARefinementJob")
 
     hyperparams: COTARefinementHyperparameters = Field(
