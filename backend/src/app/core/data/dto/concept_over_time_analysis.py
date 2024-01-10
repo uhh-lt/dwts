@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import srsly
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,9 +29,9 @@ class COTASentence(BaseModel):
 class COTAConcept(BaseModel):
     name: str = Field(description="Name of the Concept")
     description: str = Field(description="Description of the Concept")
-    color: str = Field(description="Color of the Concept", default="#00ff00")
-    visible: bool = Field(description="Visibility of the Concept", default=True)
-    id: str = Field(description="ID of the Concept", default="why?")
+    color: str = Field(description="Color of the Concept")
+    visible: bool = Field(description="Visibility of the Concept")
+    id: str = Field(description="ID of the Concept")
 
 
 class COTAConceptWithSentences(COTAConcept):
@@ -135,11 +135,19 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
 
     @field_validator("concepts", mode="before")
     @classmethod
-    def json_loads_concepts(cls, v: str) -> List[COTAConcept]:
+    def json_loads_concepts(cls, v: Union[str, List]) -> List[COTAConcept]:
         if isinstance(v, str):
             # v is a JSON string from the DB
             data = srsly.json_loads(v)
-            return [COTAConcept(**concept) for concept in data]
+            if isinstance(data, List) and isinstance(data[0], dict):
+                return [COTAConcept(**concept) for concept in data]
+            else:
+                raise ValueError(
+                    "Invalid value for concepts. "
+                    "Must be a JSON string or a list of COTAConcepts."
+                )
+        elif isinstance(v, List) and isinstance(v[0], dict):
+            return [COTAConcept(**concept) for concept in v]
         elif isinstance(v, List) and isinstance(v[0], COTAConcept):
             return v
         else:
@@ -150,11 +158,19 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
 
     @field_validator("sentence_search_space", mode="before")
     @classmethod
-    def json_loads_sss(cls, v: str) -> List[COTASentence]:
+    def json_loads_sss(cls, v: Union[str, List]) -> List[COTASentence]:
         if isinstance(v, str):
             # v is a JSON string from the DB
             data = srsly.json_loads(v)
-            return [COTASentence(**sentence) for sentence in data]
+            if isinstance(data, List) and isinstance(data[0], dict):
+                return [COTASentence(**sentence) for sentence in data]
+            else:
+                raise ValueError(
+                    "Invalid value for concepts. "
+                    "Must be a JSON string or a list of COTAConcepts."
+                )
+        elif isinstance(v, List) and isinstance(v[0], dict):
+            return [COTASentence(**sentence) for sentence in v]
         elif isinstance(v, List) and isinstance(v[0], COTASentence):
             return v
         else:
