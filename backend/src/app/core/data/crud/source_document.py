@@ -87,7 +87,9 @@ class CRUDSourceDocument(
             )
         else:
             sdoc_data_read = SourceDocumentDataRead.model_validate(data)
-        return SourceDocumentWithDataRead(**(sdoc_read.dict() | sdoc_data_read.dict()))
+        return SourceDocumentWithDataRead(
+            **(sdoc_read.model_dump() | sdoc_data_read.model_dump())
+        )
 
     def link_document_tag(
         self, db: Session, *, sdoc_id: int, tag_id: int
