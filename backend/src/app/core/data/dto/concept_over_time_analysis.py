@@ -9,7 +9,6 @@ from pydantic.functional_validators import field_validator
 from app.core.data.dto.background_job_base import (
     BackgroundJobBase,
     BackgroundJobBaseUpdate,
-    BackgroundJobStatus,
 )
 from app.core.data.dto.dto_base import UpdateDTOBase
 
@@ -229,10 +228,6 @@ class COTARefinementJobRead(COTARefinementJobCreate):
         default_factory=lambda: str(uuid.uuid4()),
     )
 
-    status: BackgroundJobStatus = Field(
-        default=BackgroundJobStatus.WAITING,
-        description="Status of the BackgroundJob",
-    )
     current_pipeline_step: Optional[str] = Field(
         description="Current Pipeline Step of the COTARefinementJob",
         default=None,
