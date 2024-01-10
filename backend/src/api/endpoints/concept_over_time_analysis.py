@@ -92,7 +92,7 @@ async def update_by_id(
     )
 
 
-@router.patch(
+@router.post(
     "/{cota_id}",
     response_model=COTARefinementJobRead,
     summary="Refines the ConceptOverTimeAnalysis",
