@@ -109,7 +109,7 @@ class TrainerService(metaclass=SingletonMeta):
         params = trainer_job.parameters
 
         base_model_name = params.base_model_name
-        model_name = params.model_name
+        model_name = params.new_model_name
 
         logger.info(f"Fine-tuning SBert model {base_model_name}...")
 

@@ -292,7 +292,7 @@ class RedisService(metaclass=SingletonMeta):
             key = cota_job.id
             tj = cota_job
 
-        if client.set(key.encode("utf-8"), tj.json()) != 1:
+        if client.set(key.encode("utf-8"), tj.model_dump_json()) != 1:
             msg = "Cannot store COTARefinementJob!"
             logger.error(msg)
             raise RuntimeError(msg)
