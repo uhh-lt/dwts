@@ -444,3 +444,30 @@ class SimSearchService(metaclass=SingletonMeta):
         return (
             self._client.query.aggregate(self.class_names[index_type]).with_meta_count()
         ).do()["data"]["Aggregate"][self.class_names[index_type]][0]["meta"]["count"]
+
+    def get_sentence_embeddings(
+        self, sentence_ids: List[int]
+    ) -> Dict[int, List[float]]:
+        query = (
+            self._client.query.get(
+                self._sentence_class_name,
+                self._sentence_props,
+            )
+            .with_additional(["vector"])
+            .with_where(
+                {
+                    "operator": "Or",
+                    "operands": [
+                        {
+                            "path": ["sentence_id"],
+                            "operator": "Equal",
+                            "valueInt": sentence_id,
+                        }
+                        for sentence_id in sentence_ids
+                    ],
+                }
+            )
+        )
+
+        result = query.do()["data"]["Get"][self._sentence_class_name]
+        return {r["sentence_id"]: r["_additional"]["vector"] for r in result}
