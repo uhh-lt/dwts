@@ -1,6 +1,9 @@
 from typing import Dict, List
 
 import srsly
+from fastapi.encoders import jsonable_encoder
+from sqlalchemy.orm import Session
+
 from app.core.data.crud.concept_over_time_analysis import (
     CRUDConceptOverTimeAnalysis,
     crud_cota,
@@ -17,8 +20,6 @@ from app.core.search.elasticsearch_service import ElasticSearchService
 from app.core.search.simsearch_service import SimSearchService
 from app.trainer.trainer_service import TrainerService
 from app.util.singleton_meta import SingletonMeta
-from fastapi.encoders import jsonable_encoder
-from sqlalchemy.orm import Session
 
 
 class COTAService(metaclass=SingletonMeta):
@@ -51,7 +52,7 @@ class COTAService(metaclass=SingletonMeta):
 
         sentence_search_space = [
             COTASentence(
-                **sent.dict(exclude={"text"}), text=sentid2text[sent.sentence_id]
+                **sent.model_dump(exclude={"text"}), text=sentid2text[sent.sentence_id]
             )
             for sent in cota.sentence_search_space
         ]
@@ -60,13 +61,13 @@ class COTAService(metaclass=SingletonMeta):
 
     def create(self, db: Session, cota_create: COTACreate) -> COTARead:
         db_obj = self.crud.create(db=db, create_dto=cota_create)
-        return COTARead.from_orm(db_obj)
+        return COTARead.model_validate(db_obj)
 
     def read_by_id(
         self, *, db: Session, cota_id: int, return_sentence_text: bool = False
     ) -> COTARead:
         db_obj = self.crud.read(db=db, id=cota_id)
-        cota = COTARead.from_orm(db_obj)
+        cota = COTARead.model_validate(db_obj)
         if return_sentence_text:
             cota = self.__resolve_sentences_text(cota)
         return cota
@@ -82,7 +83,7 @@ class COTAService(metaclass=SingletonMeta):
         db_objs = self.crud.read_by_project_and_user(
             db=db, project_id=project_id, user_id=user_id, raise_error=False
         )
-        cotas = [COTARead.from_orm(db_obj) for db_obj in db_objs]
+        cotas = [COTARead.model_validate(db_obj) for db_obj in db_objs]
         if return_sentence_text:
             return [self.__resolve_sentences_text(cota) for cota in cotas]
         return cotas
@@ -122,27 +123,28 @@ class COTAService(metaclass=SingletonMeta):
                     }
                 )
 
+            # we have to dump the concepts and the sentence search space to json
             concepts_str = srsly.json_dumps(jsonable_encoder(cota_update.concepts))
             sentence_search_space_str = srsly.json_dumps(
                 jsonable_encoder(list(sentence_search_space.values()))
             )
 
             update_dto_as_in_db = COTAUpdateAsInDB(
-                **cota_update.dict(exclude={"concepts"}, exclude_none=True),
+                **cota_update.model_dump(exclude={"concepts"}, exclude_none=True),
                 sentence_search_space=sentence_search_space_str,
                 concepts=concepts_str,
             )
         else:
             update_dto_as_in_db = COTAUpdateAsInDB(
-                **cota_update.dict(exclude={"concepts"}, exclude_none=True)
+                **cota_update.model_dump(exclude={"concepts"}, exclude_none=True)
             )
 
         db_obj = self.crud.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
-        cota = COTARead.from_orm(db_obj)
+        cota = COTARead.model_validate(db_obj)
         if return_sentence_text:
             return self.__resolve_sentences_text(cota)
         return cota
 
     def delete_by_id(self, *, db: Session, cota_id: int) -> COTARead:
         db_obj = self.crud.remove(db=db, id=cota_id)
-        return COTARead.from_orm(db_obj)
+        return COTARead.model_validate(db_obj)

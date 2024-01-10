@@ -1,14 +1,15 @@
 from typing import Optional
 
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
 from api.dependencies import get_db_session
-from app.core.analysis.concepts_over_time_analysis_service import COTAService
+from app.core.analysis.cota.service import COTAService
 from app.core.data.dto.concept_over_time_analysis import (
     COTACreate,
     COTARead,
     COTAUpdate,
 )
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
 cotas: COTAService = COTAService()
 
