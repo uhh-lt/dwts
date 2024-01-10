@@ -91,7 +91,7 @@ class COTARefinementPipeline:
     def _update_cota_job(
         self,
         cargo: Cargo,
-        status: Optional[BackgroundJobStatus] = None,
+        status: BackgroundJobStatus,
         current_step_name: Optional[str] = None,
         error_message: Optional[str] = None,
     ) -> Cargo:
@@ -167,6 +167,7 @@ class COTARefinementPipeline:
             cargo = self._update_cota_job(
                 cargo=cargo,
                 current_step_name=step.name,
+                status=BackgroundJobStatus.RUNNING,
             )
 
             cargo = step.run(cargo)
