@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from app.core.data.orm.orm_base import ORMBase
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.data.orm.orm_base import ORMBase
 
 if TYPE_CHECKING:
     from app.core.data.orm.user import UserORM
@@ -50,4 +51,4 @@ class ConceptOverTimeAnalysisORM(ORMBase):
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    user: "UserORM" = relationship("UserORM", back_populates="cotas")
+    user: Mapped["UserORM"] = relationship("UserORM", back_populates="cotas")
