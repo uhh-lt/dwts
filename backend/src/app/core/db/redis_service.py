@@ -280,7 +280,10 @@ class RedisService(metaclass=SingletonMeta):
     ) -> COTARefinementJobRead:
         client = self._get_client("cota")
 
-        if isinstance(cota_job, COTARefinementJobCreate):
+        if isinstance(cota_job, COTARefinementJobRead):
+            key = cota_job.id
+            tj = cota_job
+        elif isinstance(cota_job, COTARefinementJobCreate):
             key = self._generate_random_key()
             tj = COTARefinementJobRead(
                 id=key,
@@ -288,9 +291,6 @@ class RedisService(metaclass=SingletonMeta):
                 updated=datetime.now(),
                 **cota_job.model_dump(),
             )
-        elif isinstance(cota_job, COTARefinementJobRead):
-            key = cota_job.id
-            tj = cota_job
 
         if client.set(key.encode("utf-8"), tj.model_dump_json()) != 1:
             msg = "Cannot store COTARefinementJob!"
