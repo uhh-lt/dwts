@@ -1,8 +1,12 @@
+from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db_session
 from app.core.analysis.cota.service import COTAService
+from app.core.authorization.authz_user import AuthzUser
+from app.core.data.crud.concept_over_time_analysis import crud_cota
 from app.core.data.dto.concept_over_time_analysis import (
     COTACreate,
     COTARead,
@@ -42,6 +46,27 @@ async def get_by_id(
         db=db, cota_id=cota_id, return_sentence_text=return_sentence_text
     )
     return cota
+
+
+@router.get(
+    "/cota/{project_id}/user/{user_id}",
+    response_model=List[COTARead],
+    summary="Returns COTAs of the Project of the User",
+    description="Returns the COTA of the Project with the given ID and the User with the given ID if it exists",
+)
+async def get_by_project_and_user(
+    *,
+    db: Session = Depends(get_db_session),
+    project_id: int,
+    user_id: int,
+    authz_user: AuthzUser = Depends(),
+) -> List[COTARead]:
+    authz_user.assert_in_project(project_id)
+
+    db_objs = crud_cota.read_by_project_and_user(
+        db=db, project_id=project_id, user_id=user_id
+    )
+    return [COTARead.model_validate(db_obj) for db_obj in db_objs]
 
 
 @router.patch(
