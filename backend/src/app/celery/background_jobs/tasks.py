@@ -1,6 +1,7 @@
-from pathlib import List, Path
-from typing import Tuple
+from pathlib import Path
+from typing import List, Tuple
 
+from app.celery.background_jobs.cota import start_cota_refinement_job_
 from app.celery.background_jobs.crawl import start_crawler_job_
 from app.celery.background_jobs.export import start_export_job_
 from app.celery.background_jobs.preprocess import (
@@ -18,6 +19,15 @@ from app.celery.celery_worker import celery_worker
 from app.core.data.dto.crawler_job import CrawlerJobRead
 from app.core.data.dto.export_job import ExportJobRead
 from app.preprocessing.pipeline.model.pipeline_cargo import PipelineCargo
+
+
+@celery_worker.task(
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 0, "countdown": 5},
+)
+def start_cota_refinement_job_task(cota_job_id: str) -> None:
+    start_cota_refinement_job_(cota_job_id=cota_job_id)
 
 
 @celery_worker.task(

@@ -8,11 +8,19 @@ from app.core.data.export.export_service import ExportService
 from app.preprocessing.pipeline.model.pipeline_cargo import PipelineCargo
 
 
+def start_cota_refinement_job_async(
+    cota_job_id: str,
+) -> None:
+    from app.celery.background_jobs.tasks import start_cota_refinement_job_task
+
+    start_cota_refinement_job_task.apply_async(kwargs={"cota_job_id": cota_job_id})
+
+
 def start_trainer_job_async(
     trainer_job_id: str,
 ) -> None:
     from app.celery.background_jobs.tasks import start_trainer_job_task
-    
+
     start_trainer_job_task.apply_async(kwargs={"trainer_job_id": trainer_job_id})
 
 

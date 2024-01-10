@@ -1,21 +1,26 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import srsly
 from fastapi.encoders import jsonable_encoder
+from loguru import logger
 from sqlalchemy.orm import Session
 
-from app.core.data.crud.concept_over_time_analysis import (
-    CRUDConceptOverTimeAnalysis,
-    crud_cota,
-)
+from app.celery.background_jobs import start_cota_refinement_job_async
+from app.core.analysis.cota.pipeline import built_cota_refinement_pipeline
+from app.core.data.crud.concept_over_time_analysis import crud_cota
+from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.concept_over_time_analysis import (
     COTACreate,
     COTARead,
+    COTARefinementHyperparameters,
+    COTARefinementJobCreate,
+    COTARefinementJobRead,
     COTASentence,
     COTAUpdate,
     COTAUpdateAsInDB,
 )
 from app.core.data.dto.search import SimSearchQuery
+from app.core.db.redis_service import RedisService
 from app.core.search.elasticsearch_service import ElasticSearchService
 from app.core.search.simsearch_service import SimSearchService
 from app.trainer.trainer_service import TrainerService
@@ -24,10 +29,10 @@ from app.util.singleton_meta import SingletonMeta
 
 class COTAService(metaclass=SingletonMeta):
     def __new__(cls, *args, **kwargs):
-        cls.crud: CRUDConceptOverTimeAnalysis = crud_cota
         cls.trainer: TrainerService = TrainerService()
         cls.sims: SimSearchService = SimSearchService()
         cls.es: ElasticSearchService = ElasticSearchService()
+        cls.redis: RedisService = RedisService()
 
         cls.max_search_space_per_concept: int = 1000
         cls.search_space_sim_search_threshold: float = 0.5
@@ -35,6 +40,7 @@ class COTAService(metaclass=SingletonMeta):
         return super(COTAService, cls).__new__(cls)
 
     def __resolve_sentences_text(self, cota: COTARead) -> COTARead:
+        raise NotImplementedError()
         sdoc2sentences = dict()
         for sent in cota.sentence_search_space:
             if sent.sdoc_id not in sdoc2sentences:
@@ -60,13 +66,13 @@ class COTAService(metaclass=SingletonMeta):
         return cota
 
     def create(self, db: Session, cota_create: COTACreate) -> COTARead:
-        db_obj = self.crud.create(db=db, create_dto=cota_create)
+        db_obj = crud_cota.create(db=db, create_dto=cota_create)
         return COTARead.model_validate(db_obj)
 
     def read_by_id(
         self, *, db: Session, cota_id: int, return_sentence_text: bool = False
     ) -> COTARead:
-        db_obj = self.crud.read(db=db, id=cota_id)
+        db_obj = crud_cota.read(db=db, id=cota_id)
         cota = COTARead.model_validate(db_obj)
         if return_sentence_text:
             cota = self.__resolve_sentences_text(cota)
@@ -78,9 +84,9 @@ class COTAService(metaclass=SingletonMeta):
         db: Session,
         project_id: int,
         user_id: int,
-        return_sentence_text: bool = False
+        return_sentence_text: bool = False,
     ) -> List[COTARead]:
-        db_objs = self.crud.read_by_project_and_user(
+        db_objs = crud_cota.read_by_project_and_user(
             db=db, project_id=project_id, user_id=user_id, raise_error=False
         )
         cotas = [COTARead.model_validate(db_obj) for db_obj in db_objs]
@@ -94,7 +100,7 @@ class COTAService(metaclass=SingletonMeta):
         db: Session,
         cota_id: int,
         cota_update: COTAUpdate,
-        return_sentence_text: bool = False
+        return_sentence_text: bool = False,
     ) -> COTARead:
         cota = self.read_by_id(
             db=db, cota_id=cota_id, return_sentence_text=return_sentence_text
@@ -139,12 +145,55 @@ class COTAService(metaclass=SingletonMeta):
                 **cota_update.model_dump(exclude={"concepts"}, exclude_none=True)
             )
 
-        db_obj = self.crud.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
+        db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
         cota = COTARead.model_validate(db_obj)
         if return_sentence_text:
             return self.__resolve_sentences_text(cota)
         return cota
 
     def delete_by_id(self, *, db: Session, cota_id: int) -> COTARead:
-        db_obj = self.crud.remove(db=db, id=cota_id)
+        db_obj = crud_cota.remove(db=db, id=cota_id)
         return COTARead.model_validate(db_obj)
+
+    def create_and_start_refinement_job_async(
+        self,
+        *,
+        db: Session,
+        cota_id: int,
+        hyperparams: Optional[COTARefinementHyperparameters],
+    ) -> COTARefinementJobRead:
+        # make sure the cota exists!
+        cota = self.read_by_id(db=db, cota_id=cota_id)
+
+        if hyperparams is None:
+            hyperparams = COTARefinementHyperparameters()
+        create_dto = COTARefinementJobCreate(cota=cota, hyperparams=hyperparams)
+
+        job = self.redis.store_cota_job(create_dto)
+        logger.info(f"Created and prepared COTA Refinement job: {job}")
+
+        start_cota_refinement_job_async(cota_job_id=job.id)
+
+        return job
+
+    def _start_refinement_job_sync(
+        self,
+        *,
+        job_id: str,
+    ) -> COTARefinementJobRead:
+        pipeline = built_cota_refinement_pipeline()
+
+        job: COTARefinementJobRead = self.redis.load_cota_job(job_id)
+        logger.info(f"Starting COTA Refinement job: {job} " f"for COTA {job.cota.id}")
+
+        job.status = BackgroundJobStatus.RUNNING
+        job = self.redis.store_cota_job(job)
+        try:
+            job = pipeline.execute(job)
+        except Exception as e:
+            logger.error(f"Error while executing COTA Refinement job: {job}")
+            job.status = BackgroundJobStatus.ERROR
+            job = self.redis.store_cota_job(job)
+            raise e
+
+        return job
