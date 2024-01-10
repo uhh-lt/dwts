@@ -1,10 +1,20 @@
+import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import srsly
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.functional_validators import field_validator
+
+from app.core.data.dto.background_job_base import (
+    BackgroundJobBase,
+    BackgroundJobBaseUpdate,
+)
 from app.core.data.dto.dto_base import UpdateDTOBase
-from pydantic import BaseModel, Field
-from pydantic.utils import GetterDict
+
+####################
+# COTA Base Types
+####################
 
 
 class COTASentence(BaseModel):
@@ -37,6 +47,11 @@ class COTAConceptSimilarSentences(BaseModel):
     sdoc_timestamps: Dict[int, datetime] = Field(
         description="Dictionary of SDocIDs and their timestamps"
     )
+
+
+####################
+# COTA DTOs
+####################
 
 
 class ConceptOverTimeAnalysisBaseDTO(BaseModel):
@@ -92,18 +107,6 @@ class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
     )
 
 
-class COTACustomGetterDict(GetterDict):
-    def get(self, key: str, default: Any) -> Any:
-        if key == "concepts":
-            data = srsly.json_loads(self._obj.__getattribute__(key))
-            return [COTAConcept(**concept) for concept in data]  # type: ignore
-        elif key == "sentence_search_space":
-            data = srsly.json_loads(self._obj.__getattribute__(key))
-            return [COTASentence(**sentence) for sentence in data]  # type: ignore
-
-        return super().get(key, default)
-
-
 class COTARead(ConceptOverTimeAnalysisBaseDTO):
     id: int = Field(description="ID of the ConceptOverTimeAnalysis")
     user_id: int = Field(description="User the ConceptOverTimeAnalysis belongs to")
@@ -117,7 +120,7 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
         description=(
             "List of Sentences that form the search space "
             "of the ConceptOverTimeAnalysis"
-        )
+        ),
     )
     created: datetime = Field(
         description="Created timestamp of the ConceptOverTimeAnalysis"
@@ -126,6 +129,80 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
         description="Updated timestamp of the ConceptOverTimeAnalysis"
     )
 
-    class Config:
-        orm_mode = True
-        getter_dict = COTACustomGetterDict
+    @field_validator("concepts", mode="before")
+    @classmethod
+    def json_loads_concepts(cls, v: str) -> List[COTAConcept]:
+        if isinstance(v, str):
+            # v is a JSON string from the DB
+            data = srsly.json_loads(v)
+            return [COTAConcept(**concept) for concept in data]
+        elif isinstance(v, List) and isinstance(v[0], COTAConcept):
+            return v
+        else:
+            raise ValueError(
+                "Invalid value for concepts. "
+                "Must be a JSON string or a list of COTAConcepts."
+            )
+
+    @field_validator("sentence_search_space", mode="before")
+    @classmethod
+    def json_loads_sss(cls, v: str) -> List[COTASentence]:
+        if isinstance(v, str):
+            # v is a JSON string from the DB
+            data = srsly.json_loads(v)
+            return [COTASentence(**sentence) for sentence in data]
+        elif isinstance(v, List) and isinstance(v[0], COTASentence):
+            return v
+        else:
+            raise ValueError(
+                "Invalid value for sentence_search_space. "
+                "Must be a JSON string or a list of COTASentences."
+            )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+####################
+# COTA Refinement Job
+####################
+
+
+class COTARefinementHyperparameters(BaseModel):
+    cem_training_epochs: int = Field(
+        description="Number of epochs to train the Concept Embedding Model",
+        default=10,
+    )
+
+    cem_dimensions: int = Field(
+        description="Number of dimensions of the Concept Embedding Model",
+        default=64,
+    )
+
+
+class COTARefinementJobBase(BackgroundJobBase):
+    pass
+
+
+class COTARefinementJobCreate(COTARefinementJobBase):
+    id: str = Field(
+        description="ID of the COTARefinementJob",
+        default_factory=lambda: str(uuid.uuid4()),
+    )
+
+    cota: COTARead = Field(description="COTA that is used in the COTARefinementJob")
+
+    hyperparams: COTARefinementHyperparameters = Field(
+        description="Hyperparameters of the COTARefinementJob"
+    )
+
+
+class COTARefinementJobUpdate(BackgroundJobBaseUpdate):
+    # only update status
+    pass
+
+
+class COTARefinementJobRead(COTARefinementJobCreate):
+    created: datetime = Field(description="Created timestamp of the COTARefinementJob")
+    updated: datetime = Field(description="Updated timestamp of the COTARefinementJob")
+
+    model_config = ConfigDict(from_attributes=True)
