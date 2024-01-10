@@ -4,6 +4,13 @@ from typing import List
 import online_triplet_loss.losses as otl
 import torch
 import torch.nn as nn
+from datasets import load_dataset
+from loguru import logger
+from sentence_transformers import InputExample, SentenceTransformer
+from sentence_transformers.losses import CosineSimilarityLoss
+from sqlalchemy.orm import Session
+from torch.utils.data import DataLoader
+
 from app.celery.background_jobs import start_trainer_job_async, use_trainer_model_async
 from app.core.data.crud.project import crud_project
 from app.core.data.dto.background_job_base import BackgroundJobStatus
@@ -15,12 +22,6 @@ from app.core.data.dto.trainer_job import (
 from app.core.data.repo.repo_service import RepoService
 from app.core.db.redis_service import RedisService
 from app.util.singleton_meta import SingletonMeta
-from datasets import load_dataset
-from loguru import logger
-from sentence_transformers import InputExample, SentenceTransformer
-from sentence_transformers.losses import CosineSimilarityLoss
-from sqlalchemy.orm import Session
-from torch.utils.data import DataLoader
 
 
 class TrainerService(metaclass=SingletonMeta):
@@ -177,3 +178,7 @@ class TrainerService(metaclass=SingletonMeta):
                 layers.append(torch.nn.Linear(hidden_dim, hidden_dim))
             layers.append(torch.nn.ReLU())
         return torch.nn.Sequential(*layers)
+
+    def __do_a_triplet_loss(self) -> None:
+        otl.F
+        # this is just to import otl and not get it removed by ruff
