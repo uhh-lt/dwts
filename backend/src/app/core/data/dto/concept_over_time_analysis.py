@@ -29,6 +29,9 @@ class COTASentence(BaseModel):
 class COTAConcept(BaseModel):
     name: str = Field(description="Name of the Concept")
     description: str = Field(description="Description of the Concept")
+    color: str = Field(description="Color of the Concept")
+    visible: bool = Field(description="Visibility of the Concept")
+    id: str = Field(description="ID of the Concept")
 
 
 class COTAConceptWithSentences(COTAConcept):
