@@ -314,11 +314,12 @@ class RedisService(metaclass=SingletonMeta):
         self, key: str, update: COTARefinementJobUpdate
     ) -> COTARefinementJobRead:
         tj = self.load_cota_job(key=key)
-        data = tj.model_dump()
-        data.update(**update.model_dump())
-        tj = COTARefinementJobRead(**data, updated=datetime.now())
-        tj = self.store_cota_job(cota_job=tj)
-        logger.debug(f"Updated COTARefinementJob {key}")
+        data = tj.model_dump(exclude_none=True)
+        if len(data) >= 0:
+            data.update(**update.model_dump())
+            tj = COTARefinementJobRead(**data, updated=datetime.now())
+            tj = self.store_cota_job(cota_job=tj)
+            logger.debug(f"Updated COTARefinementJob {key}")
         return tj
 
     def delete_cota_job(self, key: str) -> COTARefinementJobRead:
