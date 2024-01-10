@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -10,6 +10,8 @@ from app.core.data.crud.concept_over_time_analysis import crud_cota
 from app.core.data.dto.concept_over_time_analysis import (
     COTACreate,
     COTARead,
+    COTARefinementHyperparameters,
+    COTARefinementJobRead,
     COTAUpdate,
 )
 
@@ -87,6 +89,25 @@ async def update_by_id(
         cota_id=cota_id,
         cota_update=cota_upate,
         return_sentence_text=return_sentence_text,
+    )
+
+
+@router.patch(
+    "/{cota_id}",
+    response_model=COTARefinementJobRead,
+    summary="Refines the ConceptOverTimeAnalysis",
+    description="Refines the ConceptOverTimeAnalysis with the given ID if it exists",
+)
+async def refine_cota_by_id(
+    *,
+    db: Session = Depends(get_db_session),
+    cota_id: int,
+    hyperparams: Optional[COTARefinementHyperparameters] = None,
+) -> COTARefinementJobRead:  # noqa: F821
+    return cotas.create_and_start_refinement_job_async(
+        db=db,
+        cota_id=cota_id,
+        hyperparams=hyperparams,
     )
 
 
