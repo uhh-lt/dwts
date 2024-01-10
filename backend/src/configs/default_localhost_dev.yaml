@@ -85,6 +85,7 @@ redis:
     export: 2
     crawler: 3
     trainer: 4
+    cota: 5
 
 logging:
   max_file_size: 500 # MB
