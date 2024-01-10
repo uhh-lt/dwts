@@ -4,7 +4,7 @@ from app.core.analysis.cota.pipeline.pipeline import COTARefinementPipeline
 
 
 @lru_cache(maxsize=1)
-def built_cota_refinement_pipeline(foo: str = "bar") -> COTARefinementPipeline:
+def build_cota_refinement_pipeline(foo: str = "bar") -> COTARefinementPipeline:
     from app.core.analysis.cota.pipeline.steps.toy import joy_step, toy_step
 
     pipeline = COTARefinementPipeline()

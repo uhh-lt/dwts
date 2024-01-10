@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
@@ -28,9 +29,9 @@ class COTASentence(BaseModel):
 class COTAConcept(BaseModel):
     name: str = Field(description="Name of the Concept")
     description: str = Field(description="Description of the Concept")
-    color: str = Field(description="Color of the Concept")
-    visible: bool = Field(description="Visibility of the Concept")
-    id: str = Field(description="ID of the Concept")
+    color: str = Field(description="Color of the Concept", default="#00ff00")
+    visible: bool = Field(description="Visibility of the Concept", default=True)
+    id: str = Field(description="ID of the Concept", default="why?")
 
 
 class COTAConceptWithSentences(COTAConcept):
@@ -207,6 +208,11 @@ class COTARefinementJobUpdate(BackgroundJobBaseUpdate):
 
 
 class COTARefinementJobRead(COTARefinementJobCreate):
+    id: str = Field(
+        description="ID of the COTARefinementJob",
+        default_factory=lambda: str(uuid.uuid4()),
+    )
+
     status: BackgroundJobStatus = Field(
         default=BackgroundJobStatus.WAITING,
         description="Status of the BackgroundJob",

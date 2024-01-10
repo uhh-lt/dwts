@@ -6,7 +6,7 @@ from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.celery.background_jobs import start_cota_refinement_job_async
-from app.core.analysis.cota.pipeline import built_cota_refinement_pipeline
+from app.core.analysis.cota.pipeline import build_cota_refinement_pipeline
 from app.core.data.crud.concept_over_time_analysis import crud_cota
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.concept_over_time_analysis import (
@@ -172,7 +172,7 @@ class COTAService(metaclass=SingletonMeta):
         job = self.redis.store_cota_job(create_dto)
         logger.info(f"Created and prepared COTA Refinement job: {job}")
 
-        start_cota_refinement_job_async(cota_job_id=job.id)
+        start_cota_refinement_job_async(cota_job_id=job.id)  # FIXME
 
         return job
 
@@ -181,7 +181,8 @@ class COTAService(metaclass=SingletonMeta):
         *,
         job_id: str,
     ) -> COTARefinementJobRead:
-        pipeline = built_cota_refinement_pipeline()
+        # THIS IS EXECUTED IN THE BACKGROUND JOBS WORKER
+        pipeline = build_cota_refinement_pipeline()
 
         job: COTARefinementJobRead = self.redis.load_cota_job(job_id)
         logger.info(f"Starting COTA Refinement job: {job} " f"for COTA {job.cota.id}")
