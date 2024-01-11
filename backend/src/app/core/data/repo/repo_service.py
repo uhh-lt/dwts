@@ -488,3 +488,14 @@ class RepoService(metaclass=SingletonMeta):
         return self.get_trained_model_path(
             proj_id=proj_id, model_name=model_name
         ).exists()
+
+    def get_embeddings_path(self, proj_id: int) -> Path:
+        return self.get_project_repo_root_path(proj_id=proj_id).joinpath("embeddings")
+
+    def get_embedding_path(self, proj_id: int, embedding_name: str) -> Path:
+        return self.get_embeddings_path(proj_id=proj_id).joinpath(embedding_name)
+
+    def embedding_exists(self, proj_id: int, embedding_name: str) -> bool:
+        return self.get_embedding_path(
+            proj_id=proj_id, embedding_name=embedding_name
+        ).exists()
