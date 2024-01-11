@@ -165,6 +165,8 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
+    profiles:
+      - background
 
   ray:
     image: uhhlt/dwts_ray:${DWTS_RAY_DOCKER_VERSION:-debian_dev_latest}
