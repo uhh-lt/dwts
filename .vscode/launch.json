@@ -24,6 +24,14 @@
       }
     },
     {
+      "name": "Celery",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "celery -A app.celery.background_jobs.tasks worker -Q bgJobsQ,celery -l debug -c 1 --without-gossip --without-mingle --without-heartbeat",
+      "cwd": "${workspaceFolder}/backend/src",
+      "envFile": "${workspaceFolder}/backend/.env"
+    },
+    {
       "name": "Python: Test",
       "type": "node-terminal",
       "request": "launch",
