@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import weaviate
@@ -446,28 +446,58 @@ class SimSearchService(metaclass=SingletonMeta):
         ).do()["data"]["Aggregate"][self.class_names[index_type]][0]["meta"]["count"]
 
     def get_sentence_embeddings(
-        self, sentence_ids: List[int]
-    ) -> Dict[int, List[float]]:
-        query = (
-            self._client.query.get(
-                self._sentence_class_name,
-                self._sentence_props,
+        self, search_tuples: List[Tuple[int, int]]
+    ) -> List[List[float]]:
+        # First prepare the query to run through data
+        def run_batch(batch):
+            query = (
+                self._client.query.get(
+                    self._sentence_class_name,
+                    self._sentence_props,
+                )
+                .with_additional(["vector"])
+                .with_where(
+                    {
+                        "operator": "Or",
+                        "operands": [
+                            {
+                                "operator": "And",
+                                "operands": [
+                                    {
+                                        "path": ["sentence_id"],
+                                        "operator": "Equal",
+                                        "valueInt": sentence_id,
+                                    },
+                                    {
+                                        "path": ["sdoc_id"],
+                                        "operator": "Equal",
+                                        "valueInt": sdoc_id,
+                                    },
+                                ],
+                            }
+                            for sentence_id, sdoc_id in batch
+                        ],
+                    }
+                )
             )
-            .with_additional(["vector"])
-            .with_where(
-                {
-                    "operator": "Or",
-                    "operands": [
-                        {
-                            "path": ["sentence_id"],
-                            "operator": "Equal",
-                            "valueInt": sentence_id,
-                        }
-                        for sentence_id in sentence_ids
-                    ],
-                }
-            )
-        )
+            result = query.do()["data"]["Get"][self._sentence_class_name]
+            return [r["_additional"]["vector"] for r in result]
 
-        result = query.do()["data"]["Get"][self._sentence_class_name]
-        return {r["sentence_id"]: r["_additional"]["vector"] for r in result}
+        embeddings = []
+        batch = search_tuples
+        while True:
+            if len(batch) >= 100:
+                minibatch = batch[:100]
+                batch = batch[100:]
+            else:
+                minibatch = batch
+                batch = []
+
+            # Get the next batch of objects
+            embeddings_minibatch = run_batch(minibatch)
+            embeddings.extend(embeddings_minibatch)
+
+            if len(batch) == 0:
+                break
+
+        return embeddings
