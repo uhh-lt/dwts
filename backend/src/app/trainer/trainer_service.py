@@ -128,9 +128,7 @@ class TrainerService(metaclass=SingletonMeta):
 
         logger.info("Starting training...")
         out_p = (
-            self.repo.get_trained_model_path(
-                proj_id=params.project_id, model_name=model_name
-            )
+            self.repo.get_model_path(proj_id=params.project_id, model_name=model_name)
             / "output"
         )
 
@@ -139,7 +137,7 @@ class TrainerService(metaclass=SingletonMeta):
             epochs=num_epochs,
             warmup_steps=warmup_steps,
             checkpoint_path=str(
-                self.repo.get_trained_model_path(
+                self.repo.get_model_path(
                     proj_id=params.project_id, model_name=model_name
                 )
                 / "checkpoints"
