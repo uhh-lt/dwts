@@ -31,6 +31,7 @@ class COTAConcept(BaseModel):
     color: str = Field(description="Color of the Concept")
     visible: bool = Field(description="Visibility of the Concept")
     id: str = Field(description="ID of the Concept")
+    sentence_annotations: List[int] = Field(description="List of Annotated Sentence IDs that belong to the Concept")
 
 
 class COTAConceptWithSentences(COTAConcept):
