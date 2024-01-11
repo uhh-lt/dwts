@@ -151,6 +151,10 @@ class COTAService(metaclass=SingletonMeta):
         # make sure the cota exists!
         cota = self.read_by_id(db=db, cota_id=cota_id)
 
+        # make sure there is at least one concept
+        if len(cota.concepts) == 0:
+            raise ValueError("Concepts missing")
+
         if hyperparams is None:
             hyperparams = COTARefinementHyperparameters()
         create_dto = COTARefinementJobCreate(cota=cota, hyperparams=hyperparams)
