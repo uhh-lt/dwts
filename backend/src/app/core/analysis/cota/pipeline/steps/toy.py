@@ -16,9 +16,9 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     cota = cargo.job.cota
 
     # the search space is not empty, we dont need to do anything
-    if len(cota.sentence_search_space) > 0:
+    if len(cota.search_space) > 0:
         return cargo
-    
+
     # the search space is empty, we build the search space with simsearch
     from app.core.search.simsearch_service import SimSearchService
 
@@ -46,7 +46,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
         )
 
     # update the cota with the search space
-    cargo.job.cota.sentence_search_space = list(search_space_sentences.values())
+    cargo.job.cota.search_space = list(search_space_sentences.values())
 
     return cargo
 
@@ -62,11 +62,15 @@ def init_or_load_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
     sims: SimSearchService = SimSearchService()
 
     # if the embeddings exists, we dont need to do anything
-    if repo.embedding_exists(proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)):
+    if repo.embedding_exists(
+        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
+    ):
         return cargo
 
     # 1. Get the embeddings for the search space sentences from weaviate
-    sentence_search_space_ids = [cota_sent.sentence_id for cota_sent in cargo.job.cota.sentence_search_space]
+    sentence_search_space_ids = [
+        cota_sent.sentence_id for cota_sent in cargo.job.cota.search_space
+    ]
     search_space_embeddings_dict = sims.get_sentence_embeddings(
         sentence_ids=sentence_search_space_ids
     )
@@ -77,7 +81,9 @@ def init_or_load_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
     search_space_reduced_embeddings = reducer.fit_transform(search_space_embeddings)
 
     # 3. Store the reduced embeddings on the file system
-    embedding_path = repo.get_embedding_path(proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id))
+    embedding_path = repo.get_embedding_path(
+        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
+    )
     np.save(embedding_path, search_space_reduced_embeddings)
 
     return cargo
@@ -92,14 +98,20 @@ def init_or_find_concept_embedding_model(cargo: Cargo) -> Cargo:
     trainer: TrainerService = TrainerService()
 
     # if the model exists, we dont need to do anything
-    if repo.trained_model_exists(proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)):
+    if repo.trained_model_exists(
+        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
+    ):
         return cargo
 
     # 1. Define model
-    model = trainer.__create_probing_layers_network(num_layers=5, input_dim=64, hidden_dim=64, output_dim=64)
+    model = trainer.__create_probing_layers_network(
+        num_layers=5, input_dim=64, hidden_dim=64, output_dim=64
+    )
 
     # 2. Store model
-    model_path = repo.get_trained_model_path(proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id))
+    model_path = repo.get_trained_model_path(
+        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
+    )
     model.save(model_path)
 
     return cargo
@@ -124,14 +136,20 @@ def train_cem(cargo: Cargo) -> Cargo:
     # TODO: Wollen wir wirklich den Trainer Service nehmen, oder einfach hier in der Pipeline trainieren?
     # 2. Start the training job with TrainerService
     with sqls.db_session() as db:
-        tj = trainer.create_and_start_trainer_job_async(db=db, trainer_params=TrainerJobParameters(
-            project_id=cargo.job.cota.project_id,
-            new_model_name=str(cargo.job.cota.id)
-        ))
+        tj = trainer.create_and_start_trainer_job_async(
+            db=db,
+            trainer_params=TrainerJobParameters(
+                project_id=cargo.job.cota.project_id,
+                new_model_name=str(cargo.job.cota.id),
+            ),
+        )
 
     # 3. Wait for the training job to finish
     # TODO: So? ist das schlau?
-    while tj.status == BackgroundJobStatus.RUNNING or tj.status == BackgroundJobStatus.WAITING:
+    while (
+        tj.status == BackgroundJobStatus.RUNNING
+        or tj.status == BackgroundJobStatus.WAITING
+    ):
         tj = redis.load_trainer_job(tj.id)
         time.sleep(3)
 
@@ -154,11 +172,15 @@ def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
     repo: RepoService = RepoService()
 
     # 1. Load the CEM
-    model_path = repo.get_trained_model_path(proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id))
+    model_path = repo.get_trained_model_path(
+        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
+    )
     model = torch.load(model_path)
 
     # 2. Load the reduced embeddings
-    embedding_path = repo.get_embedding_path(proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id))
+    embedding_path = repo.get_embedding_path(
+        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
+    )
     reduced_embeddings = np.load(embedding_path)
 
     # 2. Refine the search space reduced embeddings with the CEM

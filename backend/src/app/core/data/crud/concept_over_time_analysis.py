@@ -1,13 +1,17 @@
 from typing import List
 
-from app.core.data.crud.crud_base import CRUDBase, NoSuchElementError
-from app.core.data.dto.concept_over_time_analysis import COTACreate, COTAUpdateAsInDB
-from app.core.data.orm.concept_over_time_analysis import ConceptOverTimeAnalysisORM
 from sqlalchemy.orm import Session
+
+from app.core.data.crud.crud_base import CRUDBase, NoSuchElementError
+from app.core.data.dto.concept_over_time_analysis import (
+    COTACreateAsInDB,
+    COTAUpdateAsInDB,
+)
+from app.core.data.orm.concept_over_time_analysis import ConceptOverTimeAnalysisORM
 
 
 class CRUDConceptOverTimeAnalysis(
-    CRUDBase[ConceptOverTimeAnalysisORM, COTACreate, COTAUpdateAsInDB]
+    CRUDBase[ConceptOverTimeAnalysisORM, COTACreateAsInDB, COTAUpdateAsInDB]
 ):
     def read_by_project_and_user(
         self, db: Session, *, project_id: int, user_id: int, raise_error: bool = True

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import srsly
 from fastapi.encoders import jsonable_encoder
@@ -11,6 +11,7 @@ from app.core.data.crud.concept_over_time_analysis import crud_cota
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.concept_over_time_analysis import (
     COTACreate,
+    COTACreateAsInDB,
     COTARead,
     COTARefinementHyperparameters,
     COTARefinementJobCreate,
@@ -19,7 +20,6 @@ from app.core.data.dto.concept_over_time_analysis import (
     COTAUpdate,
     COTAUpdateAsInDB,
 )
-from app.core.data.dto.search import SimSearchQuery
 from app.core.db.redis_service import RedisService
 from app.core.search.elasticsearch_service import ElasticSearchService
 from app.core.search.simsearch_service import SimSearchService
@@ -42,7 +42,7 @@ class COTAService(metaclass=SingletonMeta):
     def __resolve_sentences_text(self, cota: COTARead) -> COTARead:
         raise NotImplementedError()
         sdoc2sentences = dict()
-        for sent in cota.sentence_search_space:
+        for sent in cota.search_space:
             if sent.sdoc_id not in sdoc2sentences:
                 sdoc2sentences[sent.sdoc_id] = []
             sdoc2sentences[sent.sdoc_id].append(sent.sentence_id)
@@ -60,13 +60,20 @@ class COTAService(metaclass=SingletonMeta):
             COTASentence(
                 **sent.model_dump(exclude={"text"}), text=sentid2text[sent.sentence_id]
             )
-            for sent in cota.sentence_search_space
+            for sent in cota.search_space
         ]
-        cota.sentence_search_space = sentence_search_space
+        cota.search_space = sentence_search_space
         return cota
 
     def create(self, db: Session, cota_create: COTACreate) -> COTARead:
-        db_obj = crud_cota.create(db=db, create_dto=cota_create)
+        # convert the provided concepts to json string
+        concepts_str = srsly.json_dumps(jsonable_encoder(cota_create.concepts))
+        create_dto_as_in_db = COTACreateAsInDB(
+            **cota_create.model_dump(exclude={"concepts"}, exclude_none=True),
+            concepts=concepts_str,
+        )
+
+        db_obj = crud_cota.create(db=db, create_dto=create_dto_as_in_db)
         return COTARead.model_validate(db_obj)
 
     def read_by_id(
@@ -102,50 +109,29 @@ class COTAService(metaclass=SingletonMeta):
         cota_update: COTAUpdate,
         return_sentence_text: bool = False,
     ) -> COTARead:
-        cota = self.read_by_id(
+        # make sure that cota with cota_id exists
+        self.read_by_id(
             db=db, cota_id=cota_id, return_sentence_text=return_sentence_text
         )
+
+        print("HI!")
+
         if cota_update.concepts is not None:
-            # the concepts get updated to we have to reset the sentence search space
-            sentence_search_space: Dict[int, COTASentence] = dict()
-            for concept in cota_update.concepts:
-                # first, find similar sentences for each concept to define the
-                # search space for the COTA
-                sents = self.sims.find_similar_sentences(
-                    query=SimSearchQuery(
-                        proj_id=cota.project_id,
-                        query=concept.description,
-                        top_k=self.max_search_space_per_concept,
-                        threshold=self.search_space_sim_search_threshold,
-                    )
-                )
-                sentence_search_space.update(
-                    {
-                        sent.sentence_id: COTASentence(
-                            sentence_id=sent.sentence_id,
-                            sdoc_id=sent.sdoc_id,
-                        )
-                        for sent in sents
-                    }
-                )
-
-            # we have to dump the concepts and the sentence search space to json
+            # convert the provided concepts to json string
             concepts_str = srsly.json_dumps(jsonable_encoder(cota_update.concepts))
-            sentence_search_space_str = srsly.json_dumps(
-                jsonable_encoder(list(sentence_search_space.values()))
-            )
-
             update_dto_as_in_db = COTAUpdateAsInDB(
                 **cota_update.model_dump(exclude={"concepts"}, exclude_none=True),
-                sentence_search_space=sentence_search_space_str,
                 concepts=concepts_str,
             )
         else:
             update_dto_as_in_db = COTAUpdateAsInDB(
-                **cota_update.model_dump(exclude={"concepts"}, exclude_none=True)
+                **cota_update.model_dump(exclude_none=True)
             )
 
+        # update the cota in db
         db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
+
+        # return the results
         cota = COTARead.model_validate(db_obj)
         if return_sentence_text:
             return self.__resolve_sentences_text(cota)

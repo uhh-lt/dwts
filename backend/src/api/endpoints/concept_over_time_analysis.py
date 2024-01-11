@@ -51,7 +51,7 @@ async def get_by_id(
 
 
 @router.get(
-    "/cota/{project_id}/user/{user_id}",
+    "/{project_id}/user/{user_id}",
     response_model=List[COTARead],
     summary="Returns COTAs of the Project of the User",
     description="Returns the COTA of the Project with the given ID and the User with the given ID if it exists",
@@ -93,7 +93,7 @@ async def update_by_id(
 
 
 @router.post(
-    "/{cota_id}",
+    "/refine/{cota_id}",
     response_model=COTARefinementJobRead,
     summary="Refines the ConceptOverTimeAnalysis",
     description="Refines the ConceptOverTimeAnalysis with the given ID if it exists",

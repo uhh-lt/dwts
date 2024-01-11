@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import srsly
 from pydantic import BaseModel, ConfigDict, Field
@@ -26,30 +26,16 @@ class COTASentence(BaseModel):
 
 
 class COTAConcept(BaseModel):
+    id: str = Field(description="ID of the Concept")
     name: str = Field(description="Name of the Concept")
     description: str = Field(description="Description of the Concept")
     color: str = Field(description="Color of the Concept")
     visible: bool = Field(description="Visibility of the Concept")
-    id: str = Field(description="ID of the Concept")
-    sentence_annotations: List[int] = Field(description="List of Annotated Sentence IDs that belong to the Concept")
-
-
-class COTAConceptWithSentences(COTAConcept):
-    sentences: List[COTASentence] = Field(
-        description="List of Sentences that describe the Concept"
+    sentence_annotations: List[int] = Field(
+        description="List of Annotated Sentence IDs that belong to the Concept"
     )
-
-
-class COTAConceptSimilarSentences(BaseModel):
-    concept: COTAConceptWithSentences = Field(description="Concept with Sentences")
-    similarity_scores: List[float] = Field(
-        description="List of similarity scores of the Sentences"
-    )
-    plot_coordinates: List[Tuple[float, float]] = Field(
-        description="List of coordinates of the Sentences embeddings for plotting"
-    )
-    sdoc_timestamps: Dict[int, datetime] = Field(
-        description="Dictionary of SDocIDs and their timestamps"
+    search_space_similarity_scores: List[float] = Field(
+        description="List of similarity scores of the sentence search space"
     )
 
 
@@ -68,10 +54,22 @@ class COTACreate(ConceptOverTimeAnalysisBaseDTO):
         description="Project the ConceptOverTimeAnalysis belongs to"
     )
     user_id: int = Field(description="User the ConceptOverTimeAnalysis belongs to")
-    name: str = Field(description="Name of the ConceptOverTimeAnalysis")
+    concepts: List[COTAConcept] = Field(
+        description="List of Concepts that are part of the ConceptOverTimeAnalysis"
+    )
 
 
-class COTAUpdate(ConceptOverTimeAnalysisBaseDTO, UpdateDTOBase):
+class COTACreateAsInDB(ConceptOverTimeAnalysisBaseDTO):
+    project_id: int = Field(
+        description="Project the ConceptOverTimeAnalysis belongs to"
+    )
+    user_id: int = Field(description="User the ConceptOverTimeAnalysis belongs to")
+    concepts: str = Field(
+        description="JSON string of List of Concepts that are part of the ConceptOverTimeAnalysis"
+    )
+
+
+class COTAUpdate(BaseModel, UpdateDTOBase):
     name: Optional[str] = Field(
         description="Name of the ConceptOverTimeAnalysis",
         default=None,
@@ -102,7 +100,7 @@ class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
         ),
         default=None,
     )
-    sentence_search_space: Optional[str] = Field(
+    search_space: Optional[str] = Field(
         description=(
             "JSON Representation of the list of Sentences that form the search space "
             "of the ConceptOverTimeAnalysis"
@@ -120,11 +118,14 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
     concepts: List[COTAConcept] = Field(
         description="List of Concepts that are part of the ConceptOverTimeAnalysis"
     )
-    sentence_search_space: List[COTASentence] = Field(
+    search_space: List[COTASentence] = Field(
         description=(
             "List of Sentences that form the search space "
             "of the ConceptOverTimeAnalysis"
         ),
+    )
+    search_space_coordinates: List[Tuple[float, float]] = Field(
+        description="List of coordinates of the search space for plotting",
     )
     created: datetime = Field(
         description="Created timestamp of the ConceptOverTimeAnalysis"
@@ -139,45 +140,69 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
         if isinstance(v, str):
             # v is a JSON string from the DB
             data = srsly.json_loads(v)
-            if isinstance(data, List) and isinstance(data[0], dict):
-                return [COTAConcept(**concept) for concept in data]
-            else:
-                raise ValueError(
-                    "Invalid value for concepts. "
-                    "Must be a JSON string or a list of COTAConcepts."
-                )
-        elif isinstance(v, List) and isinstance(v[0], dict):
-            return [COTAConcept(**concept) for concept in v]
-        elif isinstance(v, List) and isinstance(v[0], COTAConcept):
-            return v
-        else:
-            raise ValueError(
-                "Invalid value for concepts. "
-                "Must be a JSON string or a list of COTAConcepts."
-            )
+            if isinstance(data, List):
+                if len(data) == 0:
+                    return []
+                elif isinstance(data[0], dict):
+                    return [COTAConcept(**concept) for concept in data]
+        elif isinstance(v, List):
+            if len(v) == 0:
+                return []
+            elif isinstance(v[0], dict):
+                return [COTAConcept(**concept) for concept in v]
+            elif isinstance(v[0], COTAConcept):
+                return v
 
-    @field_validator("sentence_search_space", mode="before")
+        raise ValueError(
+            "Invalid value for concepts. "
+            "Must be a JSON string or a list of COTAConcepts."
+        )
+
+    @field_validator("search_space", mode="before")
     @classmethod
-    def json_loads_sss(cls, v: Union[str, List]) -> List[COTASentence]:
+    def json_loads_ss(cls, v: Union[str, List]) -> List[COTASentence]:
         if isinstance(v, str):
             # v is a JSON string from the DB
             data = srsly.json_loads(v)
-            if isinstance(data, List) and isinstance(data[0], dict):
-                return [COTASentence(**sentence) for sentence in data]
-            else:
-                raise ValueError(
-                    "Invalid value for concepts. "
-                    "Must be a JSON string or a list of COTAConcepts."
-                )
-        elif isinstance(v, List) and isinstance(v[0], dict):
-            return [COTASentence(**sentence) for sentence in v]
-        elif isinstance(v, List) and isinstance(v[0], COTASentence):
-            return v
-        else:
-            raise ValueError(
-                "Invalid value for sentence_search_space. "
-                "Must be a JSON string or a list of COTASentences."
-            )
+            if isinstance(data, List):
+                if len(data) == 0:
+                    return []
+                elif isinstance(data[0], dict):
+                    return [COTASentence(**sentence) for sentence in data]
+        elif isinstance(v, List):
+            if len(v) == 0:
+                return []
+            elif isinstance(v[0], dict):
+                return [COTASentence(**sentence) for sentence in v]
+            elif isinstance(v[0], COTASentence):
+                return v
+
+        raise ValueError(
+            "Invalid value for search_space. "
+            "Must be a JSON string or a list of COTASentences."
+        )
+
+    @field_validator("search_space_coordinates", mode="before")
+    @classmethod
+    def json_loads_ssc(cls, v: Union[str, List]) -> List[Tuple[float, float]]:
+        if isinstance(v, str):
+            # v is a JSON string from the DB
+            data = srsly.json_loads(v)
+            if isinstance(data, List):
+                if len(data) == 0:
+                    return []
+                elif isinstance(data[0], tuple) and isinstance(data[0][0], float):
+                    return data
+        elif isinstance(v, List):
+            if len(v) == 0:
+                return []
+            elif isinstance(v[0], tuple) and isinstance(v[0][0], float):
+                return v
+
+        raise ValueError(
+            "Invalid value for search_space_coordinates. "
+            "Must be a JSON string or a List[Tuple[float, float]]."
+        )
 
     model_config = ConfigDict(from_attributes=True)
 

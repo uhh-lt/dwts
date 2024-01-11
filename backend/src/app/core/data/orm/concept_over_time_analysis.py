@@ -24,7 +24,15 @@ class ConceptOverTimeAnalysisORM(ORMBase):
     )
 
     # JSON representation of a list of COTASentences that form the searchspace (see DTO)
-    sentence_search_space: Mapped[str] = mapped_column(
+    search_space: Mapped[str] = mapped_column(
+        String,
+        server_default="[]",
+        nullable=False,
+        index=False,
+    )
+
+    # JSON representation of a List[Tuple[float, float]]. 2D Coordinates of the search_space (see DTO)
+    search_space_coordinates: Mapped[str] = mapped_column(
         String,
         server_default="[]",
         nullable=False,
