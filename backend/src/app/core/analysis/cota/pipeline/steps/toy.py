@@ -10,6 +10,7 @@ from app.core.data.dto.trainer_job import TrainerJobParameters
 SEARCH_SPACE_TOPK = 100
 SEARCH_SPACE_THRESHOLD = 0.9
 MIN_CONCEPT_SENTENCE_ANNOTATIONS = 5
+UMAP_DIMENSIONS = 64
 
 
 def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
@@ -37,7 +38,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
         )
         search_space_sentences.update(
             {
-                sent.sentence_id: COTASentence(
+                f"{sent.sentence_id}-{sent.sdoc_id}": COTASentence(
                     sentence_id=sent.sentence_id,
                     sdoc_id=sent.sdoc_id,
                 )
@@ -46,7 +47,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
         )
 
     # update the cota with the search space
-    cargo.job.cota.search_space = list(search_space_sentences.values())
+    cargo.data["search_space"] = list(search_space_sentences.values())
 
     return cargo
 
@@ -67,18 +68,23 @@ def init_or_load_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
     ):
         return cargo
 
-    # 1. Get the embeddings for the search space sentences from weaviate
-    sentence_search_space_ids = [
-        cota_sent.sentence_id for cota_sent in cargo.job.cota.search_space
-    ]
-    search_space_embeddings_dict = sims.get_sentence_embeddings(
-        sentence_ids=sentence_search_space_ids
-    )
-    search_space_embeddings = np.array(list(search_space_embeddings_dict.values()))
-
-    # 2. Reduce the embeddings with UMAP (or do we want to use PCA here?)
-    reducer = umap.UMAP()
-    search_space_reduced_embeddings = reducer.fit_transform(search_space_embeddings)
+    # if the search space is empty, we cannot compute reduced embeddings
+    if len(cargo.data["search_space"]) == 0:
+        search_space_reduced_embeddings = np.array([])
+    else:
+        # 1. Get the embeddings for the search space sentences from weaviate
+        search_space_embeddings_list = sims.get_sentence_embeddings(
+            search_tuples=[
+                (cota_sent.sentence_id, cota_sent.sdoc_id)
+                for cota_sent in cargo.data["search_space"]
+            ]
+        )
+        # TODO: Kann man die Embeddings einfach nehmen? Ist die Reihnfolge der Embeddings gleich der Reihenfolge der COTASentences?
+        # Könnte eine Ursache für Bugs sein!
+        search_space_embeddings = np.array(search_space_embeddings_list)
+        # 2. Reduce the embeddings with UMAP (or do we want to use PCA here?)
+        reducer = umap.UMAP(n_components=UMAP_DIMENSIONS)
+        search_space_reduced_embeddings = reducer.fit_transform(search_space_embeddings)
 
     # 3. Store the reduced embeddings on the file system
     embedding_path = repo.get_embedding_path(
@@ -98,7 +104,7 @@ def init_or_find_concept_embedding_model(cargo: Cargo) -> Cargo:
     trainer: TrainerService = TrainerService()
 
     # if the model exists, we dont need to do anything
-    if repo.trained_model_exists(
+    if repo.model_exists(
         proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
     ):
         return cargo
@@ -109,7 +115,7 @@ def init_or_find_concept_embedding_model(cargo: Cargo) -> Cargo:
     )
 
     # 2. Store model
-    model_path = repo.get_trained_model_path(
+    model_path = repo.get_model_path(
         proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
     )
     model.save(model_path)
@@ -163,33 +169,33 @@ def train_cem(cargo: Cargo) -> Cargo:
     return cargo
 
 
-def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
-    import numpy as np
-    import torch
+# def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
+#     import numpy as np
+#     # import torch
 
-    from app.core.data.repo.repo_service import RepoService
+#     from app.core.data.repo.repo_service import RepoService
 
-    repo: RepoService = RepoService()
+#     repo: RepoService = RepoService()
 
-    # 1. Load the CEM
-    model_path = repo.get_trained_model_path(
-        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
-    )
-    model = torch.load(model_path)
+#     # 1. Load the CEM
+#     model_path = repo.get_model_path(
+#         proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
+#     )
+#     model = torch.load(model_path)
 
-    # 2. Load the reduced embeddings
-    embedding_path = repo.get_embedding_path(
-        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
-    )
-    reduced_embeddings = np.load(embedding_path)
+#     # 2. Load the reduced embeddings
+#     embedding_path = repo.get_embedding_path(
+#         proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
+#     )
+#     # reduced_embeddings = np.load(embedding_path)
 
-    # 2. Refine the search space reduced embeddings with the CEM
-    # refined_embeddings = model.predict(reduced_embeddings)
+#     # 2. Refine the search space reduced embeddings with the CEM
+#     refined_embeddings = model.predict(reduced_embeddings)
 
-    # 3. Update cargo with the refined search space reduced embeddings
-    # cargo.data["refined_search_space_reduced_embeddings"] = refined_embeddings
+#     # 3. Update cargo with the refined search space reduced embeddings
+#     cargo.data["refined_search_space_reduced_embeddings"] = refined_embeddings
 
-    return cargo
+#     return cargo
 
 
 def compute_result(cargo: Cargo) -> Cargo:
