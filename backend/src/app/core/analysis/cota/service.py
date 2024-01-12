@@ -76,14 +76,9 @@ class COTAService(metaclass=SingletonMeta):
         db_obj = crud_cota.create(db=db, create_dto=create_dto_as_in_db)
         return COTARead.model_validate(db_obj)
 
-    def read_by_id(
-        self, *, db: Session, cota_id: int, return_sentence_text: bool = False
-    ) -> COTARead:
+    def read_by_id(self, *, db: Session, cota_id: int) -> COTARead:
         db_obj = crud_cota.read(db=db, id=cota_id)
-        cota = COTARead.model_validate(db_obj)
-        if return_sentence_text:
-            cota = self.__resolve_sentences_text(cota)
-        return cota
+        return COTARead.model_validate(db_obj)
 
     def read_by_project_and_user(
         self,
@@ -91,15 +86,11 @@ class COTAService(metaclass=SingletonMeta):
         db: Session,
         project_id: int,
         user_id: int,
-        return_sentence_text: bool = False,
     ) -> List[COTARead]:
         db_objs = crud_cota.read_by_project_and_user(
             db=db, project_id=project_id, user_id=user_id, raise_error=False
         )
-        cotas = [COTARead.model_validate(db_obj) for db_obj in db_objs]
-        if return_sentence_text:
-            return [self.__resolve_sentences_text(cota) for cota in cotas]
-        return cotas
+        return [COTARead.model_validate(db_obj) for db_obj in db_objs]
 
     def update(
         self,
@@ -107,47 +98,38 @@ class COTAService(metaclass=SingletonMeta):
         db: Session,
         cota_id: int,
         cota_update: COTAUpdate,
-        return_sentence_text: bool = False,
     ) -> COTARead:
         # make sure that cota with cota_id exists
-        self.read_by_id(
-            db=db, cota_id=cota_id, return_sentence_text=return_sentence_text
-        )
-
-        concepts_str = None
-        if cota_update.concepts is not None:
-            concepts_str = srsly.json_dumps(jsonable_encoder(cota_update.concepts))
-
-        search_space_str = None
-        if cota_update.search_space is not None:
-            search_space_str = srsly.json_dumps(
-                jsonable_encoder(cota_update.search_space)
-            )
-
-        search_space_coordinates_str = None
-        if cota_update.search_space_coordinates is not None:
-            search_space_coordinates_str = srsly.json_dumps(
-                jsonable_encoder(cota_update.search_space_coordinates)
-            )
+        self.read_by_id(db=db, cota_id=cota_id)
 
         update_dto_as_in_db = COTAUpdateAsInDB(
             **cota_update.model_dump(
                 exclude={"concepts", "search_space", "search_space_coordinates"},
                 exclude_none=True,
             ),
-            concepts=concepts_str,
-            search_space=search_space_str,
-            search_space_coordinates=search_space_coordinates_str,
         )
+
+        if cota_update.concepts is not None:
+            concepts_str = srsly.json_dumps(jsonable_encoder(cota_update.concepts))
+            update_dto_as_in_db.concepts = concepts_str
+
+        if cota_update.search_space is not None:
+            search_space_str = srsly.json_dumps(
+                jsonable_encoder(cota_update.search_space)
+            )
+            update_dto_as_in_db.search_space = search_space_str
+
+        if cota_update.search_space_coordinates is not None:
+            search_space_coordinates_str = srsly.json_dumps(
+                jsonable_encoder(cota_update.search_space_coordinates)
+            )
+            update_dto_as_in_db.search_space_coordinates = search_space_coordinates_str
 
         # update the cota in db
         db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
 
         # return the results
-        cota = COTARead.model_validate(db_obj)
-        if return_sentence_text:
-            return self.__resolve_sentences_text(cota)
-        return cota
+        return COTARead.model_validate(db_obj)
 
     def delete_by_id(self, *, db: Session, cota_id: int) -> COTARead:
         db_obj = crud_cota.remove(db=db, id=cota_id)

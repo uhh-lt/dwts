@@ -44,11 +44,8 @@ async def get_by_id(
     *,
     db: Session = Depends(get_db_session),
     cota_id: int,
-    return_sentence_text: bool = False,
 ) -> COTARead:
-    cota = cotas.read_by_id(
-        db=db, cota_id=cota_id, return_sentence_text=return_sentence_text
-    )
+    cota = cotas.read_by_id(db=db, cota_id=cota_id)
     return cota
 
 
@@ -84,13 +81,11 @@ async def update_by_id(
     db: Session = Depends(get_db_session),
     cota_id: int,
     cota_upate: COTAUpdate,
-    return_sentence_text: bool = False,
 ) -> COTARead:
     return cotas.update(
         db=db,
         cota_id=cota_id,
         cota_update=cota_upate,
-        return_sentence_text=return_sentence_text,
     )
 
 
