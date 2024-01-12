@@ -17,8 +17,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     cota = cargo.job.cota
 
     # the search space is not empty, we dont need to do anything
-    # TODO
-    if len(cota.search_space) > 0:
+    if "search_space" in cargo.data and len(cargo.data["search_space"]) > 0:
         return cargo
 
     # the search space is empty, we build the search space with simsearch
@@ -233,7 +232,6 @@ def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
 
 def compute_result(cargo: Cargo) -> Cargo:
     import umap
-
     # from app.core.data.repo.repo_service import RepoService
 
     # repo: RepoService = RepoService()
@@ -246,7 +244,6 @@ def compute_result(cargo: Cargo) -> Cargo:
     # )
     # refined_embeddings = torch.load(embedding_path)
     refined_embeddings = cargo.data["refined_search_space_reduced_embeddings"]
-
     # 2. compute representation for each concept
     concept_embeddings = dict()
     for concept in cargo.job.cota.concepts:
@@ -271,8 +268,6 @@ def compute_result(cargo: Cargo) -> Cargo:
             # average embeddings
             concept_embedding = concept_embedding.mean(axis=0)
             concept_embeddings[concept.id] = concept_embedding
-
-    print(f"{concept_embeddings=}")
 
     # 3. Rank sentence for each concept: compute similarity of average representation to each sentence
     concept_similarities = dict()
