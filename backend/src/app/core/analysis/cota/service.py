@@ -114,19 +114,31 @@ class COTAService(metaclass=SingletonMeta):
             db=db, cota_id=cota_id, return_sentence_text=return_sentence_text
         )
 
-        print("HI!")
-
+        concepts_str = None
         if cota_update.concepts is not None:
-            # convert the provided concepts to json string
             concepts_str = srsly.json_dumps(jsonable_encoder(cota_update.concepts))
-            update_dto_as_in_db = COTAUpdateAsInDB(
-                **cota_update.model_dump(exclude={"concepts"}, exclude_none=True),
-                concepts=concepts_str,
+
+        search_space_str = None
+        if cota_update.search_space is not None:
+            search_space_str = srsly.json_dumps(
+                jsonable_encoder(cota_update.search_space)
             )
-        else:
-            update_dto_as_in_db = COTAUpdateAsInDB(
-                **cota_update.model_dump(exclude_none=True)
+
+        search_space_coordinates_str = None
+        if cota_update.search_space_coordinates is not None:
+            search_space_coordinates_str = srsly.json_dumps(
+                jsonable_encoder(cota_update.search_space_coordinates)
             )
+
+        update_dto_as_in_db = COTAUpdateAsInDB(
+            **cota_update.model_dump(
+                exclude={"concepts", "search_space", "search_space_coordinates"},
+                exclude_none=True,
+            ),
+            concepts=concepts_str,
+            search_space=search_space_str,
+            search_space_coordinates=search_space_coordinates_str,
+        )
 
         # update the cota in db
         db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)

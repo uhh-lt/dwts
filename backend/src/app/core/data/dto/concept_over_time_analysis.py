@@ -22,17 +22,16 @@ class COTASentence(BaseModel):
     sdoc_id: int = Field(
         description="ID of the Sentence Document that contains the Sentence"
     )
-    text: Optional[str] = Field(description="Text of the Sentence", default=None)
 
 
 class COTAConcept(BaseModel):
     id: str = Field(description="ID of the Concept")
     name: str = Field(description="Name of the Concept")
-    description: str = Field(description="Description of the Concept")
+    description: COTASentence = Field(description="Description of the Concept")
     color: str = Field(description="Color of the Concept")
     visible: bool = Field(description="Visibility of the Concept")
-    sentence_annotations: List[int] = Field(
-        description="List of Annotated Sentence IDs that belong to the Concept"
+    sentence_annotations: List[COTASentence] = Field(
+        description="List of Annotated Sentences that belong to the Concept"
     )
     search_space_similarity_scores: List[float] = Field(
         description="List of similarity scores of the sentence search space"
@@ -82,6 +81,16 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
         description="List of Concepts that are part of the ConceptOverTimeAnalysis",
         default=None,
     )
+    search_space: Optional[List[COTASentence]] = Field(
+        description=(
+            "List of Sentences that form the search space "
+            "of the ConceptOverTimeAnalysis"
+        ),
+        default=None,
+    )
+    search_space_coordinates: Optional[List[Tuple[float, float]]] = Field(
+        description="List of coordinates of the search space for plotting", default=None
+    )
 
 
 class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
@@ -105,6 +114,10 @@ class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
             "JSON Representation of the list of Sentences that form the search space "
             "of the ConceptOverTimeAnalysis"
         ),
+        default=None,
+    )
+    search_space_coordinates: Optional[str] = Field(
+        description="JSON Representation of List of coordinates of the search space for plotting",
         default=None,
     )
 

@@ -159,7 +159,7 @@ class TrainerService(metaclass=SingletonMeta):
     #      Concept Over Time Anaylsis related functions     #
     #########################################################
 
-    def __create_probing_layers_network(
+    def _create_probing_layers_network(
         self,
         num_layers: int = 5,
         input_dim: int = 64,
