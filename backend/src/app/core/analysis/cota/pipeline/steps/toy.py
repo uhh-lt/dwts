@@ -1,5 +1,5 @@
 import time
-from typing import Dict
+from typing import Dict, List
 
 from app.core.analysis.cota.pipeline.cargo import Cargo
 from app.core.data.dto.background_job_base import BackgroundJobStatus
@@ -17,48 +17,67 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     cota = cargo.job.cota
 
     # the search space is not empty, we dont need to do anything
-    if "search_space" in cargo.data and len(cargo.data["search_space"]) > 0:
+    if len(cota.search_space) > 0:
+        cargo.data["search_space"] = cota.search_space
+        cargo.data["concept_similarities"] = {
+            concept.id: concept.search_space_similarity_scores
+            for concept in cota.concepts
+        }
         return cargo
 
-    # the search space is empty, we build the search space with simsearch
-    from app.core.data.crud.source_document import crud_sdoc
-    from app.core.db.sql_service import SQLService
     from app.core.search.simsearch_service import SimSearchService
 
     sims: SimSearchService = SimSearchService()
-    sqls: SQLService = SQLService()
 
-    with sqls.db_session() as db:
-        search_space_sentences: Dict[str, COTASentence] = dict()
-        for concept in cota.concepts:
-            # get concept description sentence
-            sdoc = crud_sdoc.read_with_data(db=db, id=concept.description.sdoc_id)
-            query_text = sdoc.sentences[concept.description.sentence_id]
+    # the search space is empty, we build the search space with simsearch
+    search_space_sentences: Dict[str, COTASentence] = dict()
+    similarity_search_results: Dict[str, Dict[str, float]] = dict()
+    for concept in cota.concepts:
+        # find similar sentences for each concept to define search space
+        sents = sims.find_similar_sentences(
+            query=SimSearchQuery(
+                proj_id=cota.project_id,
+                query=concept.description,
+                top_k=SEARCH_SPACE_TOPK,
+                threshold=SEARCH_SPACE_THRESHOLD,
+            )
+        )
 
-            # find similar sentences for each concept to define search space
-            sents = sims.find_similar_sentences(
-                query=SimSearchQuery(
-                    proj_id=cota.project_id,
-                    query=query_text,
-                    top_k=SEARCH_SPACE_TOPK,
-                    threshold=SEARCH_SPACE_THRESHOLD,
+        # store the similarity search results
+        similarities_dict: Dict[str, float] = dict()
+        for sent in sents:
+            similarities_dict[f"{sent.sentence_id}-{sent.sdoc_id}"] = sent.score
+        similarity_search_results[concept.id] = similarities_dict
+
+        # we use a dict here to prevent duplicates in the search space
+        search_space_sentences.update(
+            {
+                f"{sent.sentence_id}-{sent.sdoc_id}": COTASentence(
+                    sentence_id=sent.sentence_id,
+                    sdoc_id=sent.sdoc_id,
                 )
-            )
-
-            # TODO use these similarities?
-
-            search_space_sentences.update(
-                {
-                    f"{sent.sentence_id}-{sent.sdoc_id}": COTASentence(
-                        sentence_id=sent.sentence_id,
-                        sdoc_id=sent.sdoc_id,
-                    )
-                    for sent in sents
-                }
-            )
+                for sent in sents
+            }
+        )
 
     # update the cota with the search space
-    cargo.data["search_space"] = list(search_space_sentences.values())
+    search_space = list(search_space_sentences.values())
+    cargo.data["search_space"] = search_space
+
+    # assign the similarity search similarities to the search space
+    # for each concept, we go through the search space and assign the similarity score of the sim search
+    concept_similarities: Dict[str, List[float]] = dict()
+    for concept in cargo.job.cota.concepts:
+        similarity_search_result = similarity_search_results[concept.id]
+        concept_similarity: List[float] = [0.0 for _ in range(len(search_space))]
+
+        for search_space_sentence in search_space:
+            key = f"{search_space_sentence.sentence_id}-{search_space_sentence.sdoc_id}"
+            concept_similarity.append(similarity_search_result[key])
+
+        concept_similarities[concept.id] = concept_similarity
+
+    cargo.data["concept_similarities"] = concept_similarities
 
     return cargo
 
@@ -247,20 +266,20 @@ def compute_result(cargo: Cargo) -> Cargo:
     # )
     # refined_embeddings = torch.load(embedding_path)
     refined_embeddings = cargo.data["refined_search_space_reduced_embeddings"]
-    # 2. compute representation for each concept
-    concept_embeddings = dict()
-    for concept in cargo.job.cota.concepts:
-        # the concept representation is the embedding of the description
-        if len(concept.sentence_annotations) == 0:
-            description_embedding_idx = cargo.data["search_space"].index(
-                concept.description
-            )
-            concept_embeddings[concept.id] = refined_embeddings[
-                description_embedding_idx
-            ]
 
-        # the concept representation is the average of all annotated concept sentences
-        else:
+    # 2. rank search space sentences for each concept
+    # this can only be done if a concept has sentence annotations, because we need those to compute the concept representation
+    # if we do not have sentence annotations, the ranking / similarities were already computed by the initial simsearch (in the first step)
+    do_ranking = True
+    for concept in cargo.job.cota.concepts:
+        if len(concept.sentence_annotations) < MIN_CONCEPT_SENTENCE_ANNOTATIONS:
+            do_ranking = False
+            break
+
+    if do_ranking:
+        # 2.1 compute representation for each concept
+        concept_embeddings = dict()
+        for concept in cargo.job.cota.concepts:
             # find embeddings of annotated sentences
             concept_embedding_idx = []
             for annotation in concept.sentence_annotations:
@@ -268,23 +287,22 @@ def compute_result(cargo: Cargo) -> Cargo:
                 concept_embedding_idx.append(embedding_idx)
             concept_embedding = refined_embeddings[concept_embedding_idx]
 
-            # average embeddings
+            # the concept representation is the average of all annotated concept sentences
             concept_embedding = concept_embedding.mean(axis=0)
             concept_embeddings[concept.id] = concept_embedding
 
-    # 3. Rank sentence for each concept: compute similarity of average representation to each sentence
-    concept_similarities = dict()
-    for concept in cargo.job.cota.concepts:
-        concept_embedding = concept_embeddings[concept.id]
-        sims = concept_embedding @ refined_embeddings.T
-        concept_similarities[concept.id] = sims.tolist()
+        # 2.2  compute similarity of average representation to each sentence
+        concept_similarities = dict()
+        for concept in cargo.job.cota.concepts:
+            concept_embedding = concept_embeddings[concept.id]
+            sims = concept_embedding @ refined_embeddings.T
+            concept_similarities[concept.id] = sims.tolist()
 
-    # 4. Visualize results: Reduce the refined embeddings with UMAP to 2D
+        cargo.data["concept_similarities"] = concept_similarities
+
+    # 3. Visualize results: Reduce the refined embeddings with UMAP to 2D
     reducer = umap.UMAP(n_components=2)
     visual_refined_embeddings = reducer.fit_transform(refined_embeddings.numpy())
-
-    # 5. store results in cargo
-    cargo.data["concept_similarities"] = concept_similarities
     cargo.data["visual_refined_embeddings"] = visual_refined_embeddings
 
     return cargo
@@ -297,15 +315,12 @@ def store_cota_in_db(cargo: Cargo) -> Cargo:
     cota_service: COTAService = COTAService()
     sqls: SQLService = SQLService()
 
-    # Hier im letzen Schritt würde ich alle ergebnisse in das COTA Objekt schreiben und in die DB speichern
-    # Dazu gehört
+    # Store pipeline results in the DB
+    # 1. search_space
+    # 2. concept similarity scores: the ranking of the search_space sentences for each concept
+    # 3. search_space_coordinates: die 2D coords für die sätze
 
-    # Es ist wichtig, dass alles in der DB steht, damit bei einem Reload der Seite nicht alles neuberechnet werden muss.
-
-    # 1. search_space_sentenes (mit text str und referenz zu sdoc)
-    # 2. similarity scores: das Ranking der Sätze für jedes Konzept
-    # 3. visualisierung: die 2D coords für die sätze
-
+    # store concept similarity scores
     updated_concepts = cargo.job.cota.concepts
     for concept in updated_concepts:
         concept.search_space_similarity_scores = cargo.data["concept_similarities"][
@@ -318,14 +333,12 @@ def store_cota_in_db(cargo: Cargo) -> Cargo:
             cota_id=cargo.job.cota.id,
             cota_update=COTAUpdate(
                 concepts=updated_concepts,
-                search_space=cargo.data["search_space"],
-                search_space_coordinates=cargo.data[
+                search_space=cargo.data["search_space"],  # store search_space
+                search_space_coordinates=cargo.data[  # store search_space_coordinates
                     "visual_refined_embeddings"
                 ].tolist(),
             ),
         )
-
-    # Sobald die Pipeline durchgelaufen ist, muss eigentlich nur das COTA Objekt aus der DB geladen werden, dann kann im Frontend alles gerendert werden.
 
     return cargo
 
