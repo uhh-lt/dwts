@@ -45,7 +45,6 @@ class COTAConcept(BaseModel):
 
 class ConceptOverTimeAnalysisBaseDTO(BaseModel):
     name: str = Field(description="Name of the ConceptOverTimeAnalysis")
-    description: str = Field(description="Description of the ConceptOverTimeAnalysis")
 
 
 class COTACreate(ConceptOverTimeAnalysisBaseDTO):
@@ -73,10 +72,6 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
         description="Name of the ConceptOverTimeAnalysis",
         default=None,
     )
-    description: Optional[str] = Field(
-        description="Description of the ConceptOverTimeAnalysis",
-        default=None,
-    )
     concepts: Optional[List[COTAConcept]] = Field(
         description="List of Concepts that are part of the ConceptOverTimeAnalysis",
         default=None,
@@ -96,10 +91,6 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
 class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
     name: Optional[str] = Field(
         description="Name of the ConceptOverTimeAnalysis",
-        default=None,
-    )
-    description: Optional[str] = Field(
-        description="Description of the ConceptOverTimeAnalysis",
         default=None,
     )
     concepts: Optional[str] = Field(

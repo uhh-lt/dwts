@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 class ConceptOverTimeAnalysisORM(ORMBase):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    description: Mapped[Optional[str]] = mapped_column(String, index=False)
 
     # JSON representation of a list of COTAConcepts (see DTO)
     concepts: Mapped[str] = mapped_column(
