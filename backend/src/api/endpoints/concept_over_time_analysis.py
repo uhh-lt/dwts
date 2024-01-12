@@ -14,8 +14,10 @@ from app.core.data.dto.concept_over_time_analysis import (
     COTARefinementJobRead,
     COTAUpdate,
 )
+from app.core.db.redis_service import RedisService
 
 cotas: COTAService = COTAService()
+redis: RedisService = RedisService()
 
 router = APIRouter(prefix="/cota", tags=["conceptOverTimeAnalysis"])
 
@@ -121,3 +123,16 @@ async def delete_by_id(
     *, db: Session = Depends(get_db_session), cota_id: int
 ) -> COTARead:
     return cotas.delete_by_id(db=db, cota_id=cota_id)
+
+
+@router.get(
+    "/refine/{cota_job_id}",
+    response_model=COTARefinementJobRead,
+    summary="Returns the COTA Refinement Job for the given ID",
+    description="Returns the COTA Refinement Job for the given ID if it exists",
+)
+async def get_cota_job(
+    *,
+    cota_job_id: str,
+) -> COTARefinementJobRead:
+    return redis.load_cota_job(cota_job_id)
