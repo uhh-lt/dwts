@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import srsly
 from pydantic import BaseModel, ConfigDict, Field
@@ -88,7 +88,7 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
         ),
         default=None,
     )
-    search_space_coordinates: Optional[List[Tuple[float, float]]] = Field(
+    search_space_coordinates: Optional[List[List[float]]] = Field(
         description="List of coordinates of the search space for plotting", default=None
     )
 
@@ -137,7 +137,7 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
             "of the ConceptOverTimeAnalysis"
         ),
     )
-    search_space_coordinates: List[Tuple[float, float]] = Field(
+    search_space_coordinates: List[List[float]] = Field(
         description="List of coordinates of the search space for plotting",
     )
     created: datetime = Field(
@@ -197,24 +197,24 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
 
     @field_validator("search_space_coordinates", mode="before")
     @classmethod
-    def json_loads_ssc(cls, v: Union[str, List]) -> List[Tuple[float, float]]:
+    def json_loads_ssc(cls, v: Union[str, List]) -> List[List[float]]:
         if isinstance(v, str):
             # v is a JSON string from the DB
             data = srsly.json_loads(v)
             if isinstance(data, List):
                 if len(data) == 0:
                     return []
-                elif isinstance(data[0], tuple) and isinstance(data[0][0], float):
+                elif isinstance(data[0], list) and isinstance(data[0][0], float):
                     return data
         elif isinstance(v, List):
             if len(v) == 0:
                 return []
-            elif isinstance(v[0], tuple) and isinstance(v[0][0], float):
+            elif isinstance(v[0], list) and isinstance(v[0][0], float):
                 return v
 
         raise ValueError(
             "Invalid value for search_space_coordinates. "
-            "Must be a JSON string or a List[Tuple[float, float]]."
+            "Must be a JSON string or a List[List[float, float]]."
         )
 
     model_config = ConfigDict(from_attributes=True)
