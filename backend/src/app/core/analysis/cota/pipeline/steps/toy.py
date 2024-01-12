@@ -29,7 +29,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     sqls: SQLService = SQLService()
 
     with sqls.db_session() as db:
-        search_space_sentences: Dict[int, COTASentence] = dict()
+        search_space_sentences: Dict[str, COTASentence] = dict()
         for concept in cota.concepts:
             # get concept description sentence
             sdoc = crud_sdoc.read_with_data(db=db, id=concept.description.sdoc_id)
@@ -44,6 +44,9 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
                     threshold=SEARCH_SPACE_THRESHOLD,
                 )
             )
+
+            # TODO use these similarities?
+
             search_space_sentences.update(
                 {
                     f"{sent.sentence_id}-{sent.sdoc_id}": COTASentence(
