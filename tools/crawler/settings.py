@@ -1,10 +1,13 @@
 # scrapy-selenium settings
-from shutil import which
 
-from webdriver_manager.chrome import ChromeDriverManager
 
-SELENIUM_DRIVER_NAME = "chrome"
-SELENIUM_DRIVER_EXECUTABLE_PATH = which(ChromeDriverManager().install())
+# this was removed in the 4.6 version of selenium
+# see https://stackoverflow.com/questions/76550506/typeerror-webdriver-init-got-an-unexpected-keyword-argument-executable-p
+# from shutil import which
+# from webdriver_manager.chrome import ChromeDriverManager
+# SELENIUM_DRIVER_EXECUTABLE_PATH = which(ChromeDriverManager().install())
+
+SELENIUM_DRIVER_NAME = "firefox"
 SELENIUM_DRIVER_ARGUMENTS = [
     "--headless=new"
 ]  # '--headless' if using chrome instead of firefox
