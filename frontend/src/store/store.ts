@@ -15,6 +15,7 @@ import searchFilterReducer from "../views/search/searchFilterSlice";
 import searchReducer from "../views/search/searchSlice";
 import settingsReducer from "../views/settings/settingsSlice";
 import documentSamplerReducer from "../views/analysis/DocumentSampler/documentSamplerSlice";
+import cotaReducer from "../views/analysis/ConceptsOverTime/cotaSlice";
 
 const persistConfig = {
   key: "root",
@@ -41,6 +42,7 @@ export const store = configureStore({
     wordFrequency: wordFrequencyReducer,
     wordFrequencyFilter: wordFrequencyFilterReducer,
     documentSampler: documentSamplerReducer,
+    cota: cotaReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -65,9 +65,18 @@ function Analysis() {
 
             <Grid item>
               <AnalysisCard
-                to={"document-sampler"}
-                title={"Document Sampler"}
-                description={"Sample documents for annotation projects."}
+                to={"concepts-over-time-analysis"}
+                title={"Concepts Over Time Analysis"}
+                description={"Analyse concepts overr time."}
+                color={"#77dd77"}
+              />
+            </Grid>
+
+            <Grid item>
+              <AnalysisCard
+                to={"concepts-over-time-analysis"}
+                title={"Concepts Over Time Analysis"}
+                description={"Analyse concepts overr time."}
                 color={"#77dd77"}
               />
             </Grid>
