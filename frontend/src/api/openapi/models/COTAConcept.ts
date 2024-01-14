@@ -4,6 +4,10 @@
 
 export type COTAConcept = {
   /**
+   * ID of the Concept
+   */
+  id: string;
+  /**
    * Name of the Concept
    */
   name: string;
@@ -11,4 +15,12 @@ export type COTAConcept = {
    * Description of the Concept
    */
   description: string;
+  /**
+   * Color of the Concept
+   */
+  color: string;
+  /**
+   * Visibility of the Concept
+   */
+  visible: boolean;
 };

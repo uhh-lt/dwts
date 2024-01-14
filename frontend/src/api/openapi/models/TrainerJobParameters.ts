@@ -14,5 +14,5 @@ export type TrainerJobParameters = {
   /**
    * The name of the new model.
    */
-  model_name: string;
+  new_model_name: string;
 };

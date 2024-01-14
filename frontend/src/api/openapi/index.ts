@@ -43,6 +43,8 @@ export type { ColumnInfo_WordFrequencyColumns_ } from "./models/ColumnInfo_WordF
 export type { COTAConcept } from "./models/COTAConcept";
 export type { COTACreate } from "./models/COTACreate";
 export type { COTARead } from "./models/COTARead";
+export type { COTARefinementHyperparameters } from "./models/COTARefinementHyperparameters";
+export type { COTARefinementJobRead } from "./models/COTARefinementJobRead";
 export type { COTASentence } from "./models/COTASentence";
 export type { COTAUpdate } from "./models/COTAUpdate";
 export type { CrawlerJobParameters } from "./models/CrawlerJobParameters";

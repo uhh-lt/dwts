@@ -2,15 +2,13 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { COTAConcept } from "./COTAConcept";
+
 export type COTACreate = {
   /**
    * Name of the ConceptOverTimeAnalysis
    */
   name: string;
-  /**
-   * Description of the ConceptOverTimeAnalysis
-   */
-  description: string;
   /**
    * Project the ConceptOverTimeAnalysis belongs to
    */
@@ -19,4 +17,8 @@ export type COTACreate = {
    * User the ConceptOverTimeAnalysis belongs to
    */
   user_id: number;
+  /**
+   * List of Concepts that are part of the ConceptOverTimeAnalysis
+   */
+  concepts: Array<COTAConcept>;
 };

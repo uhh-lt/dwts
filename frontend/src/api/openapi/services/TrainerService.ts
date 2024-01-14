@@ -53,10 +53,10 @@ export class TrainerService {
   /**
    * Returns the TrainerJob for the given ID
    * Returns the TrainerJob for the given ID if it exists
-   * @returns TrainerJobRead Successful Response
+   * @returns any Successful Response
    * @throws ApiError
    */
-  public static getTrainerJob({ trainerJobId }: { trainerJobId: string }): CancelablePromise<TrainerJobRead> {
+  public static getTrainerJob({ trainerJobId }: { trainerJobId: string }): CancelablePromise<TrainerJobRead | null> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/trainer/{trainer_job_id}",

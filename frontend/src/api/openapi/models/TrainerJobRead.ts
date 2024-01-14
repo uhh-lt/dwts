@@ -21,7 +21,7 @@ export type TrainerJobRead = {
   /**
    * The path to the saved model.
    */
-  saved_model_path?: string;
+  saved_model_path?: string | null;
   /**
    * Created timestamp of the TrainerJob
    */

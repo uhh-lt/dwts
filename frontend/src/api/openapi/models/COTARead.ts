@@ -11,10 +11,6 @@ export type COTARead = {
    */
   name: string;
   /**
-   * Description of the ConceptOverTimeAnalysis
-   */
-  description: string;
-  /**
    * ID of the ConceptOverTimeAnalysis
    */
   id: number;
@@ -33,7 +29,7 @@ export type COTARead = {
   /**
    * List of Sentences that form the search space of the ConceptOverTimeAnalysis
    */
-  sentence_search_space: Array<COTASentence>;
+  search_space: Array<COTASentence>;
   /**
    * Created timestamp of the ConceptOverTimeAnalysis
    */
