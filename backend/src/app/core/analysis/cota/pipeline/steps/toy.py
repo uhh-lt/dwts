@@ -13,16 +13,47 @@ MIN_CONCEPT_SENTENCE_ANNOTATIONS = 5
 UMAP_DIMENSIONS = 64
 
 
+def __get_annotation_sentence_indices(cargo: Cargo) -> Dict[str, List[int]]:
+    """Returns the indices of the sentences in the search space that are annotated with a concept, for each concept"""
+
+    annotations: Dict[str, List[int]] = {
+        concept.id: [] for concept in cargo.job.cota.concepts
+    }
+    for idx, sentence in enumerate(cargo.data["search_space"]):
+        if sentence.concept_annotation is not None:
+            annotations[sentence.concept_annotation].append(idx)
+    return annotations
+
+
+def __get_annotations(cargo: Cargo) -> Dict[str, List[COTASentence]]:
+    """Returns the sentences in the search space that are annotated with a concept, for each concept"""
+    annotations: Dict[str, List[COTASentence]] = {
+        concept.id: [] for concept in cargo.job.cota.concepts
+    }
+    for sentence in cargo.data["search_space"]:
+        if sentence.concept_annotation is not None:
+            annotations[sentence.concept_annotation].append(sentence)
+    return annotations
+
+
+def __has_min_concept_sentence_annotations(cargo: Cargo) -> bool:
+    """Returns true if each concept has at least MIN_CONCEPT_SENTENCE_ANNOTATIONS annotations"""
+
+    annotations = __get_annotations(cargo)
+
+    for concept_id, concept_annotations in annotations.items():
+        if len(concept_annotations) < MIN_CONCEPT_SENTENCE_ANNOTATIONS:
+            return False
+
+    return True
+
+
 def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     cota = cargo.job.cota
 
     # the search space is not empty, we dont need to do anything
     if len(cota.search_space) > 0:
         cargo.data["search_space"] = cota.search_space
-        cargo.data["concept_similarities"] = {
-            concept.id: concept.search_space_similarity_scores
-            for concept in cota.concepts
-        }
         return cargo
 
     from app.core.search.simsearch_service import SimSearchService
@@ -30,8 +61,9 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     sims: SimSearchService = SimSearchService()
 
     # the search space is empty, we build the search space with simsearch
-    search_space_sentences: Dict[str, COTASentence] = dict()
-    similarity_search_results: Dict[str, Dict[str, float]] = dict()
+    search_space_dict: Dict[
+        str, COTASentence
+    ] = dict()  # we use a dict here to prevent duplicates in the search space
     for concept in cota.concepts:
         # find similar sentences for each concept to define search space
         sents = sims.find_similar_sentences(
@@ -43,41 +75,25 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
             )
         )
 
-        # store the similarity search results
-        similarities_dict: Dict[str, float] = dict()
         for sent in sents:
-            similarities_dict[f"{sent.sentence_id}-{sent.sdoc_id}"] = sent.score
-        similarity_search_results[concept.id] = similarities_dict
-
-        # we use a dict here to prevent duplicates in the search space
-        search_space_sentences.update(
-            {
-                f"{sent.sentence_id}-{sent.sdoc_id}": COTASentence(
-                    sentence_id=sent.sentence_id,
+            cota_sentence_id = f"{sent.sentence_id}-{sent.sdoc_id}"
+            cota_sentence = search_space_dict.get(
+                cota_sentence_id,
+                COTASentence(
                     sdoc_id=sent.sdoc_id,
-                )
-                for sent in sents
-            }
-        )
+                    sentence_id=sent.sentence_id,
+                    concept_annotation=None,
+                    concept_similarities={concept.id: 0.0 for concept in cota.concepts},
+                    x=0.0,
+                    y=0.0,
+                ),
+            )
+            cota_sentence.concept_similarities[concept.id] = sent.score
+            search_space_dict[cota_sentence_id] = cota_sentence
 
     # update the cota with the search space
-    search_space = list(search_space_sentences.values())
+    search_space = list(search_space_dict.values())
     cargo.data["search_space"] = search_space
-
-    # assign the similarity search similarities to the search space
-    # for each concept, we go through the search space and assign the similarity score of the sim search
-    concept_similarities: Dict[str, List[float]] = dict()
-    for concept in cargo.job.cota.concepts:
-        similarity_search_result = similarity_search_results[concept.id]
-        concept_similarity: List[float] = [0.0 for _ in range(len(search_space))]
-
-        for search_space_sentence in search_space:
-            key = f"{search_space_sentence.sentence_id}-{search_space_sentence.sdoc_id}"
-            concept_similarity.append(similarity_search_result[key])
-
-        concept_similarities[concept.id] = concept_similarity
-
-    cargo.data["concept_similarities"] = concept_similarities
 
     return cargo
 
@@ -142,9 +158,8 @@ def init_or_find_concept_embedding_model(cargo: Cargo) -> Cargo:
         return cargo
 
     # We dont need to create a model, if no annotations exist, because we can't train it anyway
-    for concept in cargo.job.cota.concepts:
-        if len(concept.sentence_annotations) < MIN_CONCEPT_SENTENCE_ANNOTATIONS:
-            return cargo
+    if not __has_min_concept_sentence_annotations(cargo):
+        return cargo
 
     # 1. Define model
     model = trainer._create_probing_layers_network(
@@ -171,16 +186,15 @@ def train_cem(cargo: Cargo) -> Cargo:
     redis: RedisService = RedisService()
     repo: RepoService = RepoService()
 
-    # Only train if we have a model (that means, if we have annotations)
+    # Only train if we have a model
     if not repo.model_exists(
         proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
     ):
         return cargo
 
-    # (eigentlich unnötige Bedingung?) Only train if we have enough annotated data
-    for concept in cargo.job.cota.concepts:
-        if len(concept.sentence_annotations) < MIN_CONCEPT_SENTENCE_ANNOTATIONS:
-            return cargo
+    # Only train if we have enough annotated data
+    if not __has_min_concept_sentence_annotations(cargo):
+        return cargo
 
     # 1. Create the training data
 
@@ -258,102 +272,74 @@ def compute_result(cargo: Cargo) -> Cargo:
 
     # repo: RepoService = RepoService()
 
-    # ich würde in diesem vorletzen Schritt alle ergebnissberechnungen machen
-
-    # 1. read the refined search space reduced embeddings
+    # 1. Read the required data
     # embedding_path = repo.get_embedding_path(
     #     proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
     # )
     # refined_embeddings = torch.load(embedding_path)
+    search_space: List[COTASentence] = cargo.data["search_space"]
     refined_embeddings = cargo.data["refined_search_space_reduced_embeddings"]
 
     # 2. rank search space sentences for each concept
     # this can only be done if a concept has sentence annotations, because we need those to compute the concept representation
     # if we do not have sentence annotations, the ranking / similarities were already computed by the initial simsearch (in the first step)
-    do_ranking = True
-    for concept in cargo.job.cota.concepts:
-        if len(concept.sentence_annotations) < MIN_CONCEPT_SENTENCE_ANNOTATIONS:
-            do_ranking = False
-            break
-
-    if do_ranking:
+    if __has_min_concept_sentence_annotations(cargo):
         # 2.1 compute representation for each concept
+        annotation_indices = __get_annotation_sentence_indices(cargo)
         concept_embeddings = dict()
         for concept in cargo.job.cota.concepts:
-            # find embeddings of annotated sentences
-            concept_embedding_idx = []
-            for annotation in concept.sentence_annotations:
-                embedding_idx = cargo.data["search_space"].index(annotation)
-                concept_embedding_idx.append(embedding_idx)
-            concept_embedding = refined_embeddings[concept_embedding_idx]
-
+            # get the embeddings of the annotated sentences for the concept
+            concept_embedding = refined_embeddings[annotation_indices[concept.id]]
             # the concept representation is the average of all annotated concept sentences
-            concept_embedding = concept_embedding.mean(axis=0)
-            concept_embeddings[concept.id] = concept_embedding
+            # TODO: normalize??
+            concept_embeddings[concept.id] = concept_embedding.mean(axis=0)
 
         # 2.2  compute similarity of average representation to each sentence
-        concept_similarities = dict()
+        concept_similarities: Dict[
+            str, List[float]
+        ] = dict()  # Dict[concept_id, List[similarity]]
         for concept in cargo.job.cota.concepts:
             concept_embedding = concept_embeddings[concept.id]
             sims = concept_embedding @ refined_embeddings.T
             concept_similarities[concept.id] = sims.tolist()
 
-        cargo.data["concept_similarities"] = concept_similarities
+        # 2.3 update search_space with the concept similarities
+        for concept_id, similarities in concept_similarities.items():
+            for sentence, similarity in zip(search_space, similarities):
+                sentence.concept_similarities[concept_id] = similarity
 
     # 3. Visualize results: Reduce the refined embeddings with UMAP to 2D
+
+    # 3.1 reduce the dimensionality of the refined embeddings with UMAP
     reducer = umap.UMAP(n_components=2)
-    visual_refined_embeddings = reducer.fit_transform(refined_embeddings.numpy())
-    cargo.data["visual_refined_embeddings"] = visual_refined_embeddings
+    visual_refined_embeddings = reducer.fit_transform(
+        refined_embeddings.numpy()
+    ).tolist()
+
+    # 3.2 update search_space with the 2D coordinates
+    for sentence, coordinates in zip(search_space, visual_refined_embeddings):
+        sentence.x = coordinates[0]
+        sentence.y = coordinates[1]
 
     return cargo
 
 
-def store_cota_in_db(cargo: Cargo) -> Cargo:
+def store_search_space_in_db(cargo: Cargo) -> Cargo:
     from app.core.analysis.cota.service import COTAService
     from app.core.db.sql_service import SQLService
 
     cota_service: COTAService = COTAService()
     sqls: SQLService = SQLService()
 
-    # Store pipeline results in the DB
-    # 1. search_space
-    # 2. concept similarity scores: the ranking of the search_space sentences for each concept
-    # 3. search_space_coordinates: die 2D coords für die sätze
+    # 1. read the required data
+    search_space: List[COTASentence] = cargo.data["search_space"]
 
-    # store concept similarity scores
-    updated_concepts = cargo.job.cota.concepts
-    for concept in updated_concepts:
-        concept.search_space_similarity_scores = cargo.data["concept_similarities"][
-            concept.id
-        ]
-
+    # 2. Store search_space in db
     with sqls.db_session() as db:
         cota_service.update(
             db=db,
             cota_id=cargo.job.cota.id,
-            cota_update=COTAUpdate(
-                concepts=updated_concepts,
-                search_space=cargo.data["search_space"],  # store search_space
-                search_space_coordinates=cargo.data[  # store search_space_coordinates
-                    "visual_refined_embeddings"
-                ].tolist(),
-            ),
+            cota_update=COTAUpdate(search_space=search_space),
         )
-
-    return cargo
-
-
-def toy_step(cargo: Cargo) -> Cargo:
-    cargo.data["toy"] = "Hello World!"
-
-    return cargo
-
-
-def joy_step(cargo: Cargo) -> Cargo:
-    toy = cargo.data["toy"]
-    print(toy)
-    cargo.data["joy"] = "Hello Universe!"
-
-    print(cargo.job.cota.name)
 
     return cargo

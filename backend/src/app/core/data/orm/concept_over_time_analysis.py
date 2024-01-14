@@ -30,14 +30,6 @@ class ConceptOverTimeAnalysisORM(ORMBase):
         index=False,
     )
 
-    # JSON representation of a List[Tuple[float, float]]. 2D Coordinates of the search_space (see DTO)
-    search_space_coordinates: Mapped[str] = mapped_column(
-        String,
-        server_default="[]",
-        nullable=False,
-        index=False,
-    )
-
     created: Mapped[Optional[datetime]] = mapped_column(
         DateTime, server_default=func.now(), index=False
     )

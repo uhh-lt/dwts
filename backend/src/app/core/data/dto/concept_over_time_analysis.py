@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import srsly
 from pydantic import BaseModel, ConfigDict, Field
@@ -22,6 +22,14 @@ class COTASentence(BaseModel):
     sdoc_id: int = Field(
         description="ID of the Sentence Document that contains the Sentence"
     )
+    concept_similarities: Dict[str, float] = Field(
+        description="Dictionary of Concept IDs and their similarity score"
+    )
+    concept_annotation: Optional[str] = Field(
+        description="Concept ID this sentence belongs to"
+    )
+    x: float = Field(description="X coordinate of the Sentence in the search space")
+    y: float = Field(description="Y coordinate of the Sentence in the search space")
 
 
 class COTAConcept(BaseModel):
@@ -30,12 +38,6 @@ class COTAConcept(BaseModel):
     description: str = Field(description="Description of the Concept")
     color: str = Field(description="Color of the Concept")
     visible: bool = Field(description="Visibility of the Concept")
-    sentence_annotations: List[COTASentence] = Field(
-        description="List of Annotated Sentences that belong to the Concept"
-    )
-    search_space_similarity_scores: List[float] = Field(
-        description="List of similarity scores of the sentence search space"
-    )
 
 
 ####################
@@ -83,9 +85,6 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
         ),
         default=None,
     )
-    search_space_coordinates: Optional[List[List[float]]] = Field(
-        description="List of coordinates of the search space for plotting", default=None
-    )
 
 
 class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
@@ -107,10 +106,6 @@ class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
         ),
         default=None,
     )
-    search_space_coordinates: Optional[str] = Field(
-        description="JSON Representation of List of coordinates of the search space for plotting",
-        default=None,
-    )
 
 
 class COTARead(ConceptOverTimeAnalysisBaseDTO):
@@ -127,9 +122,6 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
             "List of Sentences that form the search space "
             "of the ConceptOverTimeAnalysis"
         ),
-    )
-    search_space_coordinates: List[List[float]] = Field(
-        description="List of coordinates of the search space for plotting",
     )
     created: datetime = Field(
         description="Created timestamp of the ConceptOverTimeAnalysis"
@@ -184,28 +176,6 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
         raise ValueError(
             "Invalid value for search_space. "
             "Must be a JSON string or a list of COTASentences."
-        )
-
-    @field_validator("search_space_coordinates", mode="before")
-    @classmethod
-    def json_loads_ssc(cls, v: Union[str, List]) -> List[List[float]]:
-        if isinstance(v, str):
-            # v is a JSON string from the DB
-            data = srsly.json_loads(v)
-            if isinstance(data, List):
-                if len(data) == 0:
-                    return []
-                elif isinstance(data[0], list) and isinstance(data[0][0], float):
-                    return data
-        elif isinstance(v, List):
-            if len(v) == 0:
-                return []
-            elif isinstance(v[0], list) and isinstance(v[0][0], float):
-                return v
-
-        raise ValueError(
-            "Invalid value for search_space_coordinates. "
-            "Must be a JSON string or a List[List[float, float]]."
         )
 
     model_config = ConfigDict(from_attributes=True)

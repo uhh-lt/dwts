@@ -119,12 +119,6 @@ class COTAService(metaclass=SingletonMeta):
             )
             update_dto_as_in_db.search_space = search_space_str
 
-        if cota_update.search_space_coordinates is not None:
-            search_space_coordinates_str = srsly.json_dumps(
-                jsonable_encoder(cota_update.search_space_coordinates)
-            )
-            update_dto_as_in_db.search_space_coordinates = search_space_coordinates_str
-
         # update the cota in db
         db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
 
