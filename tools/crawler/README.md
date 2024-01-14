@@ -43,6 +43,10 @@ Check the following example commands to see how to use this tool:
 ## Examples
 
 ```
+# cnn.com search results !! you need to provide the Cookie Header string to consent to cookies (and also for paid articles etc.). Without the cookie header it will not work!!
+
+scrapy crawl CNNSearchResults -a search_terms_csv="covid-19,vaccine" -a prefix=cnn -a output_dir=/home/7schneid/cnn_crawl -a max_pages=500 -a cookies="!!!THIS NEEDS TO BE SET!!!" -a use_playwright=True -s IMAGES_STORE=/home/7schneid/cnn_crawl/images
+
 # zeit.de search results !! you need to provide the Cookie Header string to consent to cookies (and also for paid articles etc.). Without the cookie header it will not work!!
 
 scrapy crawl ZeitSearchResults -a search_terms_csv="covid-19,Impfung" -a prefix=zeit -a output_dir=/home/7schneid/zeit_crawl -a max_pages=500 -a cookies="!!!THIS NEEDS TO BE SET!!!" -a use_playwright=True -s IMAGES_STORE=/home/7schneid/zeit_crawl/images
