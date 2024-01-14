@@ -65,7 +65,18 @@ class SpiderBase(scrapy.Spider):
         if cookie.startswith("Cookie: "):
             cookie = cookie[8:]
         cookies = cookie.replace(" ", "").split(";")
-        return dict([c.split("=") for c in cookies])
+        cookies_dict = {}
+        for c in cookies:
+            kv = c.split("=")
+            if len(kv) == 2:
+                cookies_dict[kv[0]] = kv[1]
+            elif len(kv) > 2:
+                # some cookies have = in their value
+                cookies_dict[kv[0]] = "=".join(kv[1])
+            else:
+                self.log(f"Invalid cookie: {c}")
+
+        return cookies_dict
 
     def init_item(
         self,
