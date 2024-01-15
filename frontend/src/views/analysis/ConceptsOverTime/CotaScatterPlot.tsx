@@ -24,7 +24,6 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
       }
     });
 
-    console.log(result);
     return result;
   }, [cota]);
 
@@ -34,10 +33,6 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
     content = (
       <Typography>Please add a concept to start the analysis (or make at least one concept visible).</Typography>
     );
-    // } else if (chartData === 0) {
-    //   content = (
-    //     <Typography>Please add a concept to start the analysis (or make at least one concept visible).</Typography>
-    //   );
   } else {
     content = (
       <ResponsiveContainer width="100%" height="100%">

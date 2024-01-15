@@ -157,6 +157,7 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
 
   return (
     <DataGrid
+      key={concept.id}
       rows={cota.search_space}
       columns={columns}
       autoPageSize
@@ -178,6 +179,13 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
           onAnnotateSentences: handleAnnotateSentences,
         },
       }}
+      // always sort by similarity desc by default
+      sortModel={[
+        {
+          field: "similarity",
+          sort: "desc",
+        },
+      ]}
     />
   );
 }

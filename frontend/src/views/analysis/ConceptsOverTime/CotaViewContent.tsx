@@ -4,6 +4,7 @@ import CotaConceptList from "./CotaConceptList";
 import CotaScatterPlot from "./CotaScatterPlot";
 import CotaSentenceAnnotator2 from "./CotaSentenceAnnotator";
 import CotaControl from "./CotaControl";
+import CotaSettings from "./CotaSettings";
 
 interface CotaViewContentProps {
   cota: COTARead;
@@ -15,6 +16,9 @@ function CotaViewContent({ cota }: CotaViewContentProps) {
       <Grid item md={3} className="myFlexContainer h100">
         <Box className="myFlexFitContentContainer" sx={{ mb: 2 }}>
           <CotaControl cota={cota} />
+        </Box>
+        <Box className="myFlexFitContentContainer" sx={{ mb: 2 }}>
+          <CotaSettings cota={cota} />
         </Box>
         <Box className="myFlexFillAllContainerNoScroll">
           <CotaConceptList cota={cota} />

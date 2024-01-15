@@ -109,7 +109,6 @@ function CotaDashboard() {
           project_id: projectId,
           user_id: user.id,
           name: "New Concept Over Time Analysis",
-          concepts: [],
         },
       },
       {

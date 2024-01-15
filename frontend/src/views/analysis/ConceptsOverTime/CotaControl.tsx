@@ -100,12 +100,18 @@ function CotaControl({ cota }: CotaControlProps) {
           <Alert variant="outlined" severity="warning">
             There are concepts without a description. To start the analysis, please add a description to all concepts.
           </Alert>
+        ) : !cota.settings.date_metadata_id ? (
+          <Alert variant="outlined" severity="warning">
+            Date cannot be determined. To start the analysis, please select a date metadata.
+          </Alert>
         ) : null}
 
         <List sx={{ width: "100%", bgcolor: "background.paper" }}>
           <ListItemButton
             onClick={handleRefineCota}
-            disabled={cota.search_space.length > 0 || !hasConceptsWithDescription(cota)}
+            disabled={
+              cota.search_space.length > 0 || !hasConceptsWithDescription(cota) || !cota.settings.date_metadata_id
+            }
           >
             <ListItemIcon>
               <PlayArrowIcon />
