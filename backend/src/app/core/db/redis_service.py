@@ -319,7 +319,6 @@ class RedisService(metaclass=SingletonMeta):
         tj = self.load_cota_job(key=key)
         data = tj.model_dump(exclude={"updated"})
         if len(data) >= 0:
-            print(f"{data=}")
             data.update(**update.model_dump())
             cota = data.pop("cota")
             concepts = cota.pop("concepts")
