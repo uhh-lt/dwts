@@ -46,6 +46,7 @@ export type { COTARead } from "./models/COTARead";
 export type { COTARefinementHyperparameters } from "./models/COTARefinementHyperparameters";
 export type { COTARefinementJobRead } from "./models/COTARefinementJobRead";
 export type { COTASentence } from "./models/COTASentence";
+export type { COTASettings } from "./models/COTASettings";
 export type { COTAUpdate } from "./models/COTAUpdate";
 export type { CrawlerJobParameters } from "./models/CrawlerJobParameters";
 export type { CrawlerJobRead } from "./models/CrawlerJobRead";

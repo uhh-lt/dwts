@@ -27,4 +27,8 @@ export type COTASentence = {
    * Y coordinate of the Sentence in the search space
    */
   y: number;
+  /**
+   * date of the sdoc
+   */
+  date: string;
 };

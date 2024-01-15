@@ -4,6 +4,7 @@
 
 import type { COTAConcept } from "./COTAConcept";
 import type { COTASentence } from "./COTASentence";
+import type { COTASettings } from "./COTASettings";
 
 export type COTARead = {
   /**
@@ -22,6 +23,10 @@ export type COTARead = {
    * Project the ConceptOverTimeAnalysis belongs to
    */
   project_id: number;
+  /**
+   * Settings of the ConceptOverTimeAnalysis.
+   */
+  settings: COTASettings;
   /**
    * List of Concepts that are part of the ConceptOverTimeAnalysis
    */

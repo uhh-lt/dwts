@@ -9729,12 +9729,22 @@
     },
     "/cota/refine/most_recent/{cota_id}": {
       "get": {
-        "tags": ["conceptOverTimeAnalysis"],
+        "tags": [
+          "conceptOverTimeAnalysis"
+        ],
         "summary": "Returns the most recent COTA Refinement Job for the given COTA ID",
         "description": "Returns the most recent COTA Refinement Job for the given COTA ID",
         "operationId": "get_most_recent_cota_job",
         "parameters": [
-          { "name": "cota_id", "in": "path", "required": true, "schema": { "type": "integer", "title": "Cota Id" } }
+          {
+            "name": "cota_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cota Id"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -9742,7 +9752,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [{ "$ref": "#/components/schemas/COTARefinementJobRead" }, { "type": "null" }],
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/COTARefinementJobRead"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
                   "title": "Response Conceptovertimeanalysis-Get Most Recent Cota Job"
                 }
               }
@@ -9750,28 +9767,56 @@
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
     },
     "/cota/reset/{cota_id}": {
       "post": {
-        "tags": ["conceptOverTimeAnalysis"],
+        "tags": [
+          "conceptOverTimeAnalysis"
+        ],
         "summary": "Resets the ConceptOverTimeAnalysis",
         "description": "Resets the ConceptOverTimeAnalysis deleting model, embeddings, refinement jobs and resetting the search space",
         "operationId": "reset_cota",
         "parameters": [
-          { "name": "cota_id", "in": "path", "required": true, "schema": { "type": "integer", "title": "Cota Id" } }
+          {
+            "name": "cota_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cota Id"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/COTARead" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/COTARead"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -10651,22 +10696,13 @@
             "type": "integer",
             "title": "User Id",
             "description": "User the ConceptOverTimeAnalysis belongs to"
-          },
-          "concepts": {
-            "items": {
-              "$ref": "#/components/schemas/COTAConcept"
-            },
-            "type": "array",
-            "title": "Concepts",
-            "description": "List of Concepts that are part of the ConceptOverTimeAnalysis"
           }
         },
         "type": "object",
         "required": [
           "name",
           "project_id",
-          "user_id",
-          "concepts"
+          "user_id"
         ],
         "title": "COTACreate"
       },
@@ -10691,6 +10727,14 @@
             "type": "integer",
             "title": "Project Id",
             "description": "Project the ConceptOverTimeAnalysis belongs to"
+          },
+          "settings": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/COTASettings"
+              }
+            ],
+            "description": "Settings of the ConceptOverTimeAnalysis."
           },
           "concepts": {
             "items": {
@@ -10727,6 +10771,7 @@
           "id",
           "user_id",
           "project_id",
+          "settings",
           "concepts",
           "search_space",
           "created",
@@ -10871,6 +10916,12 @@
             "type": "number",
             "title": "Y",
             "description": "Y coordinate of the Sentence in the search space"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date",
+            "description": "date of the sdoc"
           }
         },
         "type": "object",
@@ -10880,9 +10931,43 @@
           "concept_similarities",
           "concept_annotation",
           "x",
-          "y"
+          "y",
+          "date"
         ],
         "title": "COTASentence"
+      },
+      "COTASettings": {
+        "properties": {
+          "group_by": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateGroupBy"
+              }
+            ],
+            "description": "Group by date",
+            "default": "YEAR"
+          },
+          "date_metadata_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Metadata Id",
+            "description": "ID of the Project Date Metadata that is used for the ConceptOverTimeAnalysis"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold",
+            "description": "Threshold of the ConceptOverTimeAnalysis",
+            "default": 0.9
+          }
+        },
+        "type": "object",
+        "title": "COTASettings"
       },
       "COTAUpdate": {
         "properties": {
@@ -10897,6 +10982,17 @@
             ],
             "title": "Name",
             "description": "Name of the ConceptOverTimeAnalysis"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/COTASettings"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Settings of the ConceptOverTimeAnalysis."
           },
           "concepts": {
             "anyOf": [
