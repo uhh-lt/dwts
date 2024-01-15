@@ -176,7 +176,7 @@ class COTAService(metaclass=SingletonMeta):
         create_dto = COTARefinementJobCreate(cota=cota, hyperparams=hyperparams)
 
         job = self.redis.store_cota_job(create_dto)
-        logger.info(f"Created and prepared COTA Refinement job: {job}")
+        logger.info(f"Created and prepared COTA Refinement job ID: {job.id}")
 
         start_cota_refinement_job_async(cota_job_id=job.id)  # FIXME
 
@@ -191,7 +191,9 @@ class COTAService(metaclass=SingletonMeta):
         pipeline = build_cota_refinement_pipeline()
 
         job: COTARefinementJobRead = self.redis.load_cota_job(job_id)
-        logger.info(f"Starting COTA Refinement job: {job} " f"for COTA {job.cota.id}")
+        logger.info(
+            f"Starting COTA Refinement job ID: {job.id} for COTA ID: {job.cota.id}"
+        )
 
         job.status = BackgroundJobStatus.RUNNING
         job = self.redis.store_cota_job(job)
