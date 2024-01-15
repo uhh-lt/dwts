@@ -126,8 +126,6 @@ def init_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
                 for cota_sent in cargo.data["search_space"]
             ]
         )
-        # TODO: Kann man die Embeddings einfach nehmen? Ist die Reihnfolge der Embeddings gleich der Reihenfolge der COTASentences?
-        # Könnte eine Ursache für Bugs sein!
         search_space_embeddings = np.array(search_space_embeddings_list)
         # 2. Reduce the embeddings with UMAP (or do we want to use PCA here?)
         reducer = umap.UMAP(n_components=UMAP_DIMENSIONS)
