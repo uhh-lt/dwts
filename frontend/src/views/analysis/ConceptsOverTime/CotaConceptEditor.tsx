@@ -3,16 +3,17 @@ import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, 
 import { useEffect, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { SubmitErrorHandler, SubmitHandler, useForm } from "react-hook-form";
+import { COTAConcept } from "../../../api/openapi";
 import { useAppSelector } from "../../../plugins/ReduxHooks";
 import ColorUtils from "../../../utils/ColorUtils";
-import { COTAConcept } from "../../../api/openapi";
 
 interface CotaConceptEditorProps {
   onUpdate: (concept: COTAConcept) => void;
   onCancel: (concept: COTAConcept) => void;
+  isDescriptionEditable: boolean;
 }
 
-function CotaConceptEditor({ onUpdate, onCancel }: CotaConceptEditorProps) {
+function CotaConceptEditor({ onUpdate, onCancel, isDescriptionEditable }: CotaConceptEditorProps) {
   // local state
   const [color, setColor] = useState("#000000");
 
@@ -73,8 +74,15 @@ function CotaConceptEditor({ onUpdate, onCancel }: CotaConceptEditorProps) {
               key={`${currentConcept.id}-description`}
               {...register("description", { required: "Description is required" })}
               error={Boolean(errors.description)}
-              helperText={<ErrorMessage errors={errors} name="description" />}
+              helperText={
+                isDescriptionEditable ? (
+                  <ErrorMessage errors={errors} name="description" />
+                ) : (
+                  "Please reset the analysis to edit the concept description."
+                )
+              }
               InputLabelProps={{ shrink: true }}
+              disabled={!isDescriptionEditable}
             />
             <Stack direction="row">
               <TextField

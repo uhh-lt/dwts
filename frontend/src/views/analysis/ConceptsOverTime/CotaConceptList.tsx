@@ -1,6 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import InfoIcon from "@mui/icons-material/Info";
-import { Button, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
+import { ListItemButton, ListItemIcon, Tooltip } from "@mui/material";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks";
 import CotaConceptEditor from "./CotaConceptEditor";
 import CotaConceptListItem from "./CotaConceptListItem";
 import { CotaActions } from "./cotaSlice";
-import SnackbarAPI from "../../../features/Snackbar/SnackbarAPI";
+import { canAddNewConcept, canDeleteConcept, canEditConceptDescription } from "./cotaUtils";
 
 interface CotaConceptListProps {
   cota: COTARead;
@@ -27,7 +27,6 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
 
   // mutations
   const updateCota = CotaHooks.useUpdateCota();
-  const refineCota = CotaHooks.useRefineCota();
 
   // actions
   const handleAddConcept = () => {
@@ -104,22 +103,6 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
     dispatch(CotaActions.onCancelConceptEdit());
   };
 
-  const handleRefineCota = () => {
-    refineCota.mutate(
-      {
-        cotaId: cota.id,
-      },
-      {
-        onSuccess(data, variables, context) {
-          SnackbarAPI.openSnackbar({
-            text: `Refining CotA '${data.cota.name}', Job ID: '${data.id}'`,
-            severity: "success",
-          });
-        },
-      },
-    );
-  };
-
   const handleSelectConcept = (concept: COTAConcept) => {
     dispatch(CotaActions.onSelectConcept({ conceptId: concept.id }));
   };
@@ -138,17 +121,17 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
           subheader="The concepts to be analyzed in the timeline"
         />
         <CardContent className="myFlexFillAllContainer">
-          <Button>Reset</Button>
-          <Button onClick={handleRefineCota}>Start</Button>
           <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleAddConcept}>
-                <ListItemIcon>
-                  <AddIcon />
-                </ListItemIcon>
-                <ListItemText primary="Add new concept" />
-              </ListItemButton>
-            </ListItem>
+            <Tooltip title={canAddNewConcept(cota) ? undefined : "Reset the analysis to add new concepts"} followCursor>
+              <span>
+                <ListItemButton onClick={handleAddConcept} disabled={!canAddNewConcept(cota)}>
+                  <ListItemIcon>
+                    <AddIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Add new concept" />
+                </ListItemButton>
+              </span>
+            </Tooltip>
             {cota.concepts.map((concept) => (
               <CotaConceptListItem
                 key={concept.id}
@@ -158,12 +141,17 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
                 onEditClick={handleStartEditConcept}
                 onDeleteClick={handleDeleteConcept}
                 onToggleVisibilityClick={handleToggleVisibilityConcept}
+                isDeleteEnabled={canDeleteConcept(cota)}
               />
             ))}
           </List>
         </CardContent>
       </Card>
-      <CotaConceptEditor onUpdate={handleApplyConceptChanges} onCancel={handleCancelConceptChanges} />
+      <CotaConceptEditor
+        onUpdate={handleApplyConceptChanges}
+        onCancel={handleCancelConceptChanges}
+        isDescriptionEditable={canEditConceptDescription(cota)}
+      />
     </>
   );
 }

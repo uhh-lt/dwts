@@ -199,7 +199,7 @@ function CotaDashboard() {
           elevation={2}
           className="myFlexFillAllContainer myFlexContainer"
         >
-          <CardHeader title="Create table" />
+          <CardHeader title="Create Concept Over Time Analysis" />
           <CardContent className="myFlexFillAllContainer">
             <Box height="100%" overflow="auto" whiteSpace="nowrap">
               <CreateCotaCard
@@ -215,7 +215,7 @@ function CotaDashboard() {
           elevation={2}
           className="myFlexFillAllContainer myFlexContainer"
         >
-          <CardHeader title="Load table" />
+          <CardHeader title="Load Concept Over Time Analysis" />
           <CardContent className="myFlexFillAllContainer" style={{ padding: 0 }}>
             <div className="h100" style={{ width: "100%" }}>
               <DataGrid

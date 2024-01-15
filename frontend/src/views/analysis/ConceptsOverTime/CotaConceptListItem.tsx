@@ -14,6 +14,7 @@ interface CotaConceptListItemProps {
   onEditClick: (concept: COTAConcept) => void;
   onDeleteClick: (concept: COTAConcept) => void;
   onToggleVisibilityClick: (concept: COTAConcept) => void;
+  isDeleteEnabled: boolean;
 }
 
 function CotaConceptListItem({
@@ -23,6 +24,7 @@ function CotaConceptListItem({
   onEditClick,
   onDeleteClick,
   onToggleVisibilityClick,
+  isDeleteEnabled,
 }: CotaConceptListItemProps) {
   return (
     <ListItem
@@ -41,10 +43,20 @@ function CotaConceptListItem({
               <EditIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title={"Delete concept"} enterDelay={500}>
-            <IconButton edge="end" aria-label="delete" onClick={() => onDeleteClick(concept)}>
-              <DeleteIcon />
-            </IconButton>
+          <Tooltip
+            title={isDeleteEnabled ? "Delete concept" : "Please reset the analysis to delete concepts"}
+            enterDelay={500}
+          >
+            <span>
+              <IconButton
+                edge="end"
+                aria-label="delete"
+                onClick={() => onDeleteClick(concept)}
+                disabled={!isDeleteEnabled}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </span>
           </Tooltip>
         </>
       }

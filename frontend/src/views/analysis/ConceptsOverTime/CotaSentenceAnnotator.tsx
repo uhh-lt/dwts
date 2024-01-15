@@ -47,7 +47,7 @@ function CotaSentenceAnnotator2({ cota }: CotaSentenceAnnotatorProps) {
         title={selectedConcept ? `Similar sentences for concept '${selectedConcept.name}'` : "Similar sentences"}
         subheader="Annotate sentences to improve the timeline analysis"
       />
-      <CardContent className="myFlexFillAllContainer" style={{ padding: 0 }}>
+      <CardContent className="myFlexFillAllContainer" style={{ ...(selectedConcept && { padding: 0 }) }}>
         {!selectedConcept ? (
           <>Select a concept from the concept list to see similar sentences</>
         ) : (
@@ -129,10 +129,10 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
     // toggle concept annotation for each checked sentence
     sentences.forEach((sentence) => {
       const sentenceId = `${sentence.sdoc_id}-${sentence.sentence_id}`;
-      if (!searchSpaceDict[sentenceId].concept_annotation) {
-        searchSpaceDict[sentenceId].concept_annotation = concept.id;
-      } else {
+      if (searchSpaceDict[sentenceId].concept_annotation === concept.id) {
         searchSpaceDict[sentenceId].concept_annotation = null;
+      } else {
+        searchSpaceDict[sentenceId].concept_annotation = concept.id;
       }
     });
 
