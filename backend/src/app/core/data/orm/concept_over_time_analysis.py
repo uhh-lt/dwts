@@ -30,6 +30,14 @@ class ConceptOverTimeAnalysisORM(ORMBase):
         index=False,
     )
 
+    # JSON representation of COTASettings
+    settings: Mapped[str] = mapped_column(
+        String,
+        server_default="{}",
+        nullable=False,
+        index=False,
+    )
+
     created: Mapped[Optional[datetime]] = mapped_column(
         DateTime, server_default=func.now(), index=False
     )

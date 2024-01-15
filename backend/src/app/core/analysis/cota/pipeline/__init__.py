@@ -6,6 +6,7 @@ from app.core.analysis.cota.pipeline.pipeline import COTARefinementPipeline
 @lru_cache(maxsize=1)
 def build_cota_refinement_pipeline(foo: str = "bar") -> COTARefinementPipeline:
     from app.core.analysis.cota.pipeline.steps.toy import (
+        add_date_to_search_space,
         compute_result,
         init_or_find_concept_embedding_model,
         init_or_load_initial_search_space,
@@ -29,6 +30,10 @@ def build_cota_refinement_pipeline(foo: str = "bar") -> COTARefinementPipeline:
     pipeline.register_step(
         compute_result,
         required_data=["search_space", "refined_search_space_reduced_embeddings"],
+    )
+    pipeline.register_step(
+        add_date_to_search_space,
+        required_data=["search_space"],
     )
     pipeline.register_step(store_search_space_in_db, required_data=["search_space"])
 

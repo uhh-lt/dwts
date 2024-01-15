@@ -11,7 +11,6 @@ from app.core.data.crud.concept_over_time_analysis import crud_cota
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.concept_over_time_analysis import (
     COTACreate,
-    COTACreateAsInDB,
     COTARead,
     COTARefinementHyperparameters,
     COTARefinementJobCreate,
@@ -22,6 +21,7 @@ from app.core.data.dto.concept_over_time_analysis import (
 )
 from app.core.data.repo.repo_service import RepoService
 from app.core.db.redis_service import RedisService
+from app.core.db.sql_service import SQLService
 from app.core.search.elasticsearch_service import ElasticSearchService
 from app.core.search.simsearch_service import SimSearchService
 from app.trainer.trainer_service import TrainerService
@@ -35,6 +35,7 @@ class COTAService(metaclass=SingletonMeta):
         cls.es: ElasticSearchService = ElasticSearchService()
         cls.redis: RedisService = RedisService()
         cls.repo: RepoService = RepoService()
+        cls.sqls: SQLService = SQLService()
 
         cls.max_search_space_per_concept: int = 1000
         cls.search_space_sim_search_threshold: float = 0.5
@@ -68,14 +69,7 @@ class COTAService(metaclass=SingletonMeta):
         return cota
 
     def create(self, db: Session, cota_create: COTACreate) -> COTARead:
-        # convert the provided concepts to json string
-        concepts_str = srsly.json_dumps(jsonable_encoder(cota_create.concepts))
-        create_dto_as_in_db = COTACreateAsInDB(
-            **cota_create.model_dump(exclude={"concepts"}, exclude_none=True),
-            concepts=concepts_str,
-        )
-
-        db_obj = crud_cota.create(db=db, create_dto=create_dto_as_in_db)
+        db_obj = crud_cota.create(db=db, create_dto=cota_create)
         return COTARead.model_validate(db_obj)
 
     def read_by_id(self, *, db: Session, cota_id: int) -> COTARead:
@@ -106,7 +100,7 @@ class COTAService(metaclass=SingletonMeta):
 
         update_dto_as_in_db = COTAUpdateAsInDB(
             **cota_update.model_dump(
-                exclude={"concepts", "search_space"},
+                exclude={"concepts", "search_space", "settings"},
                 exclude_none=True,
             ),
         )
@@ -120,6 +114,10 @@ class COTAService(metaclass=SingletonMeta):
                 jsonable_encoder(cota_update.search_space)
             )
             update_dto_as_in_db.search_space = search_space_str
+
+        if cota_update.settings is not None:
+            settings_str = srsly.json_dumps(jsonable_encoder(cota_update.settings))
+            update_dto_as_in_db.settings = settings_str
 
         # update the cota in db
         db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)

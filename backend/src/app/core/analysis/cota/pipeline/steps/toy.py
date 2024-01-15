@@ -56,6 +56,8 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
         cargo.data["search_space"] = cota.search_space
         return cargo
 
+    from datetime import datetime
+
     from app.core.search.simsearch_service import SimSearchService
 
     sims: SimSearchService = SimSearchService()
@@ -86,6 +88,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
                     concept_similarities={concept.id: 0.0 for concept in cota.concepts},
                     x=0.0,
                     y=0.0,
+                    date=datetime.now(),
                 ),
             )
             cota_sentence.concept_similarities[concept.id] = sent.score
@@ -319,6 +322,55 @@ def compute_result(cargo: Cargo) -> Cargo:
     for sentence, coordinates in zip(search_space, visual_refined_embeddings):
         sentence.x = coordinates[0]
         sentence.y = coordinates[1]
+
+    return cargo
+
+
+def add_date_to_search_space(cargo: Cargo) -> Cargo:
+    from datetime import datetime
+
+    from app.core.data.orm.source_document import SourceDocumentORM
+    from app.core.data.orm.source_document_metadata import SourceDocumentMetadataORM
+    from app.core.db.sql_service import SQLService
+
+    sqls: SQLService = SQLService()
+
+    # 1. read the required data
+    search_space: List[COTASentence] = cargo.data["search_space"]
+    sdoc_ids = [cota_sent.sdoc_id for cota_sent in search_space]
+
+    # 2. find the date for every sdoc that is in the search space
+    sdoc_id_to_date: Dict[int, datetime] = dict()
+
+    # this is only possible if the cota has a date_metadata_id
+    if cargo.job.cota.settings.date_metadata_id is not None:
+        with sqls.db_session() as db:
+            query = (
+                db.query(
+                    SourceDocumentORM.id,
+                    SourceDocumentMetadataORM.date_value,
+                )
+                .join(SourceDocumentORM.metadata_)
+                .filter(
+                    SourceDocumentORM.id.contains(sdoc_ids),
+                    SourceDocumentMetadataORM.project_metadata_id
+                    == cargo.job.cota.settings.date_metadata_id,
+                    SourceDocumentMetadataORM.date_value.isnot(None),
+                )
+            )
+            result_rows = query.all()
+
+        for row in result_rows:
+            sdoc_id_to_date[row[0]] = row[1]
+
+    # otherwise, we set the date to today for every sdoc
+    else:
+        for sdoc_id in sdoc_ids:
+            sdoc_id_to_date[sdoc_id] = datetime.now()
+
+    # 3. update search_space with the date
+    for sentence in search_space:
+        sentence.date = sdoc_id_to_date[sentence.sdoc_id]
 
     return cargo
 

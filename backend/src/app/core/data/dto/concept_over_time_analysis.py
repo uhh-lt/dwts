@@ -6,6 +6,7 @@ import srsly
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.functional_validators import field_validator
 
+from app.core.data.dto.analysis import DateGroupBy
 from app.core.data.dto.background_job_base import (
     BackgroundJobBase,
     BackgroundJobBaseUpdate,
@@ -30,6 +31,7 @@ class COTASentence(BaseModel):
     )
     x: float = Field(description="X coordinate of the Sentence in the search space")
     y: float = Field(description="Y coordinate of the Sentence in the search space")
+    date: datetime = Field(description="date of the sdoc")
 
 
 class COTAConcept(BaseModel):
@@ -38,6 +40,17 @@ class COTAConcept(BaseModel):
     description: str = Field(description="Description of the Concept")
     color: str = Field(description="Color of the Concept")
     visible: bool = Field(description="Visibility of the Concept")
+
+
+class COTASettings(BaseModel):
+    group_by: DateGroupBy = Field(description="Group by date", default=DateGroupBy.YEAR)
+    date_metadata_id: Optional[int] = Field(
+        description="ID of the Project Date Metadata that is used for the ConceptOverTimeAnalysis",
+        default=None,
+    )
+    threshold: float = Field(
+        description="Threshold of the ConceptOverTimeAnalysis", default=0.9
+    )
 
 
 ####################
@@ -54,24 +67,15 @@ class COTACreate(ConceptOverTimeAnalysisBaseDTO):
         description="Project the ConceptOverTimeAnalysis belongs to"
     )
     user_id: int = Field(description="User the ConceptOverTimeAnalysis belongs to")
-    concepts: List[COTAConcept] = Field(
-        description="List of Concepts that are part of the ConceptOverTimeAnalysis"
-    )
-
-
-class COTACreateAsInDB(ConceptOverTimeAnalysisBaseDTO):
-    project_id: int = Field(
-        description="Project the ConceptOverTimeAnalysis belongs to"
-    )
-    user_id: int = Field(description="User the ConceptOverTimeAnalysis belongs to")
-    concepts: str = Field(
-        description="JSON string of List of Concepts that are part of the ConceptOverTimeAnalysis"
-    )
 
 
 class COTAUpdate(BaseModel, UpdateDTOBase):
     name: Optional[str] = Field(
         description="Name of the ConceptOverTimeAnalysis",
+        default=None,
+    )
+    settings: Optional[COTASettings] = Field(
+        description="Settings of the ConceptOverTimeAnalysis.",
         default=None,
     )
     concepts: Optional[List[COTAConcept]] = Field(
@@ -90,6 +94,10 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
 class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
     name: Optional[str] = Field(
         description="Name of the ConceptOverTimeAnalysis",
+        default=None,
+    )
+    settings: Optional[str] = Field(
+        description="JSON Representation of the Settings of the ConceptOverTimeAnalysis.",
         default=None,
     )
     concepts: Optional[str] = Field(
@@ -113,6 +121,9 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
     user_id: int = Field(description="User the ConceptOverTimeAnalysis belongs to")
     project_id: int = Field(
         description="Project the ConceptOverTimeAnalysis belongs to"
+    )
+    settings: COTASettings = Field(
+        description="Settings of the ConceptOverTimeAnalysis."
     )
     concepts: List[COTAConcept] = Field(
         description="List of Concepts that are part of the ConceptOverTimeAnalysis"
@@ -176,6 +187,22 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
         raise ValueError(
             "Invalid value for search_space. "
             "Must be a JSON string or a list of COTASentences."
+        )
+
+    @field_validator("settings", mode="before")
+    @classmethod
+    def json_loads_settings(cls, v: Union[str, dict]) -> COTASettings:
+        if isinstance(v, str):
+            # v is a JSON string from the DB
+            data = srsly.json_loads(v)
+            if isinstance(data, dict):
+                return COTASettings(**data)
+        elif isinstance(v, dict):
+            return COTASettings(**v)
+
+        raise ValueError(
+            "Invalid value for settings. "
+            "Must be a JSON string or a dict of COTASettings."
         )
 
     model_config = ConfigDict(from_attributes=True)

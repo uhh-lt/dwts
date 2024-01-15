@@ -26,6 +26,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("concepts", sa.String(), server_default="[]", nullable=False),
         sa.Column("search_space", sa.String(), server_default="[]", nullable=False),
+        sa.Column("settings", sa.String(), server_default="{}", nullable=False),
         sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=True
         ),
