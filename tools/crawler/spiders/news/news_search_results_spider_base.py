@@ -1,4 +1,5 @@
 import datetime
+import random
 from typing import List, Set
 
 import scrapy
@@ -10,6 +11,11 @@ from crawler.spiders.utils import slugify
 
 
 class NewsSearchResultsSpiderBase(SpiderBase):
+    def __str_to_bool(self, s: str | bool) -> bool:
+        if isinstance(s, bool):
+            return s
+        return s.lower() in ["true", "1", "yes", "y"]
+
     @classmethod
     def update_settings(cls, settings):
         # see https://docs.scrapy.org/en/latest/topics/settings.html#settings-per-spider
@@ -47,6 +53,7 @@ class NewsSearchResultsSpiderBase(SpiderBase):
         search_terms_csv: str,
         max_pages: int = 3,
         scrape_articles: bool = True,
+        random_page_traversal: bool = False,
         *args,
         **kwargs,
     ):
@@ -57,9 +64,8 @@ class NewsSearchResultsSpiderBase(SpiderBase):
         self.search_terms = search_terms_csv.split(",")
         self.max_pages = int(max_pages)
         self.start_urls = [self._build_current_search_results_url(results_page=1)]
-        if isinstance(scrape_articles, str):
-            scrape_articles = scrape_articles.lower() in ["true", "1", "yes", "y"]
-        self.scrape_articles = scrape_articles
+        self.scrape_articles = self.__str_to_bool(scrape_articles)
+        self.random_page_traversal = self.__str_to_bool(random_page_traversal)
         self.all_article_urls: Set[str] = set()
 
     def _build_current_search_results_url(self, results_page: int) -> str:
@@ -125,7 +131,10 @@ class NewsSearchResultsSpiderBase(SpiderBase):
                     )
 
             # visit every other search results page
-            for page in range(2, num_result_pages + 1):
+            page_urls = list(range(2, num_result_pages + 1))
+            if self.random_page_traversal:
+                random.shuffle(page_urls)
+            for page in page_urls:
                 if page > self.max_pages:
                     break
                 next_page_url = self._build_current_search_results_url(
