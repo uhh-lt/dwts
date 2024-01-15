@@ -335,13 +335,7 @@ class RedisService(metaclass=SingletonMeta):
     def delete_all_cota_job_by_cota_id(
         self, cota_id: int
     ) -> List[COTARefinementJobRead]:
-        client = self._get_client("cota")
-        all_cota_jobs: List[COTARefinementJobRead] = [
-            self.load_cota_job(str(key, "utf-8")) for key in client.keys()
-        ]
-        all_cota_jobs_by_cota_id = [
-            job for job in all_cota_jobs if job.cota.id == cota_id
-        ]
+        all_cota_jobs_by_cota_id = self.get_all_cota_jobs_by_cota_id(cota_id=cota_id)
         for cota_job in all_cota_jobs_by_cota_id:
             self.delete_cota_job(cota_job.id)
         return all_cota_jobs_by_cota_id
@@ -357,6 +351,25 @@ class RedisService(metaclass=SingletonMeta):
             return all_cota_jobs
         else:
             return [job for job in all_cota_jobs if job.cota.project_id == project_id]
+
+    def get_all_cota_jobs_by_cota_id(self, cota_id: int) -> List[COTARefinementJobRead]:
+        client = self._get_client("cota")
+        all_cota_jobs: List[COTARefinementJobRead] = [
+            self.load_cota_job(str(key, "utf-8")) for key in client.keys()
+        ]
+        all_cota_jobs_by_cota_id = [
+            job for job in all_cota_jobs if job.cota.id == cota_id
+        ]
+        return all_cota_jobs_by_cota_id
+
+    def get_most_recent_cota_job_by_cota_id(
+        self, cota_id: int
+    ) -> Optional[COTARefinementJobRead]:
+        all_cota_jobs_by_cota_id = self.get_all_cota_jobs_by_cota_id(cota_id=cota_id)
+        if len(all_cota_jobs_by_cota_id) == 0:
+            return None
+        else:
+            return sorted(all_cota_jobs_by_cota_id, key=lambda x: x.updated)[-1]
 
     def store_feedback(self, feedback: FeedbackCreate) -> FeedbackRead:
         client = self._get_client("feedback")

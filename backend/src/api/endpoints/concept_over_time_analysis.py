@@ -133,6 +133,19 @@ async def get_cota_job(
     return redis.load_cota_job(cota_job_id)
 
 
+@router.get(
+    "/refine/most_recent/{cota_id}",
+    response_model=Optional[COTARefinementJobRead],
+    summary="Returns the most recent COTA Refinement Job for the given COTA ID",
+    description="Returns the most recent COTA Refinement Job for the given COTA ID",
+)
+async def get_most_recent_cota_job(
+    *,
+    cota_id: int,
+) -> Optional[COTARefinementJobRead]:
+    return redis.get_most_recent_cota_job_by_cota_id(cota_id=cota_id)
+
+
 @router.post(
     "/reset/{cota_id}",
     response_model=COTARead,
