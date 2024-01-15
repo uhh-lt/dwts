@@ -9,7 +9,7 @@ def build_cota_refinement_pipeline(foo: str = "bar") -> COTARefinementPipeline:
         compute_result,
         init_or_find_concept_embedding_model,
         init_or_load_initial_search_space,
-        init_or_load_search_space_reduced_embeddings,
+        init_search_space_reduced_embeddings,
         refine_search_space_reduced_embeddings_with_cem,
         store_search_space_in_db,
         train_cem,
@@ -19,7 +19,7 @@ def build_cota_refinement_pipeline(foo: str = "bar") -> COTARefinementPipeline:
 
     pipeline.register_step(init_or_load_initial_search_space, required_data=[])
     pipeline.register_step(
-        init_or_load_search_space_reduced_embeddings, required_data=["search_space"]
+        init_search_space_reduced_embeddings, required_data=["search_space"]
     )
     pipeline.register_step(init_or_find_concept_embedding_model, required_data=[])
     pipeline.register_step(train_cem, required_data=[])

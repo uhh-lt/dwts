@@ -98,7 +98,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     return cargo
 
 
-def init_or_load_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
+def init_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
     import numpy as np
     import torch
     import umap
@@ -301,6 +301,7 @@ def compute_result(cargo: Cargo) -> Cargo:
         for concept in cargo.job.cota.concepts:
             concept_embedding = concept_embeddings[concept.id]
             sims = concept_embedding @ refined_embeddings.T
+            # TODO: normalize?
             concept_similarities[concept.id] = sims.tolist()
 
         # 2.3 update search_space with the concept similarities
