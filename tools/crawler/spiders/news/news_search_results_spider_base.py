@@ -1,7 +1,8 @@
 import datetime
-from typing import List
+from typing import List, Set
 
 import scrapy
+import srsly
 
 from crawler.items import GenericWebsiteItem
 from crawler.spiders.spider_base import SpiderBase
@@ -40,11 +41,12 @@ class NewsSearchResultsSpiderBase(SpiderBase):
             priority="spider",
         )
 
-    # provide arguments using the -a option
+    # provide arguments using the -a option (they will be passed as strings!)
     def __init__(
         self,
         search_terms_csv: str,
         max_pages: int = 3,
+        scrape_articles: bool = True,
         *args,
         **kwargs,
     ):
@@ -55,6 +57,10 @@ class NewsSearchResultsSpiderBase(SpiderBase):
         self.search_terms = search_terms_csv.split(",")
         self.max_pages = int(max_pages)
         self.start_urls = [self._build_current_search_results_url(results_page=1)]
+        if isinstance(scrape_articles, str):
+            scrape_articles = scrape_articles.lower() in ["true", "1", "yes", "y"]
+        self.scrape_articles = scrape_articles
+        self.all_article_urls: Set[str] = set()
 
     def _build_current_search_results_url(self, results_page: int) -> str:
         raise NotImplementedError
@@ -102,17 +108,21 @@ class NewsSearchResultsSpiderBase(SpiderBase):
         if response.url in self.start_urls:
             # get the number of search results pages
             num_result_pages = self._get_num_result_pages(response)
+            self.log(f"Found {num_result_pages} search results pages.")
 
             # find the urls of the articles of the first results page
             article_urls = self._get_article_urls(response)
+            self.all_article_urls.update(article_urls)
 
             # visit every article of the fist results page
-            for url in article_urls:
-                yield scrapy.Request(
-                    url,
-                    callback=self.parse,
-                    cookies=self.cookies,
-                )
+            if self.scrape_articles:
+                for url in article_urls:
+                    yield scrapy.Request(
+                        url,
+                        callback=self.parse,
+                        cookies=self.cookies,
+                        meta={"playwright": True} if self.use_playwright else None,
+                    )
 
             # visit every other search results page
             for page in range(2, num_result_pages + 1):
@@ -132,16 +142,23 @@ class NewsSearchResultsSpiderBase(SpiderBase):
         if self._is_search_results_page(response):
             # find the urls of the articles of the this results page
             article_urls = self._get_article_urls(response)
+            self.all_article_urls.update(article_urls)
 
             # visit every article of the this results page
-            for url in article_urls:
-                yield scrapy.Request(
-                    url,
-                    callback=self.parse,
-                    cookies=self.cookies,
-                    meta={"playwright": True} if self.use_playwright else None,
-                )
+            if self.scrape_articles:
+                for url in article_urls:
+                    yield scrapy.Request(
+                        url,
+                        callback=self.parse,
+                        cookies=self.cookies,
+                        meta={"playwright": True} if self.use_playwright else None,
+                    )
 
         # if on an article page
         else:
             yield self._parse_article(response)
+
+    def __del__(self):
+        fn = self.output_dir / "all_article_urls.json"
+        print(f"Saving {len(self.all_article_urls)} articles to {fn}.")
+        srsly.write_json(fn, list(self.all_article_urls))
