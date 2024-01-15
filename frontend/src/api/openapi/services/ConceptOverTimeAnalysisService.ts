@@ -166,4 +166,42 @@ export class ConceptOverTimeAnalysisService {
       },
     });
   }
+
+  /**
+   * Returns the most recent COTA Refinement Job for the given COTA ID
+   * Returns the most recent COTA Refinement Job for the given COTA ID
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static getMostRecentCotaJob({ cotaId }: { cotaId: number }): CancelablePromise<COTARefinementJobRead | null> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/cota/refine/most_recent/{cota_id}",
+      path: {
+        cota_id: cotaId,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+
+  /**
+   * Resets the ConceptOverTimeAnalysis
+   * Resets the ConceptOverTimeAnalysis deleting model, embeddings, refinement jobs and resetting the search space
+   * @returns COTARead Successful Response
+   * @throws ApiError
+   */
+  public static resetCota({ cotaId }: { cotaId: number }): CancelablePromise<COTARead> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/cota/reset/{cota_id}",
+      path: {
+        cota_id: cotaId,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
 }

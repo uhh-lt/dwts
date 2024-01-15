@@ -149,6 +149,8 @@ export const QueryKey = {
   COTAS_PROJECT_USER: "cotasProjectUser",
   // a single COTARefinementJob (by refinement job id)
   COTA_REFINEMENT_JOB: "cotaRefinementJob",
+  // the most recent COTARefinementJob of a cota (by cota id)
+  COTA_MOST_RECENT_REFINEMENT_JOB: "cotaMostRecentRefinementJob",
 
   // a single WHITEBOARD (by WHITEBOARD id)
   WHITEBOARD: "whiteboard",

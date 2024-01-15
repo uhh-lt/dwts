@@ -9726,6 +9726,55 @@
           }
         }
       }
+    },
+    "/cota/refine/most_recent/{cota_id}": {
+      "get": {
+        "tags": ["conceptOverTimeAnalysis"],
+        "summary": "Returns the most recent COTA Refinement Job for the given COTA ID",
+        "description": "Returns the most recent COTA Refinement Job for the given COTA ID",
+        "operationId": "get_most_recent_cota_job",
+        "parameters": [
+          { "name": "cota_id", "in": "path", "required": true, "schema": { "type": "integer", "title": "Cota Id" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [{ "$ref": "#/components/schemas/COTARefinementJobRead" }, { "type": "null" }],
+                  "title": "Response Conceptovertimeanalysis-Get Most Recent Cota Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        }
+      }
+    },
+    "/cota/reset/{cota_id}": {
+      "post": {
+        "tags": ["conceptOverTimeAnalysis"],
+        "summary": "Resets the ConceptOverTimeAnalysis",
+        "description": "Resets the ConceptOverTimeAnalysis deleting model, embeddings, refinement jobs and resetting the search space",
+        "operationId": "reset_cota",
+        "parameters": [
+          { "name": "cota_id", "in": "path", "required": true, "schema": { "type": "integer", "title": "Cota Id" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/COTARead" } } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        }
+      }
     }
   },
   "components": {
