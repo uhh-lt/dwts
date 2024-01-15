@@ -481,7 +481,14 @@ class SimSearchService(metaclass=SingletonMeta):
                 )
             )
             result = query.do()["data"]["Get"][self._sentence_class_name]
-            return [r["_additional"]["vector"] for r in result]
+            result_dict = {
+                f'{r["sdoc_id"]}-{r["sentence_id"]}': r["_additional"]["vector"]
+                for r in result
+            }
+            sorted_res = []
+            for sentence_id, sdoc_id in batch:
+                sorted_res.append(result_dict[f"{sdoc_id}-{sentence_id}"])
+            return sorted_res
 
         embeddings = []
         batch = search_tuples
