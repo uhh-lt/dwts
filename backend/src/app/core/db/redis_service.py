@@ -6,9 +6,12 @@ import redis
 from loguru import logger
 
 from app.core.data.dto.concept_over_time_analysis import (
+    COTAConcept,
+    COTARead,
     COTARefinementJobCreate,
     COTARefinementJobRead,
     COTARefinementJobUpdate,
+    COTASentence,
 )
 from app.core.data.dto.crawler_job import (
     CrawlerJobCreate,
@@ -314,10 +317,20 @@ class RedisService(metaclass=SingletonMeta):
         self, key: str, update: COTARefinementJobUpdate
     ) -> COTARefinementJobRead:
         tj = self.load_cota_job(key=key)
-        data = tj.model_dump(exclude_none=True, exclude={"updated"})
+        data = tj.model_dump(exclude={"updated"})
         if len(data) >= 0:
+            print(f"{data=}")
             data.update(**update.model_dump())
-            tj = COTARefinementJobRead(**data, updated=datetime.now())
+            cota = data.pop("cota")
+            concepts = cota.pop("concepts")
+            search_space = cota.pop("search_space")
+            data["cota"] = COTARead(
+                **cota,
+                concepts=[COTAConcept(**concept) for concept in concepts],
+                search_space=[COTASentence(**sentence) for sentence in search_space],
+            )
+            data["updated"] = datetime.now()
+            tj = COTARefinementJobRead(**data)
             tj = self.store_cota_job(cota_job=tj)
             logger.debug(f"Updated COTARefinementJob {key}")
         return tj
