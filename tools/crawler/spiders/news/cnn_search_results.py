@@ -20,6 +20,10 @@ class CNNSearchResultsSpider(NewsSearchResultsSpiderBase):
     web_search_base_url = "https://edition.cnn.com/search"
 
     def _build_current_search_results_url(self, results_page: int) -> str:
+        self.page_size = int(
+            self.page_size
+        )  # this is because scrapy CLI passes it as a string
+
         search_terms_parameter = "%2B".join(self.search_terms)
         from_ = self.page_size * results_page
         if results_page <= 1:
@@ -40,12 +44,10 @@ class CNNSearchResultsSpider(NewsSearchResultsSpiderBase):
         fake_request_id = str(uuid4())
         api_call_url = (
             f"{self.search_api_base_url}{query_terms}"
-            f"&request_id=pdx-search-{fake_request_id}"
+            f"&request_id=pdx-search-{fake_request_id}"  # fake request id
         )
 
-        ret = requests.get(
-            api_call_url,  # fake request id
-        )
+        ret = requests.get(api_call_url)
         if ret.status_code != 200:
             return None
         return ret.json()
