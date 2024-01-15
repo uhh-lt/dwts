@@ -20,6 +20,7 @@ from app.core.data.dto.concept_over_time_analysis import (
     COTAUpdate,
     COTAUpdateAsInDB,
 )
+from app.core.data.repo.repo_service import RepoService
 from app.core.db.redis_service import RedisService
 from app.core.search.elasticsearch_service import ElasticSearchService
 from app.core.search.simsearch_service import SimSearchService
@@ -33,6 +34,7 @@ class COTAService(metaclass=SingletonMeta):
         cls.sims: SimSearchService = SimSearchService()
         cls.es: ElasticSearchService = ElasticSearchService()
         cls.redis: RedisService = RedisService()
+        cls.repo: RepoService = RepoService()
 
         cls.max_search_space_per_concept: int = 1000
         cls.search_space_sim_search_threshold: float = 0.5
@@ -104,7 +106,7 @@ class COTAService(metaclass=SingletonMeta):
 
         update_dto_as_in_db = COTAUpdateAsInDB(
             **cota_update.model_dump(
-                exclude={"concepts", "search_space", "search_space_coordinates"},
+                exclude={"concepts", "search_space"},
                 exclude_none=True,
             ),
         )
@@ -122,6 +124,32 @@ class COTAService(metaclass=SingletonMeta):
         # update the cota in db
         db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
 
+        # return the results
+        return COTARead.model_validate(db_obj)
+
+    def reset(
+        self,
+        *,
+        db: Session,
+        cota_id: int,
+    ) -> COTARead:
+        # make sure that cota with cota_id exists
+        cota = self.read_by_id(db=db, cota_id=cota_id)
+
+        # delete the model
+        self.repo.get_model_path(cota.project_id, str(cota.id)).unlink(missing_ok=True)
+        # delete the embeddings
+        self.repo.get_embedding_path(cota.project_id, str(cota.id)).unlink(
+            missing_ok=True
+        )
+        # delete the refinement jobs
+        self.redis.delete_all_cota_job_by_cota_id(cota_id=cota.id)
+        # reset the search space
+        update_dto_as_in_db = COTAUpdateAsInDB(
+            search_space=srsly.json_dumps(jsonable_encoder([]))
+        )
+        # update the cota in db
+        db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)
         # return the results
         return COTARead.model_validate(db_obj)
 

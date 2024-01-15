@@ -131,3 +131,20 @@ async def get_cota_job(
     cota_job_id: str,
 ) -> COTARefinementJobRead:
     return redis.load_cota_job(cota_job_id)
+
+
+@router.post(
+    "/reset/{cota_id}",
+    response_model=COTARead,
+    summary="Resets the ConceptOverTimeAnalysis",
+    description="Resets the ConceptOverTimeAnalysis deleting model, embeddings, refinement jobs and resetting the search space",
+)
+async def reset_cota(
+    *,
+    db: Session = Depends(get_db_session),
+    cota_id: int,
+) -> COTARead:
+    return cotas.reset(
+        db=db,
+        cota_id=cota_id,
+    )
