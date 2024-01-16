@@ -27,7 +27,7 @@
       "name": "Celery",
       "type": "node-terminal",
       "request": "launch",
-      "command": "celery -A app.celery.background_jobs.tasks worker -Q bgJobsQ,celery -l debug -c 1 --without-gossip --without-mingle --without-heartbeat",
+      "command": "conda activate dwts && celery -A app.celery.background_jobs.tasks worker -Q bgJobsQ,celery -P threads -l info -c 1 --without-gossip --without-mingle --without-heartbeat",
       "cwd": "${workspaceFolder}/backend/src",
       "envFile": "${workspaceFolder}/backend/.env"
     },
