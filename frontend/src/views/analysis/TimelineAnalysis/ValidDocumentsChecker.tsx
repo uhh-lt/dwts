@@ -1,14 +1,11 @@
-import { useAppSelector } from "../../../plugins/ReduxHooks";
 import { useTimelineAnalysisCheckQuery } from "./useTimelineAnalysisCheckQuery";
 
 interface ValidDocumentsCheckerProps {
   projectId: number;
+  dateMetadataId: number;
 }
 
-function ValidDocumentsChecker({ projectId }: ValidDocumentsCheckerProps) {
-  // global client state (redux)
-  const dateMetadataId = useAppSelector((state) => state.timelineAnalysis.projectMetadataId);
-
+function ValidDocumentsChecker({ projectId, dateMetadataId }: ValidDocumentsCheckerProps) {
   // global server state (react-query)
   const validDocumentsCheck = useTimelineAnalysisCheckQuery(projectId, dateMetadataId);
 

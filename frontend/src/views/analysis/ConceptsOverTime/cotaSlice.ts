@@ -1,24 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { COTAConcept, DateGroupBy } from "../../../api/openapi";
+import { COTAConcept } from "../../../api/openapi";
 
 export interface CotaState {
-  selectedUserIds: number[] | undefined;
-  groupBy: DateGroupBy;
-  projectMetadataId: number;
-  metadataCheckerOpen: boolean;
   conceptEditorOpen: boolean;
   currentConcept: COTAConcept;
   provenanceDate: string | undefined;
   provenanceConcept: string | undefined;
   selectedConceptId: string | undefined;
-  rowSelectionModel: string[];
+  isTimelineView: boolean;
 }
 
 const initialState: CotaState = {
-  selectedUserIds: undefined,
-  groupBy: DateGroupBy.YEAR,
-  projectMetadataId: -1,
-  metadataCheckerOpen: false,
   conceptEditorOpen: false,
   currentConcept: {
     id: "1",
@@ -30,25 +22,13 @@ const initialState: CotaState = {
   selectedConceptId: undefined,
   provenanceDate: undefined,
   provenanceConcept: undefined,
-  rowSelectionModel: [],
+  isTimelineView: false,
 };
 
 export const cotaSlice = createSlice({
   name: "cota",
   initialState,
   reducers: {
-    setSelectedUserIds: (state, action: PayloadAction<number[]>) => {
-      state.selectedUserIds = action.payload;
-    },
-    setGroupBy: (state, action: PayloadAction<DateGroupBy>) => {
-      state.groupBy = action.payload;
-    },
-    setProjectMetadataKey: (state, action: PayloadAction<number>) => {
-      state.projectMetadataId = action.payload;
-    },
-    setMetadataCheckerOpen: (state, action: PayloadAction<boolean>) => {
-      state.metadataCheckerOpen = action.payload;
-    },
     setCurrentConcept: (state, action: PayloadAction<COTAConcept>) => {
       state.currentConcept = action.payload;
     },
@@ -80,8 +60,8 @@ export const cotaSlice = createSlice({
       }
       state.selectedConceptId = action.payload.conceptId;
     },
-    onSelectionModelChange: (state, action: PayloadAction<string[]>) => {
-      state.rowSelectionModel = action.payload;
+    onToggleTimelineView: (state) => {
+      state.isTimelineView = !state.isTimelineView;
     },
   },
 });

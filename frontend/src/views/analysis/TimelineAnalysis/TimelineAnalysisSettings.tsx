@@ -97,7 +97,7 @@ function TimelineAnalysisSettings({ timelineAnalysis }: TimelineAnalysisSettings
             variant="outlined"
             value={timelineAnalysis.settings.date_metadata_id || -1}
             onChange={handleChangeMetadataId}
-            helperText={<ValidDocumentsChecker projectId={projectId} />}
+            helperText={<ValidDocumentsChecker projectId={projectId} dateMetadataId={projectMetadataId} />}
             error={filteredProjectMetadata?.length === 0}
             disabled={filteredProjectMetadata?.length === 0}
           >

@@ -1,6 +1,7 @@
 import InfoIcon from "@mui/icons-material/Info";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ReplayIcon from "@mui/icons-material/Replay";
+import FastForwardIcon from "@mui/icons-material/FastForward";
 import {
   Alert,
   Card,
@@ -21,7 +22,12 @@ import ConfirmationAPI from "../../../features/ConfirmationDialog/ConfirmationAP
 import SnackbarAPI from "../../../features/Snackbar/SnackbarAPI";
 import queryClient from "../../../plugins/ReactQueryClient";
 import BackgroundJobStatusIndicator from "./BackgroundJobStatusIndicator";
-import { hasConceptsWithDescription } from "./cotaUtils";
+import {
+  MIN_ANNOTATIONS_PER_CONCEPT,
+  conceptsWithUnsufficientAnnotations,
+  hasConceptsWithDescription,
+  hasEnoughAnnotations,
+} from "./cotaUtils";
 
 interface CotaControlProps {
   cota: COTARead;
@@ -104,20 +110,33 @@ function CotaControl({ cota }: CotaControlProps) {
           <Alert variant="outlined" severity="warning">
             Date cannot be determined. To start the analysis, please select a date metadata.
           </Alert>
+        ) : cota.search_space.length > 0 && !hasEnoughAnnotations(cota) ? (
+          <Alert variant="outlined" severity="warning">
+            The following concepts have not enough annotations (min. {MIN_ANNOTATIONS_PER_CONCEPT}) for refinement:{" "}
+            {conceptsWithUnsufficientAnnotations(cota).join(", ")}. To refine the analysis, please annotate more
+            sentences.
+          </Alert>
         ) : null}
 
         <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-          <ListItemButton
-            onClick={handleRefineCota}
-            disabled={
-              cota.search_space.length > 0 || !hasConceptsWithDescription(cota) || !cota.settings.date_metadata_id
-            }
-          >
-            <ListItemIcon>
-              <PlayArrowIcon />
-            </ListItemIcon>
-            <ListItemText primary="Start" />
-          </ListItemButton>
+          {cota.search_space.length > 0 ? (
+            <ListItemButton onClick={handleRefineCota} disabled={!hasEnoughAnnotations(cota)}>
+              <ListItemIcon>
+                <FastForwardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Refine" />
+            </ListItemButton>
+          ) : (
+            <ListItemButton
+              onClick={handleRefineCota}
+              disabled={!hasConceptsWithDescription(cota) || !cota.settings.date_metadata_id}
+            >
+              <ListItemIcon>
+                <PlayArrowIcon />
+              </ListItemIcon>
+              <ListItemText primary="Start" />
+            </ListItemButton>
+          )}
           <ListItemButton onClick={handleResetCota} disabled={cota.search_space.length === 0}>
             <ListItemIcon>
               <ReplayIcon />

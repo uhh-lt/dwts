@@ -5,12 +5,17 @@ import CotaScatterPlot from "./CotaScatterPlot";
 import CotaSentenceAnnotator2 from "./CotaSentenceAnnotator";
 import CotaControl from "./CotaControl";
 import CotaSettings from "./CotaSettings";
+import { useAppSelector } from "../../../plugins/ReduxHooks";
+import CotaTimelinePlot from "./CotaTimelinePlot";
 
 interface CotaViewContentProps {
   cota: COTARead;
 }
 
 function CotaViewContent({ cota }: CotaViewContentProps) {
+  // global client state (redux)
+  const isTimelineView = useAppSelector((state) => state.cota.isTimelineView);
+
   return (
     <Grid container className="h100" columnSpacing={2} padding={2} bgcolor={"grey.200"}>
       <Grid item md={3} className="myFlexContainer h100">
@@ -26,7 +31,7 @@ function CotaViewContent({ cota }: CotaViewContentProps) {
       </Grid>
       <Grid item md={9} className="h100">
         <Box style={{ height: "50%" }} sx={{ pb: 1 }}>
-          <CotaScatterPlot cota={cota} />
+          {isTimelineView ? <CotaTimelinePlot cota={cota} /> : <CotaScatterPlot cota={cota} />}
         </Box>
         <Box style={{ height: "50%" }} sx={{ pt: 1 }}>
           <CotaSentenceAnnotator2 cota={cota} />

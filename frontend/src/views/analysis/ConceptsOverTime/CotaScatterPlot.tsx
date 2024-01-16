@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, Typography } from "@mui/material";
 import React, { useMemo } from "react";
 import { CartesianGrid, Legend, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { COTARead, COTASentence } from "../../../api/openapi";
+import CotaPlotToggleButton from "./CotaPlotToggleButton";
 
 interface CotaScatterPlotProps {
   cota: COTARead;
@@ -77,6 +78,7 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
         className="myFlexFitContentContainer"
         title={"Scatter Plot"}
         subheader={`Hover on a dot to see more information.`}
+        action={<CotaPlotToggleButton />}
       />
       <CardContent className="myFlexFillAllContainer">{content}</CardContent>
     </Card>
