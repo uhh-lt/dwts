@@ -352,7 +352,7 @@ def add_date_to_search_space(cargo: Cargo) -> Cargo:
                 )
                 .join(SourceDocumentORM.metadata_)
                 .filter(
-                    SourceDocumentORM.id.contains(sdoc_ids),
+                    SourceDocumentORM.id.in_(sdoc_ids),
                     SourceDocumentMetadataORM.project_metadata_id
                     == cargo.job.cota.settings.date_metadata_id,
                     SourceDocumentMetadataORM.date_value.isnot(None),
