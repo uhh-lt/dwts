@@ -63,7 +63,8 @@ class TrainerService(metaclass=SingletonMeta):
         trainer_job = self.redis.store_trainer_job(trainer_job)
 
         try:
-            trainer_job = self.__finetune_sbert_model(trainer_job)
+            trainer_job = self.__finetune_cota(trainer_job)
+            # trainer_job = self.__finetune_sbert_model(trainer_job)
             trainer_job.status = BackgroundJobStatus.FINISHED
             trainer_job = self.redis.store_trainer_job(trainer_job)
         except Exception as e:
@@ -180,3 +181,47 @@ class TrainerService(metaclass=SingletonMeta):
     def __do_a_triplet_loss(self) -> None:
         otl.F
         # this is just to import otl and not get it removed by ruff
+
+    def __finetune_cota(self, trainer_job: TrainerJobRead) -> TrainerJobRead:
+        import torch.optim as optim
+        from online_triplet_loss.losses import batch_hard_triplet_loss
+
+        trainloader_path = self.repo.get_dataloader_path(
+            proj_id=trainer_job.parameters.project_id,
+            dataloader_name=trainer_job.parameters.train_dataloader_name,
+        )
+        dataloader = torch.load(trainloader_path)
+        print(f"{len(dataloader)=}")
+        model_path = self.repo.get_model_path(
+            proj_id=trainer_job.parameters.project_id,
+            model_name=trainer_job.parameters.train_model_name,
+        )
+        model = torch.load(model_path)
+        criterion = batch_hard_triplet_loss
+        optimizer = optim.AdamW(model.parameters(), lr=0.001)
+        for epoch in range(
+            trainer_job.parameters.epochs
+        ):  # loop over the dataset multiple times
+            running_loss = 0.0
+            for i, data in enumerate(dataloader, 0):
+                print(f"{i=}")
+                # get the inputs; data is a list of [inputs, labels]
+                inputs, labels = data
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                # forward + backward + optimize
+                outputs = model(inputs)
+                loss = criterion(labels, outputs, margin=100)
+                loss.backward()
+                optimizer.step()
+
+                # print statistics
+                running_loss += loss.item()
+                if i % 20 == 19:  # print every 2000 mini-batches
+                    print(f"[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 20:.3f}")
+                    running_loss = 0.0
+
+        torch.save(model, model_path)
+        return trainer_job

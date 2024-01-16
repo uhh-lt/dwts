@@ -9,11 +9,11 @@ from app.core.data.dto.dto_base import UpdateDTOBase
 
 class TrainerJobParameters(BaseModel):
     project_id: int = Field(description="The ID of the Project.")
-    base_model_name: str = Field(
-        description="The name of the base model.",
-        default="sentence-transformers/clip-ViT-B-32-multilingual-v1",
+    train_model_name: str = Field(description="The name of the model.")
+    train_dataloader_name: str = Field(
+        description="The name of the training dataloader.",
     )
-    new_model_name: str = Field(description="The name of the new model.")
+    epochs: int = Field(description="The epochs to train.")
 
 
 # Properties shared across all DTOs

@@ -241,6 +241,7 @@ class RepoService(metaclass=SingletonMeta):
         paths = [
             self.get_embeddings_root_path(proj_id=proj_id),
             self.get_models_root_path(proj_id=proj_id),
+            self.get_dataloaders_root_path(proj_id=proj_id),
             self._get_project_repo_sdocs_root_path(proj_id=proj_id),
         ]
         for dst_path in paths:
@@ -490,6 +491,17 @@ class RepoService(metaclass=SingletonMeta):
 
     def model_exists(self, proj_id: int, model_name: str) -> bool:
         return self.get_model_path(proj_id=proj_id, model_name=model_name).exists()
+
+    def get_dataloaders_root_path(self, proj_id: int) -> Path:
+        return self.get_project_repo_root_path(proj_id=proj_id).joinpath("dataloaders")
+
+    def get_dataloader_path(self, proj_id: int, dataloader_name: str) -> Path:
+        return self.get_dataloaders_root_path(proj_id=proj_id).joinpath(dataloader_name)
+
+    def dataloader_exists(self, proj_id: int, dataloader_name: str) -> bool:
+        return self.get_dataloader_path(
+            proj_id=proj_id, dataloader_name=dataloader_name
+        ).exists()
 
     def get_embeddings_root_path(self, proj_id: int) -> Path:
         return self.get_project_repo_root_path(proj_id=proj_id).joinpath("embeddings")

@@ -1,11 +1,8 @@
-import time
 from typing import Dict, List
 
 from app.core.analysis.cota.pipeline.cargo import Cargo
-from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.concept_over_time_analysis import COTASentence, COTAUpdate
 from app.core.data.dto.search import SimSearchQuery
-from app.core.data.dto.trainer_job import TrainerJobParameters
 
 SEARCH_SPACE_TOPK = 1000
 SEARCH_SPACE_THRESHOLD = 0.0001
@@ -177,14 +174,13 @@ def init_or_find_concept_embedding_model(cargo: Cargo) -> Cargo:
 
 
 def train_cem(cargo: Cargo) -> Cargo:
-    from app.core.data.repo.repo_service import RepoService
-    from app.core.db.redis_service import RedisService
-    from app.core.db.sql_service import SQLService
-    from app.trainer.trainer_service import TrainerService
+    import torch
+    import torch.optim as optim
+    from online_triplet_loss.losses import batch_hard_triplet_loss
+    from torch.utils.data import DataLoader
 
-    trainer: TrainerService = TrainerService()
-    sqls: SQLService = SQLService()
-    redis: RedisService = RedisService()
+    from app.core.data.repo.repo_service import RepoService
+
     repo: RepoService = RepoService()
 
     # Only train if we have a model
@@ -199,34 +195,87 @@ def train_cem(cargo: Cargo) -> Cargo:
 
     # 1. Create the training data
 
-    # TODO: Wollen wir wirklich den Trainer Service nehmen, oder einfach hier in der Pipeline trainieren?
+    # Load embeddings
+    embedding_path = repo.get_embedding_path(
+        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
+    )
+    embeddings = torch.load(embedding_path, map_location=torch.device("cpu"))
+
+    # Create trainingdata
+    search_space: List[COTASentence] = cargo.data["search_space"]
+    training_data = []
+    label2id: dict = {
+        concept.id: idx for idx, concept in enumerate(cargo.job.cota.concepts)
+    }
+
+    for idx, sentence in enumerate(search_space):
+        if sentence.concept_annotation:
+            training_data.append(
+                (embeddings[idx], label2id[sentence.concept_annotation])
+            )
+
+    # Save trainingdata as dataloader
+    dataloader = DataLoader(training_data, batch_size=8, shuffle=True, num_workers=1)
+    dataloader_path = repo.get_dataloader_path(
+        proj_id=cargo.job.cota.project_id, dataloader_name=str(cargo.job.cota.id)
+    )
+    torch.save(dataloader, dataloader_path)
+
     # 2. Start the training job with TrainerService
-    with sqls.db_session() as db:
-        tj = trainer.create_and_start_trainer_job_async(
-            db=db,
-            trainer_params=TrainerJobParameters(
-                project_id=cargo.job.cota.project_id,
-                new_model_name=str(cargo.job.cota.id),
-            ),
-        )
+    # with sqls.db_session() as db:
+    #     tj = trainer.create_and_start_trainer_job_async(
+    #         db=db,
+    #         trainer_params=TrainerJobParameters(
+    #             project_id=cargo.job.cota.project_id,
+    #             train_model_name=str(cargo.job.cota.id),
+    #             train_dataloader_name=str(cargo.job.cota.id),
+    #             epochs=5,
+    #         ),
+    #     )
+    model_path = repo.get_model_path(
+        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
+    )
+    model = torch.load(model_path)
+
+    criterion = batch_hard_triplet_loss
+    optimizer = optim.AdamW(model.parameters(), lr=0.001)
+    for epoch in range(5):  # loop over the dataset multiple times
+        running_loss = 0.0
+        for i, data in enumerate(dataloader, 0):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = model(inputs)
+            loss = criterion(labels, outputs, margin=100)
+            loss.backward()
+            optimizer.step()
+
+            # print statistics
+            running_loss += loss.item()
+            if i % 20 == 19:  # print every 2000 mini-batches
+                print(f"[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 20:.3f}")
+                running_loss = 0.0
+
+    torch.save(model, model_path)
+    return cargo
 
     # 3. Wait for the training job to finish
-    # TODO: So? ist das schlau?
-    while (
-        tj.status == BackgroundJobStatus.RUNNING
-        or tj.status == BackgroundJobStatus.WAITING
-    ):
-        tj = redis.load_trainer_job(tj.id)
-        time.sleep(3)
+    # while (
+    #     tj.status == BackgroundJobStatus.RUNNING
+    #     or tj.status == BackgroundJobStatus.WAITING
+    # ):
+    #     tj = redis.load_trainer_job(tj.id)
+    #     time.sleep(3)
+    #     print("Waiting for training to finish")
 
-    if tj.status == BackgroundJobStatus.FINISHED:
-        return cargo
-    # ABORTED, ERROR
-    else:
-        # TODO: What to do?
-        raise Exception("Training of CEM failed!")
-
-    return cargo
+    # if tj.status == BackgroundJobStatus.FINISHED:
+    #     return cargo
+    # # ABORTED, ERROR
+    # else:
+    #     raise Exception("Training of CEM failed!")
 
 
 def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
@@ -253,9 +302,11 @@ def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
             proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
         )
         model = torch.load(model_path)
+        model.eval()
 
         # 2. Refine the search space reduced embeddings with the CEM
-        refined_embeddings = model(reduced_embeddings)
+        with torch.no_grad():
+            refined_embeddings = model(reduced_embeddings)
 
     # # Overwrite Embeddings? R
     # torch.save(refined_embeddings, embedding_path)
