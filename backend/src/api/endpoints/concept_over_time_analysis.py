@@ -65,7 +65,7 @@ async def get_by_project_and_user(
     authz_user.assert_in_project(project_id)
 
     db_objs = crud_cota.read_by_project_and_user(
-        db=db, project_id=project_id, user_id=user_id
+        db=db, project_id=project_id, user_id=user_id, raise_error=False
     )
     return [COTARead.model_validate(db_obj) for db_obj in db_objs]
 
