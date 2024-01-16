@@ -140,7 +140,7 @@ def init_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
     return cargo
 
 
-def init_or_find_concept_embedding_model(cargo: Cargo) -> Cargo:
+def init_concept_embedding_model(cargo: Cargo) -> Cargo:
     import torch
 
     from app.core.data.repo.repo_service import RepoService
