@@ -8,19 +8,22 @@ import IconButton from "@mui/material/IconButton";
 import {
   DataGrid,
   GridColDef,
+  GridEventListener,
   GridRowSelectionModel,
   GridToolbarColumnsButton,
   GridToolbarContainer,
   GridToolbarDensitySelector,
   GridToolbarExport,
+  useGridApiRef,
 } from "@mui/x-data-grid";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CotaHooks from "../../../api/CotaHooks";
 import { COTAConcept, COTARead, COTASentence } from "../../../api/openapi";
 import SdocRenderer from "../../../components/DataGrid/SdocRenderer";
 import SdocSentenceRenderer from "../../../components/DataGrid/SdocSentenceRenderer";
 import SnackbarAPI from "../../../features/Snackbar/SnackbarAPI";
-import { useAppSelector } from "../../../plugins/ReduxHooks";
+import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks";
+import { CotaActions } from "./cotaSlice";
 
 interface CotaSentenceAnnotatorProps {
   cota: COTARead;
@@ -51,7 +54,7 @@ function CotaSentenceAnnotator2({ cota }: CotaSentenceAnnotatorProps) {
         {!selectedConcept ? (
           <>Select a concept from the concept list to see similar sentences</>
         ) : (
-          <SimilarSentencesTable cota={cota} concept={selectedConcept} />
+          <SimilarSentencesTable cota={cota} concept={selectedConcept} key={selectedConcept.id} />
         )}
       </CardContent>
     </Card>
@@ -65,7 +68,29 @@ interface SimilarSentencesTableProps {
 
 function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
   // local state
+  const apiRef = useGridApiRef();
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>([]);
+
+  // global client state (redux)
+  const provenanceSdocIdSentenceId = useAppSelector((state) => state.cota.provenanceSdocIdSentenceId);
+
+  // scroll
+  useEffect(() => {
+    apiRef.current &&
+      provenanceSdocIdSentenceId &&
+      requestIdleCallback(() => {
+        const pageSize = apiRef.current.state.pagination.paginationModel.pageSize;
+        const getSortedRowIds = apiRef.current.getSortedRowIds();
+        const rowIndex = getSortedRowIds.indexOf(provenanceSdocIdSentenceId);
+        // set page
+        const page = Math.floor(rowIndex / pageSize);
+        apiRef.current.setPage(page);
+        // set focus
+        setTimeout(() => {
+          apiRef.current.setCellFocus(provenanceSdocIdSentenceId, "sentenceId");
+        }, 500);
+      });
+  }, [apiRef, provenanceSdocIdSentenceId]);
 
   // computed
   const columns: GridColDef<COTASentence>[] = useMemo(() => {
@@ -155,18 +180,25 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
     );
   };
 
+  const dispatch = useAppDispatch();
+  const handleRowClick: GridEventListener<"rowClick"> = (params) => {
+    dispatch(CotaActions.onSentenceAnnotatorRowClick(params.id as string));
+  };
+
   return (
     <DataGrid
-      key={concept.id}
+      apiRef={apiRef}
       rows={cota.search_space}
       columns={columns}
       autoPageSize
       getRowId={(row) => `${row.sdoc_id}-${row.sentence_id}`}
       style={{ border: "none" }}
       disableColumnFilter
+      // interaction
+      onRowClick={handleRowClick}
       // selection
       checkboxSelection
-      // disableRowSelectionOnClick
+      disableRowSelectionOnClick
       rowSelectionModel={rowSelectionModel}
       onRowSelectionModelChange={(newSelection) => setRowSelectionModel(newSelection)}
       // custom toolbar

@@ -1,14 +1,30 @@
 import { Card, CardContent, CardHeader, Typography } from "@mui/material";
 import React, { useMemo } from "react";
-import { CartesianGrid, Legend, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Dot,
+  Legend,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { COTARead, COTASentence } from "../../../api/openapi";
+import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks";
 import CotaPlotToggleButton from "./CotaPlotToggleButton";
+import { CotaActions } from "./cotaSlice";
 
 interface CotaScatterPlotProps {
   cota: COTARead;
 }
 
 function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
+  // redux
+  const dispatch = useAppDispatch();
+  const provenanceSdocIdSentenceId = useAppSelector((state) => state.cota.provenanceSdocIdSentenceId);
+
   // computed
   const chartData = useMemo(() => {
     let result: Record<string, COTASentence[]> = {};
@@ -27,6 +43,11 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
 
     return result;
   }, [cota]);
+
+  // actions
+  const handleDotClick = (sdocIdSentenceId: string) => {
+    dispatch(CotaActions.onScatterPlotDotClick(sdocIdSentenceId));
+  };
 
   // render
   let content: React.ReactNode;
@@ -59,13 +80,36 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
               data={chartData[concept.id]}
               fill={concept.color}
               isAnimationActive={false}
+              shape={(props) => {
+                console.log(props);
+                return <rect />;
+              }}
             />
           ))}
           <Scatter
             name="Unannotated Sentences"
             data={chartData["NO_CONCEPT"]}
-            fill="#8884d8"
+            fill="#8884d8a8"
             isAnimationActive={false}
+            shape={(props) => {
+              const sdocIdSentenceId = `${props.sdoc_id}-${props.sentence_id}`;
+              const isSelected = sdocIdSentenceId === provenanceSdocIdSentenceId;
+              return (
+                <Dot
+                  cx={props.cx}
+                  cy={props.cy}
+                  fill={isSelected ? "#8884d8" : props.fill}
+                  key={props.key}
+                  r={isSelected ? 10 : 5}
+                  stroke={isSelected ? "black" : undefined}
+                  strokeWidth={isSelected ? 2 : undefined}
+                  style={{
+                    zIndex: isSelected ? 100 : undefined,
+                  }}
+                  onClick={() => handleDotClick(sdocIdSentenceId)}
+                />
+              );
+            }}
           />
         </ScatterChart>
       </ResponsiveContainer>
@@ -88,7 +132,6 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
 function CotaScatterPlotTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length && payload.length > 0) {
     const data: COTASentence = payload[0].payload;
-    console.log(data);
     return (
       <Card>
         <CardContent>

@@ -5,6 +5,7 @@ export interface CotaState {
   conceptEditorOpen: boolean;
   currentConcept: COTAConcept;
   provenanceDate: string | undefined;
+  provenanceSdocIdSentenceId: string | undefined;
   provenanceConcept: string | undefined;
   selectedConceptId: string | undefined;
   isTimelineView: boolean;
@@ -21,6 +22,7 @@ const initialState: CotaState = {
   },
   selectedConceptId: undefined,
   provenanceDate: undefined,
+  provenanceSdocIdSentenceId: undefined,
   provenanceConcept: undefined,
   isTimelineView: false,
 };
@@ -62,6 +64,20 @@ export const cotaSlice = createSlice({
     },
     onToggleTimelineView: (state) => {
       state.isTimelineView = !state.isTimelineView;
+    },
+    onSentenceAnnotatorRowClick: (state, action: PayloadAction<string | undefined>) => {
+      if (state.provenanceSdocIdSentenceId === action.payload) {
+        state.provenanceSdocIdSentenceId = undefined;
+      } else {
+        state.provenanceSdocIdSentenceId = action.payload;
+      }
+    },
+    onScatterPlotDotClick: (state, action: PayloadAction<string | undefined>) => {
+      if (state.provenanceSdocIdSentenceId === action.payload) {
+        state.provenanceSdocIdSentenceId = undefined;
+      } else {
+        state.provenanceSdocIdSentenceId = action.payload;
+      }
     },
   },
 });
