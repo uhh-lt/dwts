@@ -142,10 +142,12 @@ services:
       HUGGINGFACE_HUB_CACHE: /models_cache
       TRANSFORMERS_CACHE: /models_cache
       TORCH_HOME: /models_cache
+      NUMBA_CACHE_DIR: /numba_cache
     volumes:
       - ../backend/src:/dwts_code/src
       - ./backend_repo:/tmp/dwts
       - ./models_cache:/models_cache
+      - ./numba_cache:/numba_cache
     depends_on:
       - rabbitmq
       - redis

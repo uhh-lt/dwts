@@ -2,4 +2,5 @@
 /backend_repo/*
 /models_cache/*
 /tika/*
+/numba_cache/*
 .env
