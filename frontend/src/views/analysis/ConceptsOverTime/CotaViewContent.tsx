@@ -4,7 +4,7 @@ import CotaConceptList from "./CotaConceptList";
 import CotaScatterPlot from "./CotaScatterPlot";
 import CotaSentenceAnnotator2 from "./CotaSentenceAnnotator";
 import CotaControl from "./CotaControl";
-import CotaSettings from "./CotaSettings";
+import CotaTimelineSettings from "./CotaTimelineSettings";
 import { useAppSelector } from "../../../plugins/ReduxHooks";
 import CotaTimelinePlot from "./CotaTimelinePlot";
 
@@ -23,7 +23,7 @@ function CotaViewContent({ cota }: CotaViewContentProps) {
           <CotaControl cota={cota} />
         </Box>
         <Box className="myFlexFitContentContainer" sx={{ mb: 2 }}>
-          <CotaSettings cota={cota} />
+          <CotaTimelineSettings cota={cota} />
         </Box>
         <Box className="myFlexFillAllContainerNoScroll">
           <CotaConceptList cota={cota} />
