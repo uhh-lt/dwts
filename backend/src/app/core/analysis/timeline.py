@@ -116,7 +116,9 @@ def timeline_analysis_valid_documents(
         )
         sdocs_with_valid_date = query.scalar()
 
-        query = db.query(func.count(SourceDocumentORM.id))
+        query = db.query(func.count(SourceDocumentORM.id)).filter(
+            SourceDocumentORM.project_id == project_id
+        )
         sdocs_total = query.scalar()
 
     return (sdocs_with_valid_date, sdocs_total)
