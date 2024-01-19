@@ -1,11 +1,12 @@
 from typing import List, Optional
 
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
 from api.dependencies import get_db_session
 from app.core.data.dto.trainer_job import TrainerJobParameters, TrainerJobRead
 from app.core.db.redis_service import RedisService
 from app.trainer.trainer_service import TrainerService
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/trainer")
 tags = ["trainer"]
@@ -27,21 +28,6 @@ async def start_trainer_job(
     parameters: TrainerJobParameters,
 ) -> Optional[TrainerJobRead]:
     return ts.create_and_start_trainer_job_async(db=db, trainer_params=parameters)
-
-
-@router.get(
-    "/use/{trainer_job_id}",
-    tags=tags,
-    response_model=List[float],
-    summary="Uses a model from a TrainerJob",
-    description="Uses a model from a TrainerJob with the given parameter",
-)
-async def use_trainer_model(
-    *,
-    db: Session = Depends(get_db_session),
-    trainer_job_id: str,
-) -> List[float]:
-    return ts.use_trainer_model(db=db, trainer_job_id=trainer_job_id)
 
 
 @router.get(
