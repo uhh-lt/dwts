@@ -154,6 +154,7 @@ services:
       - postgres
     ports:
       - "${JUPYTER_BACKGROUND_JOBS_EXPOSED:-8880}:8888"
+      - "${CELERY_DEBUG_PORT:-45678}:6900"
     restart: always
     links:
       - postgres
