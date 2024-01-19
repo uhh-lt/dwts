@@ -12,8 +12,6 @@ from app.core.data.dto.concept_over_time_analysis import (
     COTARefinementJobRead,
     COTARefinementJobUpdate,
     COTASentence,
-    COTATimelineSettings,
-    COTATrainingSettings,
 )
 from app.core.data.dto.crawler_job import (
     CrawlerJobCreate,
@@ -325,14 +323,10 @@ class RedisService(metaclass=SingletonMeta):
             cota = data.pop("cota")
             concepts = cota.pop("concepts")
             search_space = cota.pop("search_space")
-            training_settings = cota.pop("training_settings")
-            timeline_settings = cota.pop("timeline_settings")
             data["cota"] = COTARead(
                 **cota,
                 concepts=[COTAConcept(**concept) for concept in concepts],
                 search_space=[COTASentence(**sentence) for sentence in search_space],
-                training_settings=COTATrainingSettings(**training_settings),
-                timeline_settings=COTATimelineSettings(**timeline_settings),
             )
             data["updated"] = datetime.now()
             tj = COTARefinementJobRead(**data)
