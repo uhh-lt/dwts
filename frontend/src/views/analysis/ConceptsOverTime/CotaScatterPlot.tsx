@@ -133,7 +133,7 @@ function ScatterPlotDot({ props, onClick, provenanceSdocIdSentenceId }: ScatterP
     <Dot
       cx={props.cx}
       cy={props.cy}
-      fill={isSelected ? "#8884d8" : props.fill}
+      fill={props.fill}
       key={props.key}
       r={isSelected ? 10 : 5}
       stroke={isSelected ? "black" : undefined}
