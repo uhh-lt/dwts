@@ -4,7 +4,7 @@ import { COTAConcept, COTATrainingSettings, DimensionalityReductionAlgorithm } f
 export interface CotaState {
   conceptEditorOpen: boolean;
   currentConcept: COTAConcept;
-  provenanceDate: string | undefined;
+  selectedDate: string | undefined;
   provenanceSdocIdSentenceId: string | undefined;
   provenanceConcept: string | undefined;
   selectedConceptId: string | undefined;
@@ -24,7 +24,7 @@ const initialState: CotaState = {
     visible: true,
   },
   selectedConceptId: undefined,
-  provenanceDate: undefined,
+  selectedDate: undefined,
   provenanceSdocIdSentenceId: undefined,
   provenanceConcept: undefined,
   isTimelineView: false,
@@ -52,7 +52,7 @@ export const cotaSlice = createSlice({
       state.currentConcept = initialState.currentConcept;
     },
     setProvenanceDate: (state, action: PayloadAction<string | undefined>) => {
-      state.provenanceDate = action.payload;
+      state.selectedDate = action.payload;
     },
     setProvenanceConcept: (state, action: PayloadAction<string | undefined>) => {
       state.provenanceConcept = action.payload;
@@ -78,6 +78,7 @@ export const cotaSlice = createSlice({
     },
     onToggleTimelineView: (state) => {
       state.isTimelineView = !state.isTimelineView;
+      state.selectedDate = undefined;
     },
     onSentenceAnnotatorRowClick: (state, action: PayloadAction<string | undefined>) => {
       if (state.provenanceSdocIdSentenceId === action.payload) {
@@ -100,6 +101,10 @@ export const cotaSlice = createSlice({
     onCloseTrainingSettings: (state) => {
       state.trainingSettingsOpen = false;
       state.trainingSettings = initialState.trainingSettings;
+    },
+    onTimelineDotClick: (state, action: PayloadAction<{ date: string; conceptId: string }>) => {
+      state.selectedDate = action.payload.date;
+      state.selectedConceptId = action.payload.conceptId;
     },
   },
 });

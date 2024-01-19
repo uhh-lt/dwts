@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { padStart } from "lodash";
 import React, { useMemo } from "react";
 import {
   CartesianGrid,
   Tooltip as ChartTooltip,
+  Dot,
   Legend,
   Line,
   LineChart,
@@ -11,15 +13,21 @@ import {
   YAxis,
 } from "recharts";
 import { COTARead, DateGroupBy } from "../../../api/openapi";
+import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks";
 import { dateToLocaleDate } from "../../../utils/DateUtils";
 import CotaPlotToggleButton from "./CotaPlotToggleButton";
-import { padStart } from "lodash";
+import { CotaActions } from "./cotaSlice";
 
 interface CotaTimelinePlotProps {
   cota: COTARead;
 }
 
 function CotaTimelinePlot({ cota }: CotaTimelinePlotProps) {
+  // global client state
+  const selectedConceptId = useAppSelector((state) => state.cota.selectedConceptId);
+  const selectedDate = useAppSelector((state) => state.cota.selectedDate);
+  const dispatch = useAppDispatch();
+
   // computed
   const chartData = useMemo(() => {
     if (cota.timeline_settings.threshold === undefined) return [];
@@ -76,6 +84,11 @@ function CotaTimelinePlot({ cota }: CotaTimelinePlotProps) {
     return resultList;
   }, [cota]);
 
+  // event handlers
+  const handleTimelineDotClick = (date: string, conceptId: string) => {
+    dispatch(CotaActions.onTimelineDotClick({ date, conceptId }));
+  };
+
   // render
   let content: React.ReactNode;
   if (cota.concepts.length === 0) {
@@ -92,7 +105,27 @@ function CotaTimelinePlot({ cota }: CotaTimelinePlotProps) {
           <ChartTooltip />
           <Legend />
           {cota.concepts.map((concept) => (
-            <Line key={concept.id} name={concept.name} dataKey={concept.id} stroke={concept.color} />
+            <Line
+              key={concept.id}
+              name={concept.name}
+              dataKey={concept.id}
+              stroke={concept.color}
+              dot={(props) => (
+                <CustomizedDot
+                  {...props}
+                  isSelected={selectedConceptId === concept.id && selectedDate === props.payload.date}
+                />
+              )}
+              activeDot={(props) => (
+                <CustomizedDot
+                  {...props}
+                  r={5}
+                  stroke={concept.color}
+                  isSelected={selectedConceptId === concept.id && selectedDate === props.payload.date}
+                  onClick={() => handleTimelineDotClick(props.payload.date, concept.id)}
+                />
+              )}
+            />
           ))}
         </LineChart>
       </ResponsiveContainer>
@@ -111,5 +144,21 @@ function CotaTimelinePlot({ cota }: CotaTimelinePlotProps) {
     </Card>
   );
 }
+
+const CustomizedDot = (props: any) => {
+  const { cx, cy, stroke, r, isSelected, onClick } = props;
+
+  return (
+    <Dot
+      cx={cx}
+      cy={cy}
+      r={isSelected ? 2 * r : r}
+      stroke={isSelected ? "black" : undefined}
+      strokeWidth={isSelected ? 2 : undefined}
+      fill={stroke}
+      onClick={onClick ? () => onClick() : undefined}
+    />
+  );
+};
 
 export default CotaTimelinePlot;

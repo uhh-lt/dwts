@@ -18,12 +18,14 @@ import {
 } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
 import CotaHooks from "../../../api/CotaHooks";
-import { COTAConcept, COTARead, COTASentence } from "../../../api/openapi";
+import { COTAConcept, COTARead, COTASentence, DateGroupBy } from "../../../api/openapi";
 import SdocRenderer from "../../../components/DataGrid/SdocRenderer";
 import SdocSentenceRenderer from "../../../components/DataGrid/SdocSentenceRenderer";
 import SnackbarAPI from "../../../features/Snackbar/SnackbarAPI";
 import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks";
 import { CotaActions } from "./cotaSlice";
+import { padStart } from "lodash";
+import { dateToLocaleDate } from "../../../utils/DateUtils";
 
 interface CotaSentenceAnnotatorProps {
   cota: COTARead;
@@ -32,11 +34,20 @@ interface CotaSentenceAnnotatorProps {
 function CotaSentenceAnnotator2({ cota }: CotaSentenceAnnotatorProps) {
   // global client state (redux)
   const selectedConceptId = useAppSelector((state) => state.cota.selectedConceptId);
+  const selectedDate = useAppSelector((state) => state.cota.selectedDate);
 
   // computed
   const selectedConcept = useMemo(() => {
     return cota.concepts.find((c) => c.id === selectedConceptId);
   }, [cota, selectedConceptId]);
+
+  let title = "Similar sentences";
+  if (selectedConcept) {
+    title += ` for concept ${selectedConcept.name}`;
+  }
+  if (selectedDate) {
+    title += ` on date ${selectedDate}`;
+  }
 
   return (
     <Card className="myFlexContainer h100">
@@ -47,7 +58,7 @@ function CotaSentenceAnnotator2({ cota }: CotaSentenceAnnotatorProps) {
             <InfoIcon />
           </IconButton>
         }
-        title={selectedConcept ? `Similar sentences for concept '${selectedConcept.name}'` : "Similar sentences"}
+        title={title}
         subheader="Annotate sentences to improve the timeline analysis"
       />
       <CardContent className="myFlexFillAllContainer" style={{ ...(selectedConcept && { padding: 0 }) }}>
@@ -73,6 +84,7 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
 
   // global client state (redux)
   const provenanceSdocIdSentenceId = useAppSelector((state) => state.cota.provenanceSdocIdSentenceId);
+  const selectedDate = useAppSelector((state) => state.cota.selectedDate);
 
   // scroll
   useEffect(() => {
@@ -93,6 +105,33 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
   }, [apiRef, provenanceSdocIdSentenceId]);
 
   // computed
+  const searchSpace = useMemo(() => {
+    if (!selectedDate) return cota.search_space;
+
+    let result: COTASentence[] = [];
+    cota.search_space.forEach((cotaSentence) => {
+      // prepare date
+      const date = dateToLocaleDate(cotaSentence.date);
+      let dateStr = "";
+      switch (cota.timeline_settings.group_by) {
+        case DateGroupBy.DAY:
+          dateStr = date.getFullYear() + "-" + padStart(`${date.getMonth() + 1}`, 2, "0") + "-" + date.getDate();
+          break;
+        case DateGroupBy.MONTH:
+          dateStr = date.getFullYear() + "-" + padStart(`${date.getMonth() + 1}`, 2, "0");
+          break;
+        case DateGroupBy.YEAR:
+          dateStr = date.getFullYear().toString();
+          break;
+      }
+
+      if (dateStr === selectedDate) {
+        result.push(cotaSentence);
+      }
+    });
+    return result;
+  }, [cota, selectedDate]);
+
   const columns: GridColDef<COTASentence>[] = useMemo(() => {
     const conceptDict = cota.concepts.reduce(
       (acc, concept) => {
@@ -188,7 +227,7 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
   return (
     <DataGrid
       apiRef={apiRef}
-      rows={cota.search_space}
+      rows={searchSpace}
       columns={columns}
       autoPageSize
       getRowId={(row) => `${row.sdoc_id}-${row.sentence_id}`}
