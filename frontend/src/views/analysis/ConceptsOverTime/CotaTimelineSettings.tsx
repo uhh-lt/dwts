@@ -106,8 +106,8 @@ function CotaSettings({ cota }: CotaSettingsProps) {
             <InfoIcon />
           </IconButton>
         }
-        title="Settings"
-        subheader="Adjust the visualization settings"
+        title="Timeline Analysis Settings"
+        subheader="Adjust the visualization parameters"
       />
       <CardContent className="myFlexFillAllContainer">
         <Stack spacing={3}>

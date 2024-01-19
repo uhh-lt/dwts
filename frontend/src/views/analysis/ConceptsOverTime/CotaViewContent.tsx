@@ -20,10 +20,7 @@ function CotaViewContent({ cota }: CotaViewContentProps) {
     <Grid container className="h100" columnSpacing={2} padding={2} bgcolor={"grey.200"}>
       <Grid item md={3} className="myFlexContainer h100">
         <Box className="myFlexFitContentContainer" sx={{ mb: 2 }}>
-          <CotaControl cota={cota} />
-        </Box>
-        <Box className="myFlexFitContentContainer" sx={{ mb: 2 }}>
-          <CotaTimelineSettings cota={cota} />
+          {isTimelineView ? <CotaTimelineSettings cota={cota} /> : <CotaControl cota={cota} />}
         </Box>
         <Box className="myFlexFillAllContainerNoScroll">
           <CotaConceptList cota={cota} />
