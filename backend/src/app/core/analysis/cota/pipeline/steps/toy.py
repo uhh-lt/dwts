@@ -1,48 +1,57 @@
+from datetime import datetime
 from typing import Dict, List
 
+import numpy as np
+import torch
+
+# This would be necessary to use a GPU within Celery. But there are multiple issues with this. So we disable it!
+# try:
+#     torch.multiprocessing.set_start_method('spawn')
+# except RuntimeError:
+#     pass
+from loguru import logger
+from tqdm import tqdm
+
 from app.core.analysis.cota.pipeline.cargo import Cargo
+from app.core.analysis.cota.pipeline.concept_embedding_model import (
+    ConceptEmbeddingModel,
+)
+from app.core.analysis.cota.pipeline.steps.util import (
+    _apply_umap,
+    _create_training_dataloader,
+    _get_annotation_sentence_indices,
+    _has_min_concept_sentence_annotations,
+    _load_embeddings,
+    _load_model,
+    _store_embeddings,
+    _store_model,
+)
+from app.core.analysis.cota.service import COTAService
 from app.core.data.dto.concept_over_time_analysis import COTASentence, COTAUpdate
 from app.core.data.dto.search import SimSearchQuery
+from app.core.data.orm.source_document import SourceDocumentORM
+from app.core.data.orm.source_document_metadata import SourceDocumentMetadataORM
+from app.core.data.repo.repo_service import RepoService
+from app.core.db.sql_service import SQLService
+from app.core.search.simsearch_service import SimSearchService
+from app.trainer.trainer_service import TrainerService
 
-SEARCH_SPACE_TOPK = 1000
+cota_service: COTAService = COTAService()
+sqls: SQLService = SQLService()
+repo: RepoService = RepoService()
+trainer: TrainerService = TrainerService()
+sims: SimSearchService = SimSearchService()
+
+
+SEARCH_SPACE_TOP_K = 1000
 SEARCH_SPACE_THRESHOLD = 0.0001
-MIN_CONCEPT_SENTENCE_ANNOTATIONS = 5
-UMAP_DIMENSIONS = 64
+UMAP_REDUCED_EMBEDDINGS_DIM = 64
+CEM_NUM_LAYERS = 5
+CEM_DIM = UMAP_REDUCED_EMBEDDINGS_DIM
+CEM_TRAIN_NUM_EPOCHS = 5
 
-
-def __get_annotation_sentence_indices(cargo: Cargo) -> Dict[str, List[int]]:
-    """Returns the indices of the sentences in the search space that are annotated with a concept, for each concept"""
-
-    annotations: Dict[str, List[int]] = {
-        concept.id: [] for concept in cargo.job.cota.concepts
-    }
-    for idx, sentence in enumerate(cargo.data["search_space"]):
-        if sentence.concept_annotation is not None:
-            annotations[sentence.concept_annotation].append(idx)
-    return annotations
-
-
-def __get_annotations(cargo: Cargo) -> Dict[str, List[COTASentence]]:
-    """Returns the sentences in the search space that are annotated with a concept, for each concept"""
-    annotations: Dict[str, List[COTASentence]] = {
-        concept.id: [] for concept in cargo.job.cota.concepts
-    }
-    for sentence in cargo.data["search_space"]:
-        if sentence.concept_annotation is not None:
-            annotations[sentence.concept_annotation].append(sentence)
-    return annotations
-
-
-def __has_min_concept_sentence_annotations(cargo: Cargo) -> bool:
-    """Returns true if each concept has at least MIN_CONCEPT_SENTENCE_ANNOTATIONS annotations"""
-
-    annotations = __get_annotations(cargo)
-
-    for concept_id, concept_annotations in annotations.items():
-        if len(concept_annotations) < MIN_CONCEPT_SENTENCE_ANNOTATIONS:
-            return False
-
-    return True
+# unfortunately, we cannot use a GPU here, because we are running inside a Celery worker!
+COTA_COMPUTE_DEVICE = "cpu"
 
 
 def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
@@ -52,12 +61,6 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     if len(cota.search_space) > 0:
         cargo.data["search_space"] = cota.search_space
         return cargo
-
-    from datetime import datetime
-
-    from app.core.search.simsearch_service import SimSearchService
-
-    sims: SimSearchService = SimSearchService()
 
     # the search space is empty, we build the search space with simsearch
     search_space_dict: Dict[
@@ -69,7 +72,7 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
             query=SimSearchQuery(
                 proj_id=cota.project_id,
                 query=concept.description,
-                top_k=SEARCH_SPACE_TOPK,
+                top_k=SEARCH_SPACE_TOP_K,
                 threshold=SEARCH_SPACE_THRESHOLD,
             )
         )
@@ -99,18 +102,8 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
 
 
 def init_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
-    import numpy as np
-    import torch
-    import umap
-
-    from app.core.data.repo.repo_service import RepoService
-    from app.core.search.simsearch_service import SimSearchService
-
-    repo: RepoService = RepoService()
-    sims: SimSearchService = SimSearchService()
-
     # if the embeddings exists, we dont need to do anything
-    if repo.embedding_exists(
+    if repo.embeddings_exists(
         proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
     ):
         return cargo
@@ -120,35 +113,24 @@ def init_search_space_reduced_embeddings(cargo: Cargo) -> Cargo:
         search_space_reduced_embeddings = np.array([])
     else:
         # 1. Get the embeddings for the search space sentences from weaviate
-        search_space_embeddings_list = sims.get_sentence_embeddings(
+        search_space_embeddings = sims.get_sentence_embeddings(
             search_tuples=[
                 (cota_sent.sentence_id, cota_sent.sdoc_id)
                 for cota_sent in cargo.data["search_space"]
             ]
         )
-        search_space_embeddings = np.array(search_space_embeddings_list)
         # 2. Reduce the embeddings with UMAP (or do we want to use PCA here?)
-        reducer = umap.UMAP(n_components=UMAP_DIMENSIONS)
-        search_space_reduced_embeddings = reducer.fit_transform(search_space_embeddings)
+        search_space_reduced_embeddings = _apply_umap(
+            embs=search_space_embeddings, n_components=UMAP_REDUCED_EMBEDDINGS_DIM
+        )
 
     # 3. Store the reduced embeddings on the file system
-    embedding_path = repo.get_embedding_path(
-        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
-    )
-    torch.save(torch.from_numpy(search_space_reduced_embeddings), embedding_path)
+    _store_embeddings(cargo=cargo, embeddings=search_space_reduced_embeddings)
 
     return cargo
 
 
 def init_concept_embedding_model(cargo: Cargo) -> Cargo:
-    import torch
-
-    from app.core.data.repo.repo_service import RepoService
-    from app.trainer.trainer_service import TrainerService
-
-    repo: RepoService = RepoService()
-    trainer: TrainerService = TrainerService()
-
     # if the model exists, we dont need to do anything
     if repo.model_exists(
         proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
@@ -156,33 +138,24 @@ def init_concept_embedding_model(cargo: Cargo) -> Cargo:
         return cargo
 
     # We dont need to create a model, if no annotations exist, because we can't train it anyway
-    if not __has_min_concept_sentence_annotations(cargo):
+    if not _has_min_concept_sentence_annotations(cargo):
         return cargo
 
     # 1. Define model
-    model = trainer._create_probing_layers_network(
-        num_layers=5, input_dim=64, hidden_dim=64, output_dim=64
+    model = ConceptEmbeddingModel(
+        num_layers=CEM_NUM_LAYERS,
+        input_dim=CEM_DIM,
+        hidden_dim=CEM_DIM,
+        output_dim=CEM_DIM,
     )
 
     # 2. Store model
-    model_path = repo.get_model_path(
-        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
-    )
-    torch.save(model, model_path)
+    _store_model(cargo=cargo, model=model)
 
     return cargo
 
 
 def train_cem(cargo: Cargo) -> Cargo:
-    import torch
-    import torch.optim as optim
-    from online_triplet_loss.losses import batch_hard_triplet_loss
-    from torch.utils.data import DataLoader
-
-    from app.core.data.repo.repo_service import RepoService
-
-    repo: RepoService = RepoService()
-
     # Only train if we have a model
     if not repo.model_exists(
         proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
@@ -190,106 +163,61 @@ def train_cem(cargo: Cargo) -> Cargo:
         return cargo
 
     # Only train if we have enough annotated data
-    if not __has_min_concept_sentence_annotations(cargo):
+    if not _has_min_concept_sentence_annotations(cargo):
         return cargo
 
     # 1. Create the training data
+    train_dl = _create_training_dataloader(cargo=cargo)
 
-    # Load embeddings
-    embedding_path = repo.get_embedding_path(
-        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
-    )
-    embeddings = torch.load(embedding_path, map_location=torch.device("cpu"))
+    # prepare model for training
+    model = _load_model(cargo=cargo, eval=False, device=COTA_COMPUTE_DEVICE)
+    optimizer = model.build_optimizer()
 
-    # Create trainingdata
-    search_space: List[COTASentence] = cargo.data["search_space"]
-    training_data = []
-    label2id: dict = {
-        concept.id: idx for idx, concept in enumerate(cargo.job.cota.concepts)
-    }
-
-    for idx, sentence in enumerate(search_space):
-        if sentence.concept_annotation:
-            training_data.append(
-                (embeddings[idx], label2id[sentence.concept_annotation])
-            )
-
-    # Save trainingdata as dataloader
-    dataloader = DataLoader(training_data, batch_size=8, shuffle=True, num_workers=1)
-    dataloader_path = repo.get_dataloader_path(
-        proj_id=cargo.job.cota.project_id, dataloader_name=str(cargo.job.cota.id)
-    )
-    torch.save(dataloader, dataloader_path)
-
-    # 2. Start the training job with TrainerService
-    # with sqls.db_session() as db:
-    #     tj = trainer.create_and_start_trainer_job_async(
-    #         db=db,
-    #         trainer_params=TrainerJobParameters(
-    #             project_id=cargo.job.cota.project_id,
-    #             train_model_name=str(cargo.job.cota.id),
-    #             train_dataloader_name=str(cargo.job.cota.id),
-    #             epochs=5,
-    #         ),
-    #     )
-    model_path = repo.get_model_path(
-        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
-    )
-    model = torch.load(model_path)
-
-    criterion = batch_hard_triplet_loss
-    optimizer = optim.AdamW(model.parameters(), lr=0.001)
-    for epoch in range(5):  # loop over the dataset multiple times
+    batch_desc = "Batch: {BATCH} - Running Loss: {LOSS:.3f}"
+    for epoch in tqdm(
+        range(CEM_TRAIN_NUM_EPOCHS),
+        total=CEM_TRAIN_NUM_EPOCHS,
+        desc="Training ConceptEmbeddingModel -- Epoch:",
+        position=0,
+    ):  # loop over the dataset multiple times
         running_loss = 0.0
-        for i, data in enumerate(dataloader, 0):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs, labels = data
+        for batch_idx, batch in (
+            batch_pbar := tqdm(
+                enumerate(train_dl),
+                total=len(train_dl),
+                desc=batch_desc.format(BATCH=0, LOSS=0.0),
+                position=1,
+            )
+        ):
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs = model(inputs)
-            loss = criterion(labels, outputs, margin=100)
-            loss.backward()
+            embeddings = batch["embeddings"].to(COTA_COMPUTE_DEVICE)
+            labels = batch["labels"].to(COTA_COMPUTE_DEVICE)
+            outs = model(embeddings, labels)
             optimizer.step()
 
             # print statistics
-            running_loss += loss.item()
-            if i % 20 == 19:  # print every 2000 mini-batches
-                print(f"[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 20:.3f}")
+            running_loss += outs["loss"].item()
+            if batch_idx % 20 == 19:
+                logger.debug(
+                    f"[epoch={epoch + 1}, batch={batch_idx + 1:5d}] loss: {running_loss / 20:.3f}"
+                )
                 running_loss = 0.0
 
-    torch.save(model, model_path)
+                batch_pbar.set_description(
+                    batch_desc.format(BATCH=batch_idx + 1, LOSS=running_loss)
+                )
+
+    _store_model(cargo=cargo, model=model)
+
     return cargo
-
-    # 3. Wait for the training job to finish
-    # while (
-    #     tj.status == BackgroundJobStatus.RUNNING
-    #     or tj.status == BackgroundJobStatus.WAITING
-    # ):
-    #     tj = redis.load_trainer_job(tj.id)
-    #     time.sleep(3)
-    #     print("Waiting for training to finish")
-
-    # if tj.status == BackgroundJobStatus.FINISHED:
-    #     return cargo
-    # # ABORTED, ERROR
-    # else:
-    #     raise Exception("Training of CEM failed!")
 
 
 def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
-    import torch
-
-    from app.core.data.repo.repo_service import RepoService
-
-    repo: RepoService = RepoService()
-
     # 1. Load the reduced embeddings
-    embedding_path = repo.get_embedding_path(
-        proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
-    )
-    reduced_embeddings = torch.load(embedding_path)
+    reduced_embeddings = _load_embeddings(cargo=cargo)
 
     # if no model exists, the refined embeddings are the reduced embeddings
     if not repo.model_exists(
@@ -298,15 +226,11 @@ def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
         refined_embeddings = reduced_embeddings
     else:
         # 1. Load the CEM
-        model_path = repo.get_model_path(
-            proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
-        )
-        model = torch.load(model_path)
-        model.eval()
+        model = _load_model(cargo=cargo, eval=True, device=COTA_COMPUTE_DEVICE)
 
         # 2. Refine the search space reduced embeddings with the CEM
         with torch.no_grad():
-            refined_embeddings = model(reduced_embeddings)
+            refined_embeddings: torch.Tensor = model(reduced_embeddings)
 
     # # Overwrite Embeddings? R
     # torch.save(refined_embeddings, embedding_path)
@@ -319,7 +243,6 @@ def refine_search_space_reduced_embeddings_with_cem(cargo: Cargo) -> Cargo:
 
 
 def compute_result(cargo: Cargo) -> Cargo:
-    import umap
     # from app.core.data.repo.repo_service import RepoService
 
     # repo: RepoService = RepoService()
@@ -329,63 +252,91 @@ def compute_result(cargo: Cargo) -> Cargo:
     #     proj_id=cargo.job.cota.project_id, embedding_name=str(cargo.job.cota.id)
     # )
     # refined_embeddings = torch.load(embedding_path)
-    search_space: List[COTASentence] = cargo.data["search_space"]
-    refined_embeddings = cargo.data["refined_search_space_reduced_embeddings"]
 
     # 2. rank search space sentences for each concept
     # this can only be done if a concept has sentence annotations, because we need those to compute the concept representation
     # if we do not have sentence annotations, the ranking / similarities were already computed by the initial simsearch (in the first step)
-    if __has_min_concept_sentence_annotations(cargo):
+    if _has_min_concept_sentence_annotations(cargo):
         # 2.1 compute representation for each concept
-        annotation_indices = __get_annotation_sentence_indices(cargo)
-        concept_embeddings = dict()
-        for concept in cargo.job.cota.concepts:
-            # get the embeddings of the annotated sentences for the concept
-            concept_embedding = refined_embeddings[annotation_indices[concept.id]]
-            # the concept representation is the average of all annotated concept sentences
-            # TODO: normalize??
-            concept_embeddings[concept.id] = concept_embedding.mean(axis=0)
+        concept_embeddings = __compute_concept_embeddings(cargo)
 
         # 2.2  compute similarity of average representation to each sentence
-        concept_similarities: Dict[
-            str, List[float]
-        ] = dict()  # Dict[concept_id, List[similarity]]
-        for concept in cargo.job.cota.concepts:
-            concept_embedding = concept_embeddings[concept.id]
-            sims = concept_embedding @ refined_embeddings.T
-            # TODO: normalize?
-            concept_similarities[concept.id] = sims.tolist()
+        concept_similarities = __compute_concept_to_sentence_similarities(
+            cargo, concept_embeddings
+        )
 
         # 2.3 update search_space with the concept similarities
-        for concept_id, similarities in concept_similarities.items():
-            for sentence, similarity in zip(search_space, similarities):
-                sentence.concept_similarities[concept_id] = similarity
+        __update_search_space_with_concept_similarities(cargo, concept_similarities)
 
     # 3. Visualize results: Reduce the refined embeddings with UMAP to 2D
-
     # 3.1 reduce the dimensionality of the refined embeddings with UMAP
-    reducer = umap.UMAP(n_components=2)
-    visual_refined_embeddings = reducer.fit_transform(
-        refined_embeddings.numpy()
-    ).tolist()
+    refined_embeddings: torch.Tensor = cargo.data[
+        "refined_search_space_reduced_embeddings"
+    ]
+    visual_refined_embeddings = _apply_umap(
+        embs=refined_embeddings, n_components=2, return_list=True
+    )
 
     # 3.2 update search_space with the 2D coordinates
-    for sentence, coordinates in zip(search_space, visual_refined_embeddings):
-        sentence.x = coordinates[0]
-        sentence.y = coordinates[1]
+    __update_search_space_with_2D_coords(cargo, visual_refined_embeddings)
 
     return cargo
 
 
+def __compute_concept_embeddings(cargo: Cargo) -> Dict[str, torch.Tensor]:
+    refined_embeddings: torch.Tensor = cargo.data[
+        "refined_search_space_reduced_embeddings"
+    ]
+    annotation_indices = _get_annotation_sentence_indices(cargo)
+    # Dict[concept_id, concept_embedding]
+    concept_embeddings: Dict[str, torch.Tensor] = dict()
+    for concept in cargo.job.cota.concepts:
+        # get the embeddings of the annotated sentences for the concept
+        concept_embedding: torch.Tensor = refined_embeddings[
+            annotation_indices[concept.id]
+        ]
+        # the concept representation is the average of all annotated concept sentences
+        # TODO: normalize??
+        concept_embeddings[concept.id] = concept_embedding.mean(axis=0)
+
+    return concept_embeddings
+
+
+def __compute_concept_to_sentence_similarities(
+    cargo: Cargo, concept_embeddings: Dict[str, torch.Tensor]
+) -> Dict[str, List[float]]:
+    refined_embeddings: torch.Tensor = cargo.data[
+        "refined_search_space_reduced_embeddings"
+    ]
+    # Dict[concept_id, List[similarity]]
+    concept_similarities: Dict[str, List[float]] = dict()
+    for concept in cargo.job.cota.concepts:
+        concept_embedding = concept_embeddings[concept.id]
+        sims = concept_embedding @ refined_embeddings.T
+        # TODO: normalize?
+        concept_similarities[concept.id] = sims.tolist()
+    return concept_similarities
+
+
+def __update_search_space_with_concept_similarities(
+    cargo: Cargo, concept_similarities: Dict[str, List[float]]
+) -> None:
+    search_space: List[COTASentence] = cargo.data["search_space"]
+    for concept_id, similarities in concept_similarities.items():
+        for sentence, similarity in zip(search_space, similarities):
+            sentence.concept_similarities[concept_id] = similarity
+
+
+def __update_search_space_with_2D_coords(
+    cargo: Cargo, visual_refined_embeddings: List[List[float]]
+) -> None:
+    search_space: List[COTASentence] = cargo.data["search_space"]
+    for sentence, coordinates in zip(search_space, visual_refined_embeddings):
+        sentence.x = coordinates[0]
+        sentence.y = coordinates[1]
+
+
 def add_date_to_search_space(cargo: Cargo) -> Cargo:
-    from datetime import datetime
-
-    from app.core.data.orm.source_document import SourceDocumentORM
-    from app.core.data.orm.source_document_metadata import SourceDocumentMetadataORM
-    from app.core.db.sql_service import SQLService
-
-    sqls: SQLService = SQLService()
-
     # 1. read the required data
     search_space: List[COTASentence] = cargo.data["search_space"]
     sdoc_ids = [cota_sent.sdoc_id for cota_sent in search_space]
@@ -394,7 +345,8 @@ def add_date_to_search_space(cargo: Cargo) -> Cargo:
     sdoc_id_to_date: Dict[int, datetime] = dict()
 
     # this is only possible if the cota has a date_metadata_id
-    if cargo.job.cota.settings.date_metadata_id is not None:
+    date_metadata_id = cargo.job.cota.timeline_settings.date_metadata_id
+    if date_metadata_id is not None:
         with sqls.db_session() as db:
             query = (
                 db.query(
@@ -404,8 +356,7 @@ def add_date_to_search_space(cargo: Cargo) -> Cargo:
                 .join(SourceDocumentORM.metadata_)
                 .filter(
                     SourceDocumentORM.id.in_(sdoc_ids),
-                    SourceDocumentMetadataORM.project_metadata_id
-                    == cargo.job.cota.settings.date_metadata_id,
+                    SourceDocumentMetadataORM.project_metadata_id == date_metadata_id,
                     SourceDocumentMetadataORM.date_value.isnot(None),
                 )
             )
@@ -427,12 +378,6 @@ def add_date_to_search_space(cargo: Cargo) -> Cargo:
 
 
 def store_search_space_in_db(cargo: Cargo) -> Cargo:
-    from app.core.analysis.cota.service import COTAService
-    from app.core.db.sql_service import SQLService
-
-    cota_service: COTAService = COTAService()
-    sqls: SQLService = SQLService()
-
     # 1. read the required data
     search_space: List[COTASentence] = cargo.data["search_space"]
 

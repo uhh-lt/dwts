@@ -177,9 +177,11 @@ class COTAService(metaclass=SingletonMeta):
         cota = self.read_by_id(db=db, cota_id=cota_id)
 
         # delete the model
-        self.repo.get_model_path(cota.project_id, str(cota.id)).unlink(missing_ok=True)
+        self.repo.get_model_filename(cota.project_id, str(cota.id)).unlink(
+            missing_ok=True
+        )
         # delete the embeddings
-        self.repo.get_embedding_path(cota.project_id, str(cota.id)).unlink(
+        self.repo.get_embeddings_filename(cota.project_id, str(cota.id)).unlink(
             missing_ok=True
         )
         # delete the refinement jobs
