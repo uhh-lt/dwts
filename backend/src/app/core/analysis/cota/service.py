@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.celery.background_jobs import start_cota_refinement_job_async
 from app.core.analysis.cota.pipeline import build_cota_refinement_pipeline
 from app.core.data.crud.concept_over_time_analysis import crud_cota
+from app.core.data.crud.project_metadata import crud_project_meta
+from app.core.data.doc_type import DocType
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.concept_over_time_analysis import (
     COTACreate,
@@ -16,9 +18,12 @@ from app.core.data.dto.concept_over_time_analysis import (
     COTARefinementJobCreate,
     COTARefinementJobRead,
     COTASentence,
+    COTATimelineSettings,
     COTAUpdate,
     COTAUpdateAsInDB,
 )
+from app.core.data.dto.project_metadata import ProjectMetadataRead
+from app.core.data.meta_type import MetaType
 from app.core.data.repo.repo_service import RepoService
 from app.core.db.redis_service import RedisService
 from app.core.db.sql_service import SQLService
@@ -70,6 +75,30 @@ class COTAService(metaclass=SingletonMeta):
 
     def create(self, db: Session, cota_create: COTACreate) -> COTARead:
         db_obj = crud_cota.create(db=db, create_dto=cota_create)
+
+        # initialize the date metadata if possible
+        project_metadata = [
+            ProjectMetadataRead.model_validate(pm)
+            for pm in crud_project_meta.read_by_project(
+                db=db, proj_id=cota_create.project_id
+            )
+        ]
+        project_metadata = [
+            pm
+            for pm in project_metadata
+            if pm.metatype == MetaType.DATE and pm.doctype == DocType.text
+        ]
+        if len(project_metadata) > 0:
+            db_obj = self.update(
+                db=db,
+                cota_id=db_obj.id,
+                cota_update=COTAUpdate(
+                    timeline_settings=COTATimelineSettings(
+                        date_metadata_id=project_metadata[0].id
+                    )
+                ),
+            )
+
         return COTARead.model_validate(db_obj)
 
     def read_by_id(self, *, db: Session, cota_id: int) -> COTARead:
