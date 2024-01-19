@@ -129,6 +129,22 @@ parser.add_argument(
     required=False,
     dest="file_extension",
 )
+parser.add_argument(
+    "--batch_size",
+    help="The batch size for uploading files. Default is 200",
+    type=int,
+    default=200,
+    required=False,
+    dest="batch_size",
+)
+parser.add_argument(
+    "--max_num_docs",
+    help="The maximum number of documents to upload. Default is 400",
+    type=int,
+    default=400,
+    required=False,
+    dest="max_num_docs",
+)
 args = parser.parse_args()
 
 if len(args.metadata_keys) != len(args.metadata_types):
@@ -180,7 +196,8 @@ if directory.is_file():
 #           dict_key        name, content, mime
 files: List[Tuple[str, Tuple[str, bytes, str]]] = []
 json_data = dict()
-for file in directory.glob(f"**/*.{args.file_extension}"):
+files_in_dir = list(directory.glob(f"**/*.{args.file_extension}"))
+for file in tqdm(files_in_dir, f"Reading and checking files from {directory}!"):
     if not file.is_file():
         continue
 
@@ -224,7 +241,7 @@ temp = {upload_file[1][0]: upload_file for upload_file in files}
 files = list(temp.values())
 
 
-def upload_files(files: List[Tuple[str, Tuple[str, bytes, str]]]):
+def upload_file_batch(file_batch: List[Tuple[str, Tuple[str, bytes, str]]]):
     # status before upload
     status = api.read_project_status(proj_id=project["id"])
     sdocs_in_project = status["num_sdocs_finished"]
@@ -232,32 +249,35 @@ def upload_files(files: List[Tuple[str, Tuple[str, bytes, str]]]):
     # file upload
     num_files_to_upload = api.upload_files(
         proj_id=project["id"],
-        files=files,
+        files=file_batch,
         filter_duplicate_files_before_upload=args.filter_duplicate_files_before_upload,
     )
 
     # wait for pre-processing to finishe
     status = api.read_project_status(proj_id=project["id"])
-    while status["num_sdocs_finished"] != (sdocs_in_project + num_files_to_upload):
-        sleep(5)
-        status = api.read_project_status(proj_id=project["id"])
-        print(
-            f"Uploading documents. Current status: {status['num_sdocs_finished'] - sdocs_in_project} / {num_files_to_upload}"
-        )
+    with tqdm(
+        total=num_files_to_upload, desc="Document Preprocessing: ", position=1
+    ) as pbar:
+        while status["num_sdocs_finished"] != (sdocs_in_project + num_files_to_upload):
+            sleep(5)
+            status = api.read_project_status(proj_id=project["id"])
+            pbar.update(status["num_sdocs_finished"] - sdocs_in_project)
 
     print("Upload success!")
 
 
 print(f"Uploading {len(files)} files to project '{project['title']}'!")
-
 # upload files batchwise, 200 files at a time
-num_batches = math.ceil(len(files) / 200)
-current_batch = 1
-for i in range(0, len(files), 200):
-    print(f"\nUploading batch {current_batch} / {num_batches}")
-    upload_files(files=files[i : i + 200])
+num_batches = math.ceil(len(files) / args.batch_size)
+for i in tqdm(
+    range(0, len(files), args.batch_size),
+    desc="Uploading batches... ",
+    total=num_batches,
+):
+    upload_file_batch(file_batch=files[i : i + args.batch_size])
     api.refresh_login()
-    current_batch += 1
+    if (i + 1) * args.batch_size > args.max_num_docs:
+        break
 
 
 # create new tag if it does not exist
@@ -279,8 +299,9 @@ api.bulk_apply_tags(sdoc_ids=list(untagged_sdoc_ids), tag_ids=[tag["id"]])
 
 # apply sdoc metadata
 applied = set()
-print("Applying metadata to sdocs!")
-for filename, data in tqdm(json_data.items(), total=len(json_data)):
+for filename, data in tqdm(
+    json_data.items(), total=len(json_data), desc="Applying metadata to sdocs... "
+):
     sdoc_id = api.resolve_sdoc_id_from_proj_and_filename(
         proj_id=project["id"], filename=filename
     )
