@@ -4,7 +4,7 @@
 
 import type { DateGroupBy } from "./DateGroupBy";
 
-export type COTASettings = {
+export type COTATimelineSettings = {
   /**
    * Group by date
    */

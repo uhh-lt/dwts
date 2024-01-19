@@ -8,11 +8,15 @@ export type TrainerJobParameters = {
    */
   project_id: number;
   /**
-   * The name of the base model.
+   * The name of the model.
    */
-  base_model_name?: string;
+  train_model_name: string;
   /**
-   * The name of the new model.
+   * The name of the training dataloader.
    */
-  new_model_name: string;
+  train_dataloader_name: string;
+  /**
+   * The epochs to train.
+   */
+  epochs: number;
 };

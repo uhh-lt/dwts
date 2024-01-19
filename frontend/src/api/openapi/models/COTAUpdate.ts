@@ -4,7 +4,8 @@
 
 import type { COTAConcept } from "./COTAConcept";
 import type { COTASentence } from "./COTASentence";
-import type { COTASettings } from "./COTASettings";
+import type { COTATimelineSettings } from "./COTATimelineSettings";
+import type { COTATrainingSettings } from "./COTATrainingSettings";
 
 export type COTAUpdate = {
   /**
@@ -12,9 +13,13 @@ export type COTAUpdate = {
    */
   name?: string | null;
   /**
-   * Settings of the ConceptOverTimeAnalysis.
+   * Timeline Settings of the ConceptOverTimeAnalysis.
    */
-  settings?: COTASettings | null;
+  timeline_settings?: COTATimelineSettings | null;
+  /**
+   * Training Settings of the ConceptOverTimeAnalysis.
+   */
+  training_settings?: COTATrainingSettings | null;
   /**
    * List of Concepts that are part of the ConceptOverTimeAnalysis
    */
