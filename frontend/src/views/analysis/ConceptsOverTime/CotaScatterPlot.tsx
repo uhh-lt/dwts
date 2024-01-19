@@ -80,10 +80,13 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
               data={chartData[concept.id]}
               fill={concept.color}
               isAnimationActive={false}
-              shape={(props) => {
-                console.log(props);
-                return <rect />;
-              }}
+              shape={(props) => (
+                <ScatterPlotDot
+                  props={props}
+                  onClick={handleDotClick}
+                  provenanceSdocIdSentenceId={provenanceSdocIdSentenceId}
+                />
+              )}
             />
           ))}
           <Scatter
@@ -91,25 +94,13 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
             data={chartData["NO_CONCEPT"]}
             fill="#8884d8a8"
             isAnimationActive={false}
-            shape={(props) => {
-              const sdocIdSentenceId = `${props.sdoc_id}-${props.sentence_id}`;
-              const isSelected = sdocIdSentenceId === provenanceSdocIdSentenceId;
-              return (
-                <Dot
-                  cx={props.cx}
-                  cy={props.cy}
-                  fill={isSelected ? "#8884d8" : props.fill}
-                  key={props.key}
-                  r={isSelected ? 10 : 5}
-                  stroke={isSelected ? "black" : undefined}
-                  strokeWidth={isSelected ? 2 : undefined}
-                  style={{
-                    zIndex: isSelected ? 100 : undefined,
-                  }}
-                  onClick={() => handleDotClick(sdocIdSentenceId)}
-                />
-              );
-            }}
+            shape={(props) => (
+              <ScatterPlotDot
+                props={props}
+                onClick={handleDotClick}
+                provenanceSdocIdSentenceId={provenanceSdocIdSentenceId}
+              />
+            )}
           />
         </ScatterChart>
       </ResponsiveContainer>
@@ -126,6 +117,32 @@ function CotaScatterPlot({ cota }: CotaScatterPlotProps) {
       />
       <CardContent className="myFlexFillAllContainer">{content}</CardContent>
     </Card>
+  );
+}
+
+interface ScatterPlotDotProps {
+  props: any;
+  onClick: (sdocIdSentenceId: string) => void;
+  provenanceSdocIdSentenceId: string | undefined;
+}
+
+function ScatterPlotDot({ props, onClick, provenanceSdocIdSentenceId }: ScatterPlotDotProps) {
+  const sdocIdSentenceId = `${props.sdoc_id}-${props.sentence_id}`;
+  const isSelected = sdocIdSentenceId === provenanceSdocIdSentenceId;
+  return (
+    <Dot
+      cx={props.cx}
+      cy={props.cy}
+      fill={isSelected ? "#8884d8" : props.fill}
+      key={props.key}
+      r={isSelected ? 10 : 5}
+      stroke={isSelected ? "black" : undefined}
+      strokeWidth={isSelected ? 2 : undefined}
+      style={{
+        zIndex: isSelected ? 100 : undefined,
+      }}
+      onClick={() => onClick(sdocIdSentenceId)}
+    />
   );
 }
 
