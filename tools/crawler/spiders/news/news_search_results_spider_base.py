@@ -93,7 +93,7 @@ class NewsSearchResultsSpiderBase(SpiderBase):
         article_title = self._get_article_title(response)
         author = self._get_article_author(response)
         published_date = self._get_published_date(response)
-        visited_date: str = datetime.datetime.now().strftime("%Y-%d-%m")
+        visited_date: str = datetime.datetime.now().isoformat()
         filename = slugify(article_title)
 
         # write raw html, but use custom filename

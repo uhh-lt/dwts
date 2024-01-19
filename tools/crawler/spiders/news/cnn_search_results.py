@@ -1,6 +1,7 @@
 import logging
 import math
 import re
+from datetime import datetime
 from typing import Any, Dict, List
 from uuid import uuid4
 
@@ -109,10 +110,8 @@ class CNNSearchResultsSpider(NewsSearchResultsSpiderBase):
             "//div[contains(@class, 'timestamp')]/text()"
         ).get()
         if published_date is None:
-            return "1970-01-01"
-        return parser.parse("".join(published_date.split(",")[-2:])).strftime(
-            "%Y-%m-%d"
-        )
+            return datetime.now().isoformat()
+        return parser.parse("".join(published_date.split(",")[-2:])).isoformat()
 
     def _is_search_results_page(self, response) -> bool:
         return response.url.startswith(self.web_search_base_url)
