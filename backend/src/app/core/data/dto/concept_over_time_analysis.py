@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Optional, Union
 
 import srsly
@@ -42,7 +43,7 @@ class COTAConcept(BaseModel):
     visible: bool = Field(description="Visibility of the Concept")
 
 
-class COTASettings(BaseModel):
+class COTATimelineSettings(BaseModel):
     group_by: DateGroupBy = Field(description="Group by date", default=DateGroupBy.YEAR)
     date_metadata_id: Optional[int] = Field(
         description="ID of the Project Date Metadata that is used for the ConceptOverTimeAnalysis",
@@ -51,6 +52,34 @@ class COTASettings(BaseModel):
     threshold: float = Field(
         description="Threshold of the ConceptOverTimeAnalysis", default=0.9
     )
+
+
+class DimensionalityReductionAlgorithm(Enum):
+    UMAP = "umap"
+    PCA = "pca"
+    TSNE = "tsne"
+
+
+class COTATrainingSettings(BaseModel):
+    search_space_topk: int = Field(
+        description="Number of sentences to use as search space per concept.",
+        default=1000,
+    )
+    search_space_threshold: float = Field(
+        description="Threshold to filter sentences from the search space.",
+        default=0.8,
+    )
+    min_required_annotations_per_concept: int = Field(
+        description="Minimum number of annotations per concept required to train the CEM.",
+        default=5,
+    )
+    dimensionality_reduction_algorithm: DimensionalityReductionAlgorithm = Field(
+        description="Dimensionality Reduction Algorithm used for the ConceptOverTimeAnalysis",
+        default=DimensionalityReductionAlgorithm.UMAP,
+    )
+    layers: int = Field(description="Number of layers of the CEM.", default=5)
+    dimensions: int = Field(description="Number of dimensions of the CEM.", default=64)
+    epochs: int = Field(description="Number of epochs to train", default=5)
 
 
 ####################
@@ -74,8 +103,12 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
         description="Name of the ConceptOverTimeAnalysis",
         default=None,
     )
-    settings: Optional[COTASettings] = Field(
-        description="Settings of the ConceptOverTimeAnalysis.",
+    timeline_settings: Optional[COTATimelineSettings] = Field(
+        description="Timeline Settings of the ConceptOverTimeAnalysis.",
+        default=None,
+    )
+    training_settings: Optional[COTATrainingSettings] = Field(
+        description="Training Settings of the ConceptOverTimeAnalysis.",
         default=None,
     )
     concepts: Optional[List[COTAConcept]] = Field(
@@ -96,8 +129,12 @@ class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
         description="Name of the ConceptOverTimeAnalysis",
         default=None,
     )
-    settings: Optional[str] = Field(
-        description="JSON Representation of the Settings of the ConceptOverTimeAnalysis.",
+    timeline_settings: Optional[str] = Field(
+        description="JSON Representation of the Timeline Settings of the ConceptOverTimeAnalysis.",
+        default=None,
+    )
+    training_settings: Optional[str] = Field(
+        description="JSON Representation of the Training Settings of the ConceptOverTimeAnalysis.",
         default=None,
     )
     concepts: Optional[str] = Field(
@@ -122,8 +159,11 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
     project_id: int = Field(
         description="Project the ConceptOverTimeAnalysis belongs to"
     )
-    settings: COTASettings = Field(
-        description="Settings of the ConceptOverTimeAnalysis."
+    timeline_settings: COTATimelineSettings = Field(
+        description="Timeline Analysis Settings of the ConceptOverTimeAnalysis."
+    )
+    training_settings: COTATrainingSettings = Field(
+        description="Timeline Training Settings of the ConceptOverTimeAnalysis."
     )
     concepts: List[COTAConcept] = Field(
         description="List of Concepts that are part of the ConceptOverTimeAnalysis"
@@ -189,20 +229,36 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
             "Must be a JSON string or a list of COTASentences."
         )
 
-    @field_validator("settings", mode="before")
+    @field_validator("timeline_settings", mode="before")
     @classmethod
-    def json_loads_settings(cls, v: Union[str, dict]) -> COTASettings:
+    def json_loads_timeline_settings(cls, v: Union[str, dict]) -> COTATimelineSettings:
         if isinstance(v, str):
             # v is a JSON string from the DB
             data = srsly.json_loads(v)
             if isinstance(data, dict):
-                return COTASettings(**data)
+                return COTATimelineSettings(**data)
         elif isinstance(v, dict):
-            return COTASettings(**v)
+            return COTATimelineSettings(**v)
 
         raise ValueError(
-            "Invalid value for settings. "
-            "Must be a JSON string or a dict of COTASettings."
+            "Invalid value for timeline_settings. "
+            "Must be a JSON string or a dict of COTATimelineSettings."
+        )
+
+    @field_validator("training_settings", mode="before")
+    @classmethod
+    def json_loads_training_settings(cls, v: Union[str, dict]) -> COTATrainingSettings:
+        if isinstance(v, str):
+            # v is a JSON string from the DB
+            data = srsly.json_loads(v)
+            if isinstance(data, dict):
+                return COTATrainingSettings(**data)
+        elif isinstance(v, dict):
+            return COTATrainingSettings(**v)
+
+        raise ValueError(
+            "Invalid value for training_settings. "
+            "Must be a JSON string or a dict of COTATrainingSettings."
         )
 
     model_config = ConfigDict(from_attributes=True)

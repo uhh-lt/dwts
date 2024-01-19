@@ -100,7 +100,12 @@ class COTAService(metaclass=SingletonMeta):
 
         update_dto_as_in_db = COTAUpdateAsInDB(
             **cota_update.model_dump(
-                exclude={"concepts", "search_space", "settings"},
+                exclude={
+                    "concepts",
+                    "search_space",
+                    "training_settings",
+                    "timeline_settings",
+                },
                 exclude_none=True,
             ),
         )
@@ -115,9 +120,17 @@ class COTAService(metaclass=SingletonMeta):
             )
             update_dto_as_in_db.search_space = search_space_str
 
-        if cota_update.settings is not None:
-            settings_str = srsly.json_dumps(jsonable_encoder(cota_update.settings))
-            update_dto_as_in_db.settings = settings_str
+        if cota_update.training_settings is not None:
+            training_settings_str = srsly.json_dumps(
+                jsonable_encoder(cota_update.training_settings)
+            )
+            update_dto_as_in_db.training_settings = training_settings_str
+
+        if cota_update.timeline_settings is not None:
+            timeline_settings_str = srsly.json_dumps(
+                jsonable_encoder(cota_update.timeline_settings)
+            )
+            update_dto_as_in_db.timeline_settings = timeline_settings_str
 
         # update the cota in db
         db_obj = crud_cota.update(db=db, id=cota_id, update_dto=update_dto_as_in_db)

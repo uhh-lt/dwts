@@ -30,8 +30,16 @@ class ConceptOverTimeAnalysisORM(ORMBase):
         index=False,
     )
 
-    # JSON representation of COTASettings
-    settings: Mapped[str] = mapped_column(
+    # JSON representation of COTATimelineSettings
+    timeline_settings: Mapped[str] = mapped_column(
+        String,
+        server_default="{}",
+        nullable=False,
+        index=False,
+    )
+
+    # JSON representation of COTATrainingSettings
+    training_settings: Mapped[str] = mapped_column(
         String,
         server_default="{}",
         nullable=False,
