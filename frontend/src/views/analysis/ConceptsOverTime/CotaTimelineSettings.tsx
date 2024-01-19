@@ -33,8 +33,8 @@ function CotaSettings({ cota }: CotaSettingsProps) {
         cotaId: cota.id,
         requestBody: {
           ...cota,
-          settings: {
-            ...cota.settings,
+          timeline_settings: {
+            ...cota.timeline_settings,
             date_metadata_id: parseInt(event.target.value),
           },
         },
@@ -42,7 +42,7 @@ function CotaSettings({ cota }: CotaSettingsProps) {
       {
         onSuccess(data, variables, context) {
           SnackbarAPI.openSnackbar({
-            text: `Updated settings of CotA '${data.name}'`,
+            text: `Updated timeline settings of CotA '${data.name}'`,
             severity: "success",
           });
         },
@@ -56,8 +56,8 @@ function CotaSettings({ cota }: CotaSettingsProps) {
         cotaId: cota.id,
         requestBody: {
           ...cota,
-          settings: {
-            ...cota.settings,
+          timeline_settings: {
+            ...cota.timeline_settings,
             group_by: event.target.value as DateGroupBy,
           },
         },
@@ -65,7 +65,7 @@ function CotaSettings({ cota }: CotaSettingsProps) {
       {
         onSuccess(data, variables, context) {
           SnackbarAPI.openSnackbar({
-            text: `Updated settings of CotA '${data.name}'`,
+            text: `Updated timeline settings of CotA '${data.name}'`,
             severity: "success",
           });
         },
@@ -80,8 +80,8 @@ function CotaSettings({ cota }: CotaSettingsProps) {
         cotaId: cota.id,
         requestBody: {
           ...cota,
-          settings: {
-            ...cota.settings,
+          timeline_settings: {
+            ...cota.timeline_settings,
             threshold: parseFloat(event.target.value),
           },
         },
@@ -89,7 +89,7 @@ function CotaSettings({ cota }: CotaSettingsProps) {
       {
         onSuccess(data, variables, context) {
           SnackbarAPI.openSnackbar({
-            text: `Updated settings of CotA '${data.name}'`,
+            text: `Updated timeline settings of CotA '${data.name}'`,
             severity: "success",
           });
         },
@@ -116,7 +116,7 @@ function CotaSettings({ cota }: CotaSettingsProps) {
             fullWidth
             label={"Group by"}
             variant="outlined"
-            value={cota.settings.group_by}
+            value={cota.timeline_settings.group_by}
             onChange={handleChangeGroupBy}
             helperText="Specify the aggregation of the results."
           >
@@ -132,10 +132,13 @@ function CotaSettings({ cota }: CotaSettingsProps) {
             fullWidth
             label={"Date metadata"}
             variant="outlined"
-            value={cota.settings.date_metadata_id || -1}
+            value={cota.timeline_settings.date_metadata_id || -1}
             onChange={handleChangeMetadataId}
             helperText={
-              <ValidDocumentsChecker projectId={projectId} dateMetadataId={cota.settings.date_metadata_id || -1} />
+              <ValidDocumentsChecker
+                projectId={projectId}
+                dateMetadataId={cota.timeline_settings.date_metadata_id || -1}
+              />
             }
             error={filteredProjectMetadata?.length === 0}
             disabled={filteredProjectMetadata?.length === 0}
@@ -160,7 +163,7 @@ function CotaSettings({ cota }: CotaSettingsProps) {
             fullWidth
             label={"Similarity threshold"}
             variant="outlined"
-            defaultValue={cota.settings.threshold}
+            defaultValue={cota.timeline_settings.threshold}
             helperText={"Specify the similarity threshold."}
             onBlur={handleChangeThreshold}
             type="number"

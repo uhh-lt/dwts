@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { COTAConcept } from "../../../api/openapi";
+import { COTAConcept, COTATrainingSettings, DimensionalityReductionAlgorithm } from "../../../api/openapi";
 
 export interface CotaState {
   conceptEditorOpen: boolean;
@@ -9,6 +9,9 @@ export interface CotaState {
   provenanceConcept: string | undefined;
   selectedConceptId: string | undefined;
   isTimelineView: boolean;
+  // COTATrainingSettings.tsx
+  trainingSettings: COTATrainingSettings;
+  trainingSettingsOpen: boolean;
 }
 
 const initialState: CotaState = {
@@ -25,6 +28,17 @@ const initialState: CotaState = {
   provenanceSdocIdSentenceId: undefined,
   provenanceConcept: undefined,
   isTimelineView: false,
+  // COTATrainingSettings.tsx
+  trainingSettings: {
+    dimensionality_reduction_algorithm: DimensionalityReductionAlgorithm.UMAP,
+    dimensions: 64,
+    epochs: 5,
+    layers: 5,
+    min_required_annotations_per_concept: 5,
+    search_space_threshold: 0.8,
+    search_space_topk: 1000,
+  },
+  trainingSettingsOpen: false,
 };
 
 export const cotaSlice = createSlice({
@@ -78,6 +92,14 @@ export const cotaSlice = createSlice({
       } else {
         state.provenanceSdocIdSentenceId = action.payload;
       }
+    },
+    onOpenTrainingSettings: (state, action: PayloadAction<{ trainingSettings: COTATrainingSettings }>) => {
+      state.trainingSettingsOpen = true;
+      state.trainingSettings = action.payload.trainingSettings;
+    },
+    onCloseTrainingSettings: (state) => {
+      state.trainingSettingsOpen = false;
+      state.trainingSettings = initialState.trainingSettings;
     },
   },
 });

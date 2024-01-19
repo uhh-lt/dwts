@@ -22,15 +22,15 @@ interface CotaTimelinePlotProps {
 function CotaTimelinePlot({ cota }: CotaTimelinePlotProps) {
   // computed
   const chartData = useMemo(() => {
-    if (cota.settings.threshold === undefined) return [];
-    if (cota.settings.group_by === undefined) return [];
+    if (cota.timeline_settings.threshold === undefined) return [];
+    if (cota.timeline_settings.group_by === undefined) return [];
 
     let result: Record<string, any> = {};
     cota.search_space.forEach((cotaSentence) => {
       // prepare date
       const date = dateToLocaleDate(cotaSentence.date);
       let dateStr = "";
-      switch (cota.settings.group_by) {
+      switch (cota.timeline_settings.group_by) {
         case DateGroupBy.DAY:
           dateStr = date.getFullYear() + "-" + padStart(`${date.getMonth() + 1}`, 2, "0") + "-" + date.getDate();
           break;
@@ -52,7 +52,7 @@ function CotaTimelinePlot({ cota }: CotaTimelinePlotProps) {
 
       // count concept, if similartiy is above threshold
       Object.entries(cotaSentence.concept_similarities).forEach(([conceptId, conceptSimilarity]) => {
-        if (conceptSimilarity > cota.settings.threshold!) {
+        if (conceptSimilarity > cota.timeline_settings.threshold!) {
           result[dateStr][conceptId] += 1;
         }
       });
