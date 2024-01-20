@@ -62,7 +62,7 @@ class ConceptEmbeddingModel(nn.Module):
                 betas=betas,
                 eps=eps,
             )
-        if opti == "sgd":
+        elif opti == "sgd":
             optimizer = optim.SGD(
                 self.parameters(),
                 lr=lr,
