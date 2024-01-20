@@ -1,11 +1,14 @@
 from pathlib import Path
-from typing import Dict, Literal, Tuple
+from typing import Dict, Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from loguru import logger
-from online_triplet_loss.losses import batch_all_triplet_loss, batch_hard_triplet_loss
+from sentence_transformers.losses import (
+    BatchHardTripletLoss,
+    BatchHardTripletLossDistanceFunction,
+)
 
 
 class ConceptEmbeddingModel(nn.Module):
@@ -15,23 +18,14 @@ class ConceptEmbeddingModel(nn.Module):
         input_dim: int = 64,
         hidden_dim: int = 64,
         output_dim: int = 64,
-        loss_fn: Literal[
-            "batch_hard_triplet_loss", "batch_all_triplet_loss"
-        ] = "batch_hard_triplet_loss",
-        triplet_loss_margin: int = 100,
+        triplet_loss_margin: float = 5,
+        distance_metric=BatchHardTripletLossDistanceFunction.eucledian_distance,
     ):
         super().__init__()
         self.num_layers = num_layers
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
-        if loss_fn == "batch_hard_triplet_loss":
-            self.loss_fn = batch_hard_triplet_loss
-        elif loss_fn == "batch_all_triplet_loss":
-            self.loss_fn = batch_all_triplet_loss
-        else:
-            raise NotImplementedError(f"Loss function {loss_fn} not implemented!")
-        self.triplet_loss_margin = triplet_loss_margin
 
         layers = []
         for i in range(num_layers):
@@ -44,6 +38,12 @@ class ConceptEmbeddingModel(nn.Module):
             layers.append(torch.nn.ReLU())
 
         self.model = torch.nn.Sequential(*layers)
+
+        self.loss_fn = BatchHardTripletLoss(
+            model=self.model,
+            margin=triplet_loss_margin,
+            distance_metric=distance_metric,
+        )
 
     def build_optimizer(
         self,
@@ -80,12 +80,10 @@ class ConceptEmbeddingModel(nn.Module):
         embeddings = self.model(embeddings)  # B x D
         if labels is None:
             return embeddings
-        loss = self.loss_fn(
+        loss = self.loss_fn.batch_hard_triplet_loss(
             labels=labels,
             embeddings=embeddings,
-            margin=self.triplet_loss_margin,
-            squared=False,
-        )  # scalar float tensor
+        )
         if isinstance(loss, Tuple):
             loss = loss[0]
 
