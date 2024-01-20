@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Callable, Dict, Tuple
+from typing import Dict, Literal, Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from loguru import logger
-from online_triplet_loss.losses import batch_hard_triplet_loss
+from online_triplet_loss.losses import batch_all_triplet_loss, batch_hard_triplet_loss
 
 
 class ConceptEmbeddingModel(nn.Module):
@@ -15,7 +15,9 @@ class ConceptEmbeddingModel(nn.Module):
         input_dim: int = 64,
         hidden_dim: int = 64,
         output_dim: int = 64,
-        loss_fn: Callable[..., torch.Tensor] = batch_hard_triplet_loss,
+        loss_fn: Literal[
+            "batch_hard_triplet_loss", "batch_all_triplet_loss"
+        ] = "batch_hard_triplet_loss",
         triplet_loss_margin: int = 100,
     ):
         super().__init__()
@@ -23,7 +25,12 @@ class ConceptEmbeddingModel(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
-        self.loss_fn = loss_fn
+        if loss_fn == "batch_hard_triplet_loss":
+            self.loss_fn = batch_hard_triplet_loss
+        elif loss_fn == "batch_all_triplet_loss":
+            self.loss_fn = batch_all_triplet_loss
+        else:
+            raise NotImplementedError(f"Loss function {loss_fn} not implemented!")
         self.triplet_loss_margin = triplet_loss_margin
 
         layers = []
@@ -45,6 +52,7 @@ class ConceptEmbeddingModel(nn.Module):
         weight_decay: float = 1e-2,
         betas: Tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-8,
+        momentum: float = 0.9,
     ) -> torch.optim.Optimizer:
         if opti == "adamw":
             optimizer = optim.AdamW(
@@ -53,6 +61,12 @@ class ConceptEmbeddingModel(nn.Module):
                 weight_decay=weight_decay,
                 betas=betas,
                 eps=eps,
+            )
+        if opti == "sgd":
+            optimizer = optim.SGD(
+                self.parameters(),
+                lr=lr,
+                momentum=momentum,
             )
         else:
             raise NotImplementedError(f"Optimizer {opti} not implemented!")
@@ -72,7 +86,11 @@ class ConceptEmbeddingModel(nn.Module):
             margin=self.triplet_loss_margin,
             squared=False,
         )  # scalar float tensor
+        if isinstance(loss, Tuple):
+            loss = loss[0]
+
         loss.backward()
+
         return {"embeddings": embeddings, "loss": loss}
 
     def __repr__(self) -> str:
