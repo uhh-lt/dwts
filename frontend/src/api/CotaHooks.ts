@@ -107,6 +107,22 @@ const usePollMostRecentRefinementJob = (cotaId: number | undefined) => {
   );
 };
 
+const useAnnotateCotaSentences = () =>
+  useMutation(ConceptOverTimeAnalysisService.annotateCotaSentence, {
+    onSuccess: (cota) => {
+      queryClient.invalidateQueries([QueryKey.COTA, cota.id]);
+      queryClient.invalidateQueries([QueryKey.COTAS_PROJECT_USER, cota.project_id, cota.user_id]);
+    },
+  });
+
+const useRemoveCotaSentences = () =>
+  useMutation(ConceptOverTimeAnalysisService.removeCotaSentence, {
+    onSuccess: (cota) => {
+      queryClient.invalidateQueries([QueryKey.COTA, cota.id]);
+      queryClient.invalidateQueries([QueryKey.COTAS_PROJECT_USER, cota.project_id, cota.user_id]);
+    },
+  });
+
 const CotaHooks = {
   useGetCota,
   useGetUserCotas,
@@ -117,6 +133,8 @@ const CotaHooks = {
   useRefineCota,
   useResetCota,
   usePollMostRecentRefinementJob,
+  useAnnotateCotaSentences,
+  useRemoveCotaSentences,
 };
 
 export default CotaHooks;

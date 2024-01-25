@@ -16,6 +16,10 @@ export type COTASentence = {
    */
   concept_similarities: Record<string, number>;
   /**
+   * Dictionary of Concept IDs and their probability score
+   */
+  concept_probabilities: Record<string, number>;
+  /**
    * Concept ID this sentence belongs to
    */
   concept_annotation: string | null;
@@ -31,4 +35,8 @@ export type COTASentence = {
    * date of the sdoc
    */
   date: string;
+  /**
+   * text of the sentence
+   */
+  text: string;
 };

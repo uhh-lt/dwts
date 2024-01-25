@@ -32,25 +32,6 @@ export class TrainerService {
   }
 
   /**
-   * Uses a model from a TrainerJob
-   * Uses a model from a TrainerJob with the given parameter
-   * @returns number Successful Response
-   * @throws ApiError
-   */
-  public static useTrainerModel({ trainerJobId }: { trainerJobId: string }): CancelablePromise<Array<number>> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/trainer/use/{trainer_job_id}",
-      path: {
-        trainer_job_id: trainerJobId,
-      },
-      errors: {
-        422: `Validation Error`,
-      },
-    });
-  }
-
-  /**
    * Returns the TrainerJob for the given ID
    * Returns the TrainerJob for the given ID if it exists
    * @returns any Successful Response

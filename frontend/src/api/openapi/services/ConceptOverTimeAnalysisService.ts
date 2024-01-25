@@ -5,6 +5,7 @@ import type { COTACreate } from "../models/COTACreate";
 import type { COTARead } from "../models/COTARead";
 import type { COTARefinementHyperparameters } from "../models/COTARefinementHyperparameters";
 import type { COTARefinementJobRead } from "../models/COTARefinementJobRead";
+import type { COTASentenceID } from "../models/COTASentenceID";
 import type { COTAUpdate } from "../models/COTAUpdate";
 
 import type { CancelablePromise } from "../core/CancelablePromise";
@@ -115,6 +116,63 @@ export class ConceptOverTimeAnalysisService {
         project_id: projectId,
         user_id: userId,
       },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+
+  /**
+   * Annotate (multiple) COTASentences
+   * @returns COTARead Successful Response
+   * @throws ApiError
+   */
+  public static annotateCotaSentence({
+    cotaId,
+    requestBody,
+    conceptId,
+  }: {
+    cotaId: number;
+    requestBody: Array<COTASentenceID>;
+    conceptId?: string | null;
+  }): CancelablePromise<COTARead> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/cota/annotate/{cota_id}",
+      path: {
+        cota_id: cotaId,
+      },
+      query: {
+        concept_id: conceptId,
+      },
+      body: requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+
+  /**
+   * Remove (multiple) COTASentences from the search space
+   * @returns COTARead Successful Response
+   * @throws ApiError
+   */
+  public static removeCotaSentence({
+    cotaId,
+    requestBody,
+  }: {
+    cotaId: number;
+    requestBody: Array<COTASentenceID>;
+  }): CancelablePromise<COTARead> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/cota/remove/{cota_id}",
+      path: {
+        cota_id: cotaId,
+      },
+      body: requestBody,
+      mediaType: "application/json",
       errors: {
         422: `Validation Error`,
       },

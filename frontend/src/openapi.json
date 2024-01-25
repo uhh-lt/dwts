@@ -9241,53 +9241,6 @@
         }
       }
     },
-    "/trainer/use/{trainer_job_id}": {
-      "get": {
-        "tags": [
-          "trainer"
-        ],
-        "summary": "Uses a model from a TrainerJob",
-        "description": "Uses a model from a TrainerJob with the given parameter",
-        "operationId": "use_trainer_model",
-        "parameters": [
-          {
-            "name": "trainer_job_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Trainer Job Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  },
-                  "title": "Response Trainer-Use Trainer Model"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/trainer/{trainer_job_id}": {
       "get": {
         "tags": [
@@ -9607,6 +9560,134 @@
                     "$ref": "#/components/schemas/COTARead"
                   },
                   "title": "Response Conceptovertimeanalysis-Get By Project And User"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cota/annotate/{cota_id}": {
+      "post": {
+        "tags": [
+          "conceptOverTimeAnalysis"
+        ],
+        "summary": "Annotate (multiple) COTASentences",
+        "operationId": "annotate_cota_sentence",
+        "parameters": [
+          {
+            "name": "cota_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cota Id"
+            }
+          },
+          {
+            "name": "concept_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Concept Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/COTASentenceID"
+                },
+                "title": "Cota Sentence Ids"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/COTARead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cota/remove/{cota_id}": {
+      "post": {
+        "tags": [
+          "conceptOverTimeAnalysis"
+        ],
+        "summary": "Remove (multiple) COTASentences from the search space",
+        "operationId": "remove_cota_sentence",
+        "parameters": [
+          {
+            "name": "cota_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cota Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/COTASentenceID"
+                },
+                "title": "Cota Sentence Ids"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/COTARead"
                 }
               }
             }
@@ -10904,6 +10985,14 @@
             "title": "Concept Similarities",
             "description": "Dictionary of Concept IDs and their similarity score"
           },
+          "concept_probabilities": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Concept Probabilities",
+            "description": "Dictionary of Concept IDs and their probability score"
+          },
           "concept_annotation": {
             "anyOf": [
               {
@@ -10931,6 +11020,11 @@
             "format": "date-time",
             "title": "Date",
             "description": "date of the sdoc"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "text of the sentence"
           }
         },
         "type": "object",
@@ -10938,12 +11032,34 @@
           "sentence_id",
           "sdoc_id",
           "concept_similarities",
+          "concept_probabilities",
           "concept_annotation",
           "x",
           "y",
-          "date"
+          "date",
+          "text"
         ],
         "title": "COTASentence"
+      },
+      "COTASentenceID": {
+        "properties": {
+          "sentence_id": {
+            "type": "integer",
+            "title": "Sentence Id",
+            "description": "ID of the Sentence in the SDoc"
+          },
+          "sdoc_id": {
+            "type": "integer",
+            "title": "Sdoc Id",
+            "description": "ID of the Sentence Document that contains the Sentence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sentence_id",
+          "sdoc_id"
+        ],
+        "title": "COTASentenceID"
       },
       "COTATimelineSettings": {
         "properties": {
@@ -10983,17 +11099,20 @@
           "search_space_topk": {
             "type": "integer",
             "title": "Search Space Topk",
-            "description": "Number of sentences to use as search space per concept."
+            "description": "Number of sentences to use as search space per concept.",
+            "default": 1000
           },
           "search_space_threshold": {
             "type": "number",
             "title": "Search Space Threshold",
-            "description": "Threshold to filter sentences from the search space."
+            "description": "Threshold to filter sentences from the search space.",
+            "default": 0.8
           },
           "min_required_annotations_per_concept": {
             "type": "integer",
             "title": "Min Required Annotations Per Concept",
-            "description": "Minimum number of annotations per concept required to train the CEM."
+            "description": "Minimum number of annotations per concept required to train the CEM.",
+            "default": 5
           },
           "dimensionality_reduction_algorithm": {
             "allOf": [
@@ -11001,34 +11120,29 @@
                 "$ref": "#/components/schemas/DimensionalityReductionAlgorithm"
               }
             ],
-            "description": "Dimensionality Reduction Algorithm used for the ConceptOverTimeAnalysis"
+            "description": "Dimensionality Reduction Algorithm used for the ConceptOverTimeAnalysis",
+            "default": "umap"
           },
           "layers": {
             "type": "integer",
             "title": "Layers",
-            "description": "Number of layers of the CEM."
+            "description": "Number of layers of the CEM.",
+            "default": 5
           },
           "dimensions": {
             "type": "integer",
             "title": "Dimensions",
-            "description": "Number of dimensions of the CEM."
+            "description": "Number of dimensions of the CEM.",
+            "default": 64
           },
           "epochs": {
             "type": "integer",
             "title": "Epochs",
-            "description": "Number of epochs to train"
+            "description": "Number of epochs to train",
+            "default": 5
           }
         },
         "type": "object",
-        "required": [
-          "search_space_topk",
-          "search_space_threshold",
-          "min_required_annotations_per_concept",
-          "dimensionality_reduction_algorithm",
-          "layers",
-          "dimensions",
-          "epochs"
-        ],
         "title": "COTATrainingSettings"
       },
       "COTAUpdate": {
@@ -11081,21 +11195,6 @@
             ],
             "title": "Concepts",
             "description": "List of Concepts that are part of the ConceptOverTimeAnalysis"
-          },
-          "search_space": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/COTASentence"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search Space",
-            "description": "List of Sentences that form the search space of the ConceptOverTimeAnalysis"
           }
         },
         "type": "object",

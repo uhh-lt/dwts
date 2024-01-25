@@ -46,6 +46,7 @@ export type { COTARead } from "./models/COTARead";
 export type { COTARefinementHyperparameters } from "./models/COTARefinementHyperparameters";
 export type { COTARefinementJobRead } from "./models/COTARefinementJobRead";
 export type { COTASentence } from "./models/COTASentence";
+export type { COTASentenceID } from "./models/COTASentenceID";
 export type { COTATimelineSettings } from "./models/COTATimelineSettings";
 export type { COTATrainingSettings } from "./models/COTATrainingSettings";
 export type { COTAUpdate } from "./models/COTAUpdate";
