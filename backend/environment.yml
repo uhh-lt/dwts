@@ -61,5 +61,6 @@ dependencies:
   - beautifulsoup4=4.11.1
   - black=23.9.1
   - umap-learn=0.5.5
+  - setfit=1.0.3
   - pip:
       - -r requirements.txt
