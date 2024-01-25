@@ -34,7 +34,6 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
     updateCota.mutate({
       cotaId: cota.id,
       requestBody: {
-        ...cota,
         concepts: [
           ...cota.concepts,
           {
@@ -57,7 +56,6 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
       updateCota.mutate({
         cotaId: cota.id,
         requestBody: {
-          ...cota,
           concepts: cotaConcepts,
         },
       });
@@ -72,7 +70,6 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
       updateCota.mutate({
         cotaId: cota.id,
         requestBody: {
-          ...cota,
           concepts: cotaConcepts,
         },
       });
@@ -88,7 +85,6 @@ function CotaConceptList({ cota }: CotaConceptListProps) {
       updateCota.mutate({
         cotaId: cota.id,
         requestBody: {
-          ...cota,
           concepts: cotaConcepts,
         },
       });

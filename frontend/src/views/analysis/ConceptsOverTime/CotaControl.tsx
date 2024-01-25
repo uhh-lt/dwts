@@ -108,7 +108,6 @@ function CotaControl({ cota }: CotaControlProps) {
       {
         cotaId: cota.id,
         requestBody: {
-          ...cota,
           training_settings: trainingSettings,
         },
       },
@@ -135,7 +134,7 @@ function CotaControl({ cota }: CotaControlProps) {
             </IconButton>
           }
           title="Controls"
-          subheader="Do stuff here"
+          subheader="Manage model training"
         />
         <CardContent className="myFlexFillAllContainer">
           {cota.concepts.length === 0 ? (

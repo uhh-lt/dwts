@@ -59,8 +59,8 @@ function CotaTimelinePlot({ cota }: CotaTimelinePlotProps) {
       }
 
       // count concept, if similartiy is above threshold
-      Object.entries(cotaSentence.concept_similarities).forEach(([conceptId, conceptSimilarity]) => {
-        if (conceptSimilarity > cota.timeline_settings.threshold!) {
+      Object.entries(cotaSentence.concept_probabilities).forEach(([conceptId, conceptProbability]) => {
+        if (conceptProbability > cota.timeline_settings.threshold!) {
           result[dateStr][conceptId] += 1;
         }
       });

@@ -33,10 +33,10 @@ function TopBar(props: AppBarProps) {
               <Typography variant="h6" noWrap sx={{ display: { xs: "none", sm: "block" } }}>
                 {loginStatus === LoginStatus.LOGGED_IN ? (
                   <Link href="/projects" color="inherit" underline="none">
-                    DWTS
+                    DATS
                   </Link>
                 ) : (
-                  "DWTS"
+                  "DATS"
                 )}
               </Typography>
             </Stack>

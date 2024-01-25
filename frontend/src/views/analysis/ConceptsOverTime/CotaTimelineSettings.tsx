@@ -161,10 +161,10 @@ function CotaSettings({ cota }: CotaSettingsProps) {
 
           <TextField
             fullWidth
-            label={"Similarity threshold"}
+            label={"Probabililty threshold"}
             variant="outlined"
             defaultValue={cota.timeline_settings.threshold}
-            helperText={"Specify the similarity threshold."}
+            helperText={"Specify the probabililty threshold."}
             onBlur={handleChangeThreshold}
             type="number"
             inputProps={{

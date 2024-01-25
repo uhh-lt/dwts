@@ -1,6 +1,9 @@
 import BorderColorIcon from "@mui/icons-material/BorderColor";
+import CircleIcon from "@mui/icons-material/Circle";
+import ClearIcon from "@mui/icons-material/Clear";
+import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
-import { Box, Button } from "@mui/material";
+import { Box, Button, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from "@mui/material";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
@@ -9,23 +12,27 @@ import {
   DataGrid,
   GridColDef,
   GridEventListener,
+  GridFooterContainer,
   GridRowSelectionModel,
+  GridSortModel,
   GridToolbarColumnsButton,
   GridToolbarContainer,
   GridToolbarDensitySelector,
   GridToolbarExport,
+  useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import { useEffect, useMemo, useState } from "react";
+import { padStart } from "lodash";
+import React, { useEffect, useMemo, useState } from "react";
 import CotaHooks from "../../../api/CotaHooks";
-import { COTAConcept, COTARead, COTASentence, DateGroupBy } from "../../../api/openapi";
+import { COTAConcept, COTARead, COTASentence, COTASentenceID, DateGroupBy } from "../../../api/openapi";
 import SdocRenderer from "../../../components/DataGrid/SdocRenderer";
-import SdocSentenceRenderer from "../../../components/DataGrid/SdocSentenceRenderer";
+import { renderTextCellExpand } from "../../../components/DataGrid/renderTextCellExpand";
 import SnackbarAPI from "../../../features/Snackbar/SnackbarAPI";
 import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks";
-import { CotaActions } from "./cotaSlice";
-import { padStart } from "lodash";
 import { dateToLocaleDate } from "../../../utils/DateUtils";
+import TablePaginationActions from "../../search/ToolBar/ToolBarElements/TablePaginationActions";
+import { CotaActions } from "./cotaSlice";
 
 interface CotaSentenceAnnotatorProps {
   cota: COTARead;
@@ -81,6 +88,12 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
   // local state
   const apiRef = useGridApiRef();
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>([]);
+  const [sortModel, setSortModel] = useState<GridSortModel>([
+    {
+      field: "similarity",
+      sort: "desc",
+    },
+  ]);
 
   // global client state (redux)
   const provenanceSdocIdSentenceId = useAppSelector((state) => state.cota.provenanceSdocIdSentenceId);
@@ -145,8 +158,14 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
       {
         field: "similarity",
         headerName: "Similarity",
-        renderCell: (params) => <>{params.row.concept_similarities[concept.id].toFixed(4)}</>,
+        renderCell: (params) => <>{(params.row.concept_similarities[concept.id] * 100.0).toFixed(2)}</>,
         valueGetter: (params) => params.row.concept_similarities[concept.id],
+      },
+      {
+        field: "probability",
+        headerName: "Probability",
+        renderCell: (params) => <>{(params.row.concept_probabilities[concept.id] * 100.0).toFixed(2)}</>,
+        valueGetter: (params) => params.row.concept_probabilities[concept.id],
       },
       {
         field: "annotation",
@@ -172,40 +191,42 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
         field: "sentenceId",
         headerName: "Sentence",
         flex: 3,
-        renderCell: (params) => (
-          <SdocSentenceRenderer params={params} sdoc={params.row.sdoc_id} sentenceId={params.row.sentence_id} />
-        ),
+        renderCell: (params) =>
+          renderTextCellExpand({
+            ...params,
+            value: params.row.text,
+          }),
       },
     ] as GridColDef<COTASentence>[];
   }, [concept.id, cota.concepts]);
 
   // actions
-  const updateCota = CotaHooks.useUpdateCota();
-  const handleAnnotateSentences = (sentences: { sentence_id: number; sdoc_id: number }[]) => {
-    const searchSpaceDict = cota.search_space.reduce(
-      (acc, sentence) => {
-        acc[`${sentence.sdoc_id}-${sentence.sentence_id}`] = sentence;
-        return acc;
-      },
-      {} as Record<string, COTASentence>,
-    );
-
-    // toggle concept annotation for each checked sentence
-    sentences.forEach((sentence) => {
-      const sentenceId = `${sentence.sdoc_id}-${sentence.sentence_id}`;
-      if (searchSpaceDict[sentenceId].concept_annotation === concept.id) {
-        searchSpaceDict[sentenceId].concept_annotation = null;
-      } else {
-        searchSpaceDict[sentenceId].concept_annotation = concept.id;
-      }
-    });
-
-    updateCota.mutate(
+  const annotateCotaSentences = CotaHooks.useAnnotateCotaSentences();
+  const handleAnnotateSentences = (sentences: COTASentenceID[], conceptId: string | null) => {
+    annotateCotaSentences.mutate(
       {
         cotaId: cota.id,
-        requestBody: {
-          search_space: Object.values(searchSpaceDict),
+        conceptId: conceptId,
+        requestBody: sentences,
+      },
+      {
+        onSuccess(data, variables, context) {
+          SnackbarAPI.openSnackbar({
+            text: `Updated CotA '${data.name}'`,
+            severity: "success",
+          });
+          setRowSelectionModel([]);
         },
+      },
+    );
+  };
+
+  const removeCotaSentences = CotaHooks.useRemoveCotaSentences();
+  const handleRemoveSentences = (sentences: COTASentenceID[]) => {
+    removeCotaSentences.mutate(
+      {
+        cotaId: cota.id,
+        requestBody: sentences,
       },
       {
         onSuccess(data, variables, context) {
@@ -243,32 +264,75 @@ function SimilarSentencesTable({ cota, concept }: SimilarSentencesTableProps) {
       // custom toolbar
       slots={{
         toolbar: SimilarSentencesToolbar,
+        footer: CustomFooter,
       }}
       slotProps={{
         toolbar: {
           selectedRows: rowSelectionModel,
           onAnnotateSentences: handleAnnotateSentences,
+          onRemoveSentences: handleRemoveSentences,
+          concepts: cota.concepts,
         },
       }}
       // always sort by similarity desc by default
-      sortModel={[
-        {
-          field: "similarity",
-          sort: "desc",
-        },
-      ]}
+      sortModel={sortModel}
+      onSortModelChange={(model) => setSortModel(model)}
     />
   );
 }
 
-interface SimilarSentencesToolbarProps {
-  selectedRows: GridRowSelectionModel;
-  onAnnotateSentences: (sentences: { sentence_id: number; sdoc_id: number }[]) => void;
+function CustomFooter(props: any) {
+  const apiRef = useGridApiContext();
+
+  const page = apiRef.current.state.pagination.paginationModel.page;
+  const rowsPerPage = apiRef.current.state.pagination.paginationModel.pageSize;
+  const count = apiRef.current.state.rows.totalRowCount;
+  const text = `${page * rowsPerPage + 1}-${Math.min((page + 1) * rowsPerPage, count)} of ${count}`;
+  return (
+    <GridFooterContainer>
+      <Box flexGrow={1} />
+      <Typography>{text}</Typography>
+      <TablePaginationActions
+        count={count}
+        page={page}
+        onPageChange={(event, value) => apiRef.current.setPage(value)}
+        rowsPerPage={rowsPerPage}
+      />
+    </GridFooterContainer>
+  );
 }
 
-function SimilarSentencesToolbar({ selectedRows, onAnnotateSentences }: SimilarSentencesToolbarProps) {
-  const handleAnnotateSentences = () => {
+interface SimilarSentencesToolbarProps {
+  concepts: COTAConcept[];
+  selectedRows: GridRowSelectionModel;
+  onAnnotateSentences: (sentences: COTASentenceID[], conceptId: string | null) => void;
+  onRemoveSentences: (sentences: COTASentenceID[]) => void;
+}
+
+function SimilarSentencesToolbar({
+  selectedRows,
+  onAnnotateSentences,
+  onRemoveSentences,
+  concepts,
+}: SimilarSentencesToolbarProps) {
+  // actions
+  const handleAnnotateSentences = (conceptId: string | null) => {
+    setAnchorEl(null);
     onAnnotateSentences(
+      selectedRows.map((row) => {
+        // row is a string in the format of `${row.sdocId}-${row.sentenceId}`
+        const [sdocId, sentenceId] = row.toString().split("-");
+        return {
+          sentence_id: parseInt(sentenceId),
+          sdoc_id: parseInt(sdocId),
+        };
+      }),
+      conceptId,
+    );
+  };
+
+  const handleRemoveSentences = () => {
+    onRemoveSentences(
       selectedRows.map((row) => {
         // row is a string in the format of `${row.sdocId}-${row.sentenceId}`
         const [sdocId, sentenceId] = row.toString().split("-");
@@ -280,11 +344,42 @@ function SimilarSentencesToolbar({ selectedRows, onAnnotateSentences }: SimilarS
     );
   };
 
+  // annotation menu
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
     <GridToolbarContainer>
       {selectedRows.length > 0 && (
-        <Button startIcon={<BorderColorIcon />} size="small" onClick={handleAnnotateSentences}>
-          Toggle annotation ({selectedRows.length})
+        <Button startIcon={<BorderColorIcon />} size="small" onClick={handleClick}>
+          Annotate ({selectedRows.length})
+        </Button>
+      )}
+      <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+        <MenuItem onClick={() => handleAnnotateSentences(null)}>
+          <ListItemIcon>
+            <ClearIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Clear annotation</ListItemText>
+        </MenuItem>
+        {concepts.map((concept) => (
+          <MenuItem onClick={() => handleAnnotateSentences(concept.id)}>
+            <ListItemIcon>
+              <CircleIcon fontSize="small" style={{ color: concept.color }} />
+            </ListItemIcon>
+            <ListItemText>{concept.name}</ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
+      {selectedRows.length > 0 && (
+        <Button startIcon={<DeleteIcon />} size="small" onClick={() => handleRemoveSentences()}>
+          Remove ({selectedRows.length}) sentence{selectedRows.length > 0 ? "s" : null}
         </Button>
       )}
       <GridToolbarColumnsButton />
