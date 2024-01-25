@@ -2,7 +2,10 @@ from datetime import datetime
 from typing import Dict, List
 
 import numpy as np
+import srsly
 import torch
+from datasets import Dataset
+from fastapi.encoders import jsonable_encoder
 
 # This would be necessary to use a GPU within Celery. But there are multiple issues with this. So we disable it!
 # try:
@@ -10,6 +13,8 @@ import torch
 # except RuntimeError:
 #     pass
 from loguru import logger
+from setfit import SetFitModel, Trainer, TrainingArguments
+from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
 
 from app.core.analysis.cota.pipeline.cargo import Cargo
@@ -27,8 +32,14 @@ from app.core.analysis.cota.pipeline.steps.util import (
     _store_model,
 )
 from app.core.analysis.cota.service import COTAService
-from app.core.data.dto.concept_over_time_analysis import COTASentence, COTAUpdate
+from app.core.data.crud.concept_over_time_analysis import crud_cota
+from app.core.data.crud.source_document import crud_sdoc
+from app.core.data.dto.concept_over_time_analysis import (
+    COTASentence,
+    COTAUpdateAsInDB,
+)
 from app.core.data.dto.search import SimSearchQuery
+from app.core.data.dto.source_document import SourceDocumentWithDataRead
 from app.core.data.orm.source_document import SourceDocumentORM
 from app.core.data.orm.source_document_metadata import SourceDocumentMetadataORM
 from app.core.data.repo.repo_service import RepoService
@@ -43,8 +54,8 @@ trainer: TrainerService = TrainerService()
 sims: SimSearchService = SimSearchService()
 
 
-SEARCH_SPACE_TOP_K = 1000
-SEARCH_SPACE_THRESHOLD = 0.0001
+SEARCH_SPACE_TOP_K = 500
+SEARCH_SPACE_THRESHOLD = 0.9
 UMAP_REDUCED_EMBEDDINGS_DIM = 64
 CEM_NUM_LAYERS = 5
 CEM_DIM = UMAP_REDUCED_EMBEDDINGS_DIM
@@ -86,9 +97,13 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
                     sentence_id=sent.sentence_id,
                     concept_annotation=None,
                     concept_similarities={concept.id: 0.0 for concept in cota.concepts},
+                    concept_probabilities={
+                        concept.id: 1 / len(cota.concepts) for concept in cota.concepts
+                    },
                     x=0.0,
                     y=0.0,
                     date=datetime.now(),
+                    text="",
                 ),
             )
             cota_sentence.concept_similarities[concept.id] = sent.score
@@ -97,6 +112,54 @@ def init_or_load_initial_search_space(cargo: Cargo) -> Cargo:
     # update the cota with the search space
     search_space = list(search_space_dict.values())
     cargo.data["search_space"] = search_space
+
+    return cargo
+
+
+def get_sentences(cargo: Cargo) -> Cargo:
+    cota = cargo.job.cota
+
+    # the search space is not empty, and the text has been set, we dont need to do anything
+    if len(cota.search_space) > 0:
+        sentences = []
+        for cota_sent in cota.search_space:
+            sentences.append(cota_sent.text)
+        cargo.data["sentences"] = sentences
+        return cargo
+
+    search_space: List[COTASentence] = cargo.data["search_space"]
+    sdoc_ids = list(set([cota_sent.sdoc_id for cota_sent in search_space]))
+
+    # get the data from the database
+    with sqls.db_session() as db:
+        sdoc_data = crud_sdoc.read_with_data_batch(db=db, ids=sdoc_ids)
+
+    # map the data
+    sdoc_id2sdocreadwithdata: Dict[int, SourceDocumentWithDataRead] = {
+        sdoc_data_read.id: sdoc_data_read for sdoc_data_read in sdoc_data
+    }
+
+    sentences = []
+    for cota_sent in search_space:
+        if cota_sent.sdoc_id not in sdoc_id2sdocreadwithdata:
+            raise ValueError(
+                f"Could not find SourceDocumentWithDataRead for sdoc_id {cota_sent.sdoc_id}!"
+            )
+        sdoc_data_read = sdoc_id2sdocreadwithdata[cota_sent.sdoc_id]
+
+        if cota_sent.sentence_id >= len(sdoc_data_read.sentences):
+            raise ValueError(
+                f"Could not find sentence with id {cota_sent.sentence_id} in SourceDocumentWithDataRead with id {sdoc_data_read.id}!"
+            )
+        sentences.append(sdoc_data_read.sentences[cota_sent.sentence_id])
+
+    # write sentences to disk
+    cargo.data["sentences"] = sentences
+
+    assert len(sentences) == len(search_space)
+
+    for sentence, cota_sent in zip(sentences, search_space):
+        cota_sent.text = sentence
 
     return cargo
 
@@ -155,11 +218,98 @@ def init_concept_embedding_model(cargo: Cargo) -> Cargo:
     return cargo
 
 
+def finetune_st(cargo: Cargo) -> Cargo:
+    # Only train if we have enough annotated data
+    if not _has_min_concept_sentence_annotations(cargo):
+        return cargo
+
+    search_space: List[COTASentence] = cargo.data["search_space"]
+    sentences: List[str] = cargo.data["sentences"]
+
+    # 1. Create the training data
+    conceptid2label: Dict[str, int] = {
+        concept.id: idx for idx, concept in enumerate(cargo.job.cota.concepts)
+    }
+
+    texts = []
+    labels = []
+    label_texts = []
+    for idx, (ss_sentence, text) in enumerate(zip(search_space, sentences)):
+        if ss_sentence.concept_annotation:
+            texts.append(text)
+            labels.append(conceptid2label[ss_sentence.concept_annotation])
+            label_texts.append(ss_sentence.concept_annotation)
+
+    train_dataset = Dataset.from_dict(
+        ({"text": texts, "label": labels, "label_text": label_texts})
+    )
+
+    texts = []
+    labels = []
+    label_texts = []
+    count = 0
+    for idx, (ss_sentence, text) in enumerate(zip(search_space, sentences)):
+        if ss_sentence.concept_annotation:
+            texts.append(text)
+            labels.append(conceptid2label[ss_sentence.concept_annotation])
+            label_texts.append(ss_sentence.concept_annotation)
+            count += 1
+
+        if count >= 16:
+            break
+    eval_dataset = Dataset.from_dict(
+        ({"text": texts, "label": labels, "label_text": label_texts})
+    )
+    # eval_dataset = train_dataset
+
+    # 2. load a SetFit model from Hub
+    model = SetFitModel.from_pretrained(
+        "sentence-transformers/paraphrase-mpnet-base-v2",
+    )
+
+    # 3. init training
+    model_name = str(cargo.job.cota.id)
+    model_path = repo.get_model_filename(
+        proj_id=cargo.job.cota.project_id, model_name=model_name, with_suffix=False
+    )
+    args = TrainingArguments(
+        batch_size=16,
+        num_epochs=1,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        load_best_model_at_end=True,
+        output_dir=str(model_path),
+        report_to="none",
+    )
+    trainer = Trainer(
+        model=model,
+        args=args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        metric="accuracy",
+        column_mapping={
+            "text": "text",
+            "label": "label",
+        },  # Map dataset columns to text/label expected by trainer
+    )
+
+    # 4. train
+    trainer.train()
+
+    # 5. store model
+    model_name = f"{cargo.job.cota.id}-best-model"
+    model_path = repo.get_model_filename(
+        proj_id=cargo.job.cota.project_id, model_name=model_name, with_suffix=False
+    )
+    model.save_pretrained(model_path)
+
+    return cargo
+
+
 def train_cem(cargo: Cargo) -> Cargo:
     # Only train if we have a model
-    if not repo.model_exists(
-        proj_id=cargo.job.cota.project_id, model_name=str(cargo.job.cota.id)
-    ):
+    model_name = f"{cargo.job.cota.id}-best-model"
+    if not repo.model_exists(proj_id=cargo.job.cota.project_id, model_name=model_name):
         return cargo
 
     # Only train if we have enough annotated data
@@ -211,6 +361,61 @@ def train_cem(cargo: Cargo) -> Cargo:
                 )
 
     _store_model(cargo=cargo, model=model)
+
+    return cargo
+
+
+def compute_search_space_embeddings_with_st(cargo: Cargo) -> Cargo:
+    # if no model exists, use the embeddings stored in weaviate
+    model_name = f"{cargo.job.cota.id}-best-model"
+    if not repo.model_exists(
+        proj_id=cargo.job.cota.project_id,
+        model_name=model_name,
+        with_suffix=False,
+    ):
+        search_space: List[COTASentence] = cargo.data["search_space"]
+
+        search_space_embeddings = sims.get_sentence_embeddings(
+            search_tuples=[
+                (cota_sent.sentence_id, cota_sent.sdoc_id) for cota_sent in search_space
+            ]
+        )
+        embeddings_tensor = torch.tensor(search_space_embeddings)
+        probabilities = [[0.5, 0.5] for _ in search_space]
+        logger.debug("No model exists. We use weaviate embeddings.")
+    else:
+        sentences: List[str] = cargo.data["sentences"]
+
+        # 1. Load the st model
+        proj_id = cargo.job.cota.project_id
+        model_path = repo.get_model_filename(
+            proj_id=proj_id, model_name=model_name, with_suffix=False
+        )
+        model = SetFitModel.from_pretrained(model_path)
+        logger.debug(f"Loaded {model_name} from {model_path}! Ready to embedd :)")
+
+        # 2. Embedd the search space sentences
+        sentence_transformer = model.model_body
+        if sentence_transformer is None:
+            raise ValueError(
+                f"Model {model_name} does not have a sentence_transformer!"
+            )
+        sentence_transformer.eval()
+        embeddings = sentence_transformer.encode(
+            sentences=sentences,
+            show_progress_bar=True,
+            convert_to_numpy=False,
+            normalize_embeddings=True,
+        )
+        embeddings_tensor = torch.stack(embeddings)
+
+        # 3. Predict the probabilities for each concept
+        regrssion_model: LogisticRegression = model.model_head
+        probabilities = regrssion_model.predict_proba(embeddings_tensor.cpu().numpy())
+
+    # 4. Update cargo with the refined search space reduced embeddings
+    cargo.data["refined_search_space_reduced_embeddings"] = embeddings_tensor
+    cargo.data["concept_probabilities"] = probabilities
 
     return cargo
 
@@ -280,6 +485,10 @@ def compute_result(cargo: Cargo) -> Cargo:
     # 3.2 update search_space with the 2D coordinates
     __update_search_space_with_2D_coords(cargo, visual_refined_embeddings)
 
+    # 4. update search_space with concept_probabilities
+    probabilities = cargo.data["concept_probabilities"]
+    __update_search_space_with_concept_probabilities(cargo, probabilities)
+
     return cargo
 
 
@@ -327,6 +536,15 @@ def __update_search_space_with_concept_similarities(
             sentence.concept_similarities[concept_id] = similarity
 
 
+def __update_search_space_with_concept_probabilities(
+    cargo: Cargo, concept_probabilities: List[List[float]]
+) -> None:
+    search_space: List[COTASentence] = cargo.data["search_space"]
+    for sentence, probabilities in zip(search_space, concept_probabilities):
+        for concept, probability in zip(cargo.job.cota.concepts, probabilities):
+            sentence.concept_probabilities[concept.id] = probability
+
+
 def __update_search_space_with_2D_coords(
     cargo: Cargo, visual_refined_embeddings: List[List[float]]
 ) -> None:
@@ -339,7 +557,7 @@ def __update_search_space_with_2D_coords(
 def add_date_to_search_space(cargo: Cargo) -> Cargo:
     # 1. read the required data
     search_space: List[COTASentence] = cargo.data["search_space"]
-    sdoc_ids = [cota_sent.sdoc_id for cota_sent in search_space]
+    sdoc_ids = list(set([cota_sent.sdoc_id for cota_sent in search_space]))
 
     # 2. find the date for every sdoc that is in the search space
     sdoc_id_to_date: Dict[int, datetime] = dict()
@@ -383,10 +601,11 @@ def store_search_space_in_db(cargo: Cargo) -> Cargo:
 
     # 2. Store search_space in db
     with sqls.db_session() as db:
-        cota_service.update(
+        search_space_str = srsly.json_dumps(jsonable_encoder(search_space))
+        crud_cota.update(
             db=db,
-            cota_id=cargo.job.cota.id,
-            cota_update=COTAUpdate(search_space=search_space),
+            id=cargo.job.cota.id,
+            update_dto=COTAUpdateAsInDB(search_space=search_space_str),
         )
 
     return cargo

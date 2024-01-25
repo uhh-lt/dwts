@@ -19,13 +19,19 @@ from app.core.data.dto.dto_base import UpdateDTOBase
 ####################
 
 
-class COTASentence(BaseModel):
+class COTASentenceID(BaseModel):
     sentence_id: int = Field(description="ID of the Sentence in the SDoc")
     sdoc_id: int = Field(
         description="ID of the Sentence Document that contains the Sentence"
     )
+
+
+class COTASentence(COTASentenceID):
     concept_similarities: Dict[str, float] = Field(
         description="Dictionary of Concept IDs and their similarity score"
+    )
+    concept_probabilities: Dict[str, float] = Field(
+        description="Dictionary of Concept IDs and their probability score"
     )
     concept_annotation: Optional[str] = Field(
         description="Concept ID this sentence belongs to"
@@ -33,6 +39,7 @@ class COTASentence(BaseModel):
     x: float = Field(description="X coordinate of the Sentence in the search space")
     y: float = Field(description="Y coordinate of the Sentence in the search space")
     date: datetime = Field(description="date of the sdoc")
+    text: str = Field(description="text of the sentence")
 
 
 class COTAConcept(BaseModel):
@@ -83,6 +90,11 @@ class COTATrainingSettings(BaseModel):
 
 
 ####################
+# Annotation DTOs
+####################
+
+
+####################
 # COTA DTOs
 ####################
 
@@ -115,13 +127,7 @@ class COTAUpdate(BaseModel, UpdateDTOBase):
         description="List of Concepts that are part of the ConceptOverTimeAnalysis",
         default=None,
     )
-    search_space: Optional[List[COTASentence]] = Field(
-        description=(
-            "List of Sentences that form the search space "
-            "of the ConceptOverTimeAnalysis"
-        ),
-        default=None,
-    )
+    # search_space is missing intentionally: we do not allow to update search space directly
 
 
 class COTAUpdateAsInDB(BaseModel, UpdateDTOBase):
@@ -262,6 +268,12 @@ class COTARead(ConceptOverTimeAnalysisBaseDTO):
         )
 
     model_config = ConfigDict(from_attributes=True)
+
+    def __str__(self) -> str:
+        return f"COTARead(id={self.id}, name={self.name}, user_id={self.user_id}, project_id={self.project_id}, timeline_settings={self.timeline_settings}, training_settings={self.training_settings}, concepts={self.concepts}, search_space={len(self.search_space)}, created={self.created}, updated={self.updated})"
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
 ####################

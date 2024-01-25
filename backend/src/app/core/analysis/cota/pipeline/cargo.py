@@ -26,3 +26,9 @@ class Cargo(BaseModel):
     data: Dict[str, Any] = Field(description="data", default_factory=dict)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __str__(self) -> str:
+        return f"Cargo(job={self.job}, next_steps={self.next_steps}, finished_steps={self.finished_steps})"
+
+    def __repr__(self) -> str:
+        return str(self)

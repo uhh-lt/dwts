@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import srsly
 from fastapi.encoders import jsonable_encoder
@@ -18,6 +18,7 @@ from app.core.data.dto.concept_over_time_analysis import (
     COTARefinementJobCreate,
     COTARefinementJobRead,
     COTASentence,
+    COTASentenceID,
     COTATimelineSettings,
     COTAUpdate,
     COTAUpdateAsInDB,
@@ -131,7 +132,6 @@ class COTAService(metaclass=SingletonMeta):
             **cota_update.model_dump(
                 exclude={
                     "concepts",
-                    "search_space",
                     "training_settings",
                     "timeline_settings",
                 },
@@ -142,12 +142,6 @@ class COTAService(metaclass=SingletonMeta):
         if cota_update.concepts is not None:
             concepts_str = srsly.json_dumps(jsonable_encoder(cota_update.concepts))
             update_dto_as_in_db.concepts = concepts_str
-
-        if cota_update.search_space is not None:
-            search_space_str = srsly.json_dumps(
-                jsonable_encoder(cota_update.search_space)
-            )
-            update_dto_as_in_db.search_space = search_space_str
 
         if cota_update.training_settings is not None:
             training_settings_str = srsly.json_dumps(
@@ -176,10 +170,13 @@ class COTAService(metaclass=SingletonMeta):
         # make sure that cota with cota_id exists
         cota = self.read_by_id(db=db, cota_id=cota_id)
 
-        # delete the model
+        # delete the models
         self.repo.get_model_filename(cota.project_id, str(cota.id)).unlink(
             missing_ok=True
         )
+        self.repo.get_model_filename(
+            cota.project_id, str(cota.id) + "_best-model"
+        ).unlink(missing_ok=True)
         # delete the embeddings
         self.repo.get_embeddings_filename(cota.project_id, str(cota.id)).unlink(
             missing_ok=True
@@ -248,3 +245,80 @@ class COTAService(metaclass=SingletonMeta):
             raise e
 
         return job
+
+    def annotate_sentences(
+        self,
+        *,
+        db: Session,
+        cota_id: int,
+        cota_sentence_ids: List[COTASentenceID],
+        concept_id: Optional[str] = None,
+    ) -> COTARead:  # noqa: F821
+        cota = self.read_by_id(db=db, cota_id=cota_id)
+
+        # create map
+        cota_sentence_id2_cota_sentence: Dict[str, COTASentence] = dict()
+        for cota_sentence in cota.search_space:
+            cota_sentence_id2_cota_sentence[
+                f"{cota_sentence.sdoc_id}_{cota_sentence.sentence_id}"
+            ] = cota_sentence
+
+        # find the cota sentences and annotate them
+        for cota_sentence_id in cota_sentence_ids:
+            idx = f"{cota_sentence_id.sdoc_id}_{cota_sentence_id.sentence_id}"
+            cota_sentence_id2_cota_sentence[idx].concept_annotation = concept_id
+
+        # json dump the search space
+        search_space_str = srsly.json_dumps(
+            jsonable_encoder(list(cota_sentence_id2_cota_sentence.values()))
+        )
+
+        # update the cota in db
+        db_obj = crud_cota.update(
+            db=db,
+            id=cota_id,
+            update_dto=COTAUpdateAsInDB(
+                search_space=search_space_str,
+            ),
+        )
+
+        # return the results
+        return COTARead.model_validate(db_obj)
+
+    def remove_sentences(
+        self,
+        *,
+        db: Session,
+        cota_id: int,
+        cota_sentence_ids: List[COTASentenceID],
+    ) -> COTARead:  # noqa: F821
+        cota = self.read_by_id(db=db, cota_id=cota_id)
+
+        # create map
+        cota_sentence_id2_cota_sentence: Dict[str, COTASentence] = dict()
+        for cota_sentence in cota.search_space:
+            cota_sentence_id2_cota_sentence[
+                f"{cota_sentence.sdoc_id}_{cota_sentence.sentence_id}"
+            ] = cota_sentence
+
+        # find the cota sentences and delete them
+        for cota_sentence_id in cota_sentence_ids:
+            idx = f"{cota_sentence_id.sdoc_id}_{cota_sentence_id.sentence_id}"
+            del cota_sentence_id2_cota_sentence[idx]
+
+        # json dump the search space
+        search_space_str = srsly.json_dumps(
+            jsonable_encoder(list(cota_sentence_id2_cota_sentence.values()))
+        )
+
+        # update the cota in db
+        db_obj = crud_cota.update(
+            db=db,
+            id=cota_id,
+            update_dto=COTAUpdateAsInDB(
+                search_space=search_space_str,
+            ),
+        )
+
+        # return the results
+        return COTARead.model_validate(db_obj)

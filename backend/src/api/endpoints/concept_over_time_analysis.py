@@ -12,6 +12,7 @@ from app.core.data.dto.concept_over_time_analysis import (
     COTARead,
     COTARefinementHyperparameters,
     COTARefinementJobRead,
+    COTASentenceID,
     COTAUpdate,
 )
 from app.core.db.redis_service import RedisService
@@ -86,6 +87,44 @@ async def update_by_id(
         db=db,
         cota_id=cota_id,
         cota_update=cota_upate,
+    )
+
+
+@router.post(
+    "/annotate/{cota_id}",
+    response_model=COTARead,
+    summary="Annotate (multiple) COTASentences",
+)
+async def annotate_cota_sentence(
+    *,
+    db: Session = Depends(get_db_session),
+    cota_id: int,
+    cota_sentence_ids: List[COTASentenceID],
+    concept_id: Optional[str] = None,
+) -> COTARead:  # noqa: F821
+    return cotas.annotate_sentences(
+        db=db,
+        cota_id=cota_id,
+        cota_sentence_ids=cota_sentence_ids,
+        concept_id=concept_id,
+    )
+
+
+@router.post(
+    "/remove/{cota_id}",
+    response_model=COTARead,
+    summary="Remove (multiple) COTASentences from the search space",
+)
+async def remove_cota_sentence(
+    *,
+    db: Session = Depends(get_db_session),
+    cota_id: int,
+    cota_sentence_ids: List[COTASentenceID],
+) -> COTARead:  # noqa: F821
+    return cotas.remove_sentences(
+        db=db,
+        cota_id=cota_id,
+        cota_sentence_ids=cota_sentence_ids,
     )
 
 

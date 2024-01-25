@@ -91,6 +91,46 @@ class CRUDSourceDocument(
             **(sdoc_read.model_dump() | sdoc_data_read.model_dump())
         )
 
+    def read_with_data_batch(
+        self, db: Session, *, ids: List[int]
+    ) -> List[SourceDocumentWithDataRead]:
+        db_objs = (
+            db.query(SourceDocumentORM, SourceDocumentDataORM)
+            .join(SourceDocumentDataORM, isouter=True)
+            .filter(SourceDocumentORM.id.in_(ids))
+            .all()
+        )
+
+        results = []
+        for db_obj in db_objs:
+            sdoc, data = db_obj
+            sdoc_read = SourceDocumentRead.model_validate(sdoc)
+
+            if data is None:
+                sdoc_data_read = SourceDocumentDataRead(
+                    id=sdoc.id,
+                    content="",
+                    html="",
+                    token_starts=[],
+                    token_ends=[],
+                    sentence_starts=[],
+                    sentence_ends=[],
+                    tokens=[],
+                    token_character_offsets=[],
+                    sentences=[],
+                    sentence_character_offsets=[],
+                )
+            else:
+                sdoc_data_read = SourceDocumentDataRead.model_validate(data)
+
+            results.append(
+                SourceDocumentWithDataRead(
+                    **(sdoc_read.model_dump() | sdoc_data_read.model_dump())
+                )
+            )
+
+        return results
+
     def link_document_tag(
         self, db: Session, *, sdoc_id: int, tag_id: int
     ) -> SourceDocumentORM:

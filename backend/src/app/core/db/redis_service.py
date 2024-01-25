@@ -365,10 +365,7 @@ class RedisService(metaclass=SingletonMeta):
             return [job for job in all_cota_jobs if job.cota.project_id == project_id]
 
     def get_all_cota_jobs_by_cota_id(self, cota_id: int) -> List[COTARefinementJobRead]:
-        client = self._get_client("cota")
-        all_cota_jobs: List[COTARefinementJobRead] = [
-            self.load_cota_job(str(key, "utf-8")) for key in client.keys()
-        ]
+        all_cota_jobs = self.get_all_cota_jobs()
         all_cota_jobs_by_cota_id = [
             job for job in all_cota_jobs if job.cota.id == cota_id
         ]

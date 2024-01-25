@@ -490,19 +490,25 @@ class RepoService(metaclass=SingletonMeta):
         proj_id: int,
         model_name: str,
         model_prefix: str = "cota_",
+        with_suffix: bool = True,
     ) -> Path:
-        return (
-            self.get_models_root_path(proj_id=proj_id)
-            / f"{model_prefix}{model_name}.pt"
+        name = (
+            self.get_models_root_path(proj_id=proj_id) / f"{model_prefix}{model_name}"
         )
+        if with_suffix:
+            name = name.with_suffix(".pt")
+        return name
 
     def model_exists(
         self,
         proj_id: int,
         model_name: str,
         model_prefix: str = "cota_",
+        with_suffix: bool = True,
     ) -> bool:
-        return self.get_model_filename(proj_id=proj_id, model_name=model_name).exists()
+        return self.get_model_filename(
+            proj_id=proj_id, model_name=model_name, with_suffix=with_suffix
+        ).exists()
 
     def get_dataloaders_root_dir(self, proj_id: int) -> Path:
         return self.get_project_repo_root_path(proj_id=proj_id).joinpath("dataloaders")
