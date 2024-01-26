@@ -255,7 +255,7 @@ class RepoService(metaclass=SingletonMeta):
                 # FIXME Flo: Throw or what?!
                 logger.error(f"Cannot create project directory structure! {e}")
 
-        return dst_path
+        return paths[-1]
 
     def _create_directory_structure_for_project_file(
         self, proj_id: int, filename: Union[str, Path]
@@ -485,18 +485,15 @@ class RepoService(metaclass=SingletonMeta):
     def get_models_root_path(self, proj_id: int) -> Path:
         return self.get_project_repo_root_path(proj_id=proj_id).joinpath("models")
 
-    def get_model_filename(
+    def get_model_dir(
         self,
         proj_id: int,
         model_name: str,
         model_prefix: str = "cota_",
-        with_suffix: bool = True,
     ) -> Path:
         name = (
             self.get_models_root_path(proj_id=proj_id) / f"{model_prefix}{model_name}"
         )
-        if with_suffix:
-            name = name.with_suffix(".pt")
         return name
 
     def model_exists(
@@ -504,11 +501,8 @@ class RepoService(metaclass=SingletonMeta):
         proj_id: int,
         model_name: str,
         model_prefix: str = "cota_",
-        with_suffix: bool = True,
     ) -> bool:
-        return self.get_model_filename(
-            proj_id=proj_id, model_name=model_name, with_suffix=with_suffix
-        ).exists()
+        return self.get_model_dir(proj_id=proj_id, model_name=model_name).exists()
 
     def get_dataloaders_root_dir(self, proj_id: int) -> Path:
         return self.get_project_repo_root_path(proj_id=proj_id).joinpath("dataloaders")

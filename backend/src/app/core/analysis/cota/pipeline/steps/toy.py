@@ -4,7 +4,6 @@ from typing import Dict, List
 import numpy as np
 import srsly
 import torch
-from datasets import Dataset
 from fastapi.encoders import jsonable_encoder
 
 # This would be necessary to use a GPU within Celery. But there are multiple issues with this. So we disable it!
@@ -13,8 +12,6 @@ from fastapi.encoders import jsonable_encoder
 # except RuntimeError:
 #     pass
 from loguru import logger
-from setfit import SetFitModel, Trainer, TrainingArguments
-from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
 
 from app.core.analysis.cota.pipeline.cargo import Cargo
@@ -40,8 +37,6 @@ from app.core.data.dto.concept_over_time_analysis import (
 )
 from app.core.data.dto.search import SimSearchQuery
 from app.core.data.dto.source_document import SourceDocumentWithDataRead
-from app.core.data.orm.source_document import SourceDocumentORM
-from app.core.data.orm.source_document_metadata import SourceDocumentMetadataORM
 from app.core.data.repo.repo_service import RepoService
 from app.core.db.sql_service import SQLService
 from app.core.search.simsearch_service import SimSearchService
@@ -218,94 +213,6 @@ def init_concept_embedding_model(cargo: Cargo) -> Cargo:
     return cargo
 
 
-def finetune_st(cargo: Cargo) -> Cargo:
-    # Only train if we have enough annotated data
-    if not _has_min_concept_sentence_annotations(cargo):
-        return cargo
-
-    search_space: List[COTASentence] = cargo.data["search_space"]
-    sentences: List[str] = cargo.data["sentences"]
-
-    # 1. Create the training data
-    conceptid2label: Dict[str, int] = {
-        concept.id: idx for idx, concept in enumerate(cargo.job.cota.concepts)
-    }
-
-    texts = []
-    labels = []
-    label_texts = []
-    for idx, (ss_sentence, text) in enumerate(zip(search_space, sentences)):
-        if ss_sentence.concept_annotation:
-            texts.append(text)
-            labels.append(conceptid2label[ss_sentence.concept_annotation])
-            label_texts.append(ss_sentence.concept_annotation)
-
-    train_dataset = Dataset.from_dict(
-        ({"text": texts, "label": labels, "label_text": label_texts})
-    )
-
-    texts = []
-    labels = []
-    label_texts = []
-    count = 0
-    for idx, (ss_sentence, text) in enumerate(zip(search_space, sentences)):
-        if ss_sentence.concept_annotation:
-            texts.append(text)
-            labels.append(conceptid2label[ss_sentence.concept_annotation])
-            label_texts.append(ss_sentence.concept_annotation)
-            count += 1
-
-        if count >= 16:
-            break
-    eval_dataset = Dataset.from_dict(
-        ({"text": texts, "label": labels, "label_text": label_texts})
-    )
-    # eval_dataset = train_dataset
-
-    # 2. load a SetFit model from Hub
-    model = SetFitModel.from_pretrained(
-        "sentence-transformers/paraphrase-mpnet-base-v2",
-    )
-
-    # 3. init training
-    model_name = str(cargo.job.cota.id)
-    model_path = repo.get_model_filename(
-        proj_id=cargo.job.cota.project_id, model_name=model_name, with_suffix=False
-    )
-    args = TrainingArguments(
-        batch_size=16,
-        num_epochs=1,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-        output_dir=str(model_path),
-        report_to="none",
-    )
-    trainer = Trainer(
-        model=model,
-        args=args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        metric="accuracy",
-        column_mapping={
-            "text": "text",
-            "label": "label",
-        },  # Map dataset columns to text/label expected by trainer
-    )
-
-    # 4. train
-    trainer.train()
-
-    # 5. store model
-    model_name = f"{cargo.job.cota.id}-best-model"
-    model_path = repo.get_model_filename(
-        proj_id=cargo.job.cota.project_id, model_name=model_name, with_suffix=False
-    )
-    model.save_pretrained(model_path)
-
-    return cargo
-
-
 def train_cem(cargo: Cargo) -> Cargo:
     # Only train if we have a model
     model_name = f"{cargo.job.cota.id}-best-model"
@@ -361,61 +268,6 @@ def train_cem(cargo: Cargo) -> Cargo:
                 )
 
     _store_model(cargo=cargo, model=model)
-
-    return cargo
-
-
-def compute_search_space_embeddings_with_st(cargo: Cargo) -> Cargo:
-    # if no model exists, use the embeddings stored in weaviate
-    model_name = f"{cargo.job.cota.id}-best-model"
-    if not repo.model_exists(
-        proj_id=cargo.job.cota.project_id,
-        model_name=model_name,
-        with_suffix=False,
-    ):
-        search_space: List[COTASentence] = cargo.data["search_space"]
-
-        search_space_embeddings = sims.get_sentence_embeddings(
-            search_tuples=[
-                (cota_sent.sentence_id, cota_sent.sdoc_id) for cota_sent in search_space
-            ]
-        )
-        embeddings_tensor = torch.tensor(search_space_embeddings)
-        probabilities = [[0.5, 0.5] for _ in search_space]
-        logger.debug("No model exists. We use weaviate embeddings.")
-    else:
-        sentences: List[str] = cargo.data["sentences"]
-
-        # 1. Load the st model
-        proj_id = cargo.job.cota.project_id
-        model_path = repo.get_model_filename(
-            proj_id=proj_id, model_name=model_name, with_suffix=False
-        )
-        model = SetFitModel.from_pretrained(model_path)
-        logger.debug(f"Loaded {model_name} from {model_path}! Ready to embedd :)")
-
-        # 2. Embedd the search space sentences
-        sentence_transformer = model.model_body
-        if sentence_transformer is None:
-            raise ValueError(
-                f"Model {model_name} does not have a sentence_transformer!"
-            )
-        sentence_transformer.eval()
-        embeddings = sentence_transformer.encode(
-            sentences=sentences,
-            show_progress_bar=True,
-            convert_to_numpy=False,
-            normalize_embeddings=True,
-        )
-        embeddings_tensor = torch.stack(embeddings)
-
-        # 3. Predict the probabilities for each concept
-        regrssion_model: LogisticRegression = model.model_head
-        probabilities = regrssion_model.predict_proba(embeddings_tensor.cpu().numpy())
-
-    # 4. Update cargo with the refined search space reduced embeddings
-    cargo.data["refined_search_space_reduced_embeddings"] = embeddings_tensor
-    cargo.data["concept_probabilities"] = probabilities
 
     return cargo
 
@@ -506,7 +358,7 @@ def __compute_concept_embeddings(cargo: Cargo) -> Dict[str, torch.Tensor]:
         ]
         # the concept representation is the average of all annotated concept sentences
         # TODO: normalize??
-        concept_embeddings[concept.id] = concept_embedding.mean(axis=0)
+        concept_embeddings[concept.id] = concept_embedding.mean()
 
     return concept_embeddings
 
@@ -552,47 +404,6 @@ def __update_search_space_with_2D_coords(
     for sentence, coordinates in zip(search_space, visual_refined_embeddings):
         sentence.x = coordinates[0]
         sentence.y = coordinates[1]
-
-
-def add_date_to_search_space(cargo: Cargo) -> Cargo:
-    # 1. read the required data
-    search_space: List[COTASentence] = cargo.data["search_space"]
-    sdoc_ids = list(set([cota_sent.sdoc_id for cota_sent in search_space]))
-
-    # 2. find the date for every sdoc that is in the search space
-    sdoc_id_to_date: Dict[int, datetime] = dict()
-
-    # this is only possible if the cota has a date_metadata_id
-    date_metadata_id = cargo.job.cota.timeline_settings.date_metadata_id
-    if date_metadata_id is not None:
-        with sqls.db_session() as db:
-            query = (
-                db.query(
-                    SourceDocumentORM.id,
-                    SourceDocumentMetadataORM.date_value,
-                )
-                .join(SourceDocumentORM.metadata_)
-                .filter(
-                    SourceDocumentORM.id.in_(sdoc_ids),
-                    SourceDocumentMetadataORM.project_metadata_id == date_metadata_id,
-                    SourceDocumentMetadataORM.date_value.isnot(None),
-                )
-            )
-            result_rows = query.all()
-
-        for row in result_rows:
-            sdoc_id_to_date[row[0]] = row[1]
-
-    # otherwise, we set the date to today for every sdoc
-    else:
-        for sdoc_id in sdoc_ids:
-            sdoc_id_to_date[sdoc_id] = datetime.now()
-
-    # 3. update search_space with the date
-    for sentence in search_space:
-        sentence.date = sdoc_id_to_date[sentence.sdoc_id]
-
-    return cargo
 
 
 def store_search_space_in_db(cargo: Cargo) -> Cargo:

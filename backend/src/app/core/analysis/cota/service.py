@@ -1,3 +1,4 @@
+import shutil
 from typing import Dict, List, Optional
 
 import srsly
@@ -169,14 +170,11 @@ class COTAService(metaclass=SingletonMeta):
     ) -> COTARead:
         # make sure that cota with cota_id exists
         cota = self.read_by_id(db=db, cota_id=cota_id)
-
-        # delete the models
-        self.repo.get_model_filename(cota.project_id, str(cota.id)).unlink(
-            missing_ok=True
+        # delete the model directories
+        shutil.rmtree(self.repo.get_model_dir(cota.project_id, str(cota.id)))
+        shutil.rmtree(
+            self.repo.get_model_dir(cota.project_id, str(cota.id) + "_best-model")
         )
-        self.repo.get_model_filename(
-            cota.project_id, str(cota.id) + "_best-model"
-        ).unlink(missing_ok=True)
         # delete the embeddings
         self.repo.get_embeddings_filename(cota.project_id, str(cota.id)).unlink(
             missing_ok=True

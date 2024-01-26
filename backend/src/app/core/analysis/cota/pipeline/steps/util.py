@@ -49,12 +49,15 @@ def __get_concept_sentence_annotations(cargo: Cargo) -> Dict[str, List[COTASente
 
 
 def _has_min_concept_sentence_annotations(cargo: Cargo) -> bool:
-    """Returns true if each concept has at least MIN_CONCEPT_SENTENCE_ANNOTATIONS annotations"""
+    """Returns true if each concept has at least min_required_annotations_per_concept"""
 
     annotations = __get_concept_sentence_annotations(cargo)
 
     for concept_id, concept_annotations in annotations.items():
-        if len(concept_annotations) < MIN_CONCEPT_SENTENCE_ANNOTATIONS:
+        if (
+            len(concept_annotations)
+            < cargo.job.cota.training_settings.min_required_annotations_per_concept
+        ):
             return False
 
     return True
@@ -98,7 +101,7 @@ def _load_embeddings(cargo: Cargo) -> torch.Tensor:
 def _store_model(cargo: Cargo, model: ConceptEmbeddingModel) -> None:
     proj_id = cargo.job.cota.project_id
     model_name = str(cargo.job.cota.id)
-    model_path = repo.get_model_filename(proj_id=proj_id, model_name=model_name)
+    model_path = repo.get_model_dir(proj_id=proj_id, model_name=model_name)
     model.save(path=model_path)
 
 
@@ -107,7 +110,7 @@ def _load_model(
 ) -> ConceptEmbeddingModel:
     proj_id = cargo.job.cota.project_id
     model_name = str(cargo.job.cota.id)
-    model_path = repo.get_model_filename(proj_id=proj_id, model_name=model_name)
+    model_path = repo.get_model_dir(proj_id=proj_id, model_name=model_name)
     if not model_path.exists():
         raise ValueError(f"Model {model_name} in Project {proj_id} does not exist!")
     model = ConceptEmbeddingModel.load(path=model_path)

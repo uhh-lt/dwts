@@ -103,7 +103,7 @@ class TrainerService(metaclass=SingletonMeta):
         )
         dataloader = torch.load(trainloader_path)
         print(f"{len(dataloader)=}")
-        model_path = self.repo.get_model_filename(
+        model_path = self.repo.get_model_dir(
             proj_id=trainer_job.parameters.project_id,
             model_name=trainer_job.parameters.train_model_name,
         )
