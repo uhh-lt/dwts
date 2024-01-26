@@ -1,8 +1,8 @@
-"""introduced cota
+"""introduced_cota
 
-Revision ID: 902d2d7fe2e5
+Revision ID: e0a8fb361b1e
 Revises: 058eeaf4aa8d
-Create Date: 2024-01-11 12:22:42.654848
+Create Date: 2024-01-26 10:50:01.483063
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "902d2d7fe2e5"
+revision: str = "e0a8fb361b1e"
 down_revision: Union[str, None] = "058eeaf4aa8d"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,7 +26,12 @@ def upgrade() -> None:
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("concepts", sa.String(), server_default="[]", nullable=False),
         sa.Column("search_space", sa.String(), server_default="[]", nullable=False),
-        sa.Column("settings", sa.String(), server_default="{}", nullable=False),
+        sa.Column(
+            "timeline_settings", sa.String(), server_default="{}", nullable=False
+        ),
+        sa.Column(
+            "training_settings", sa.String(), server_default="{}", nullable=False
+        ),
         sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=True
         ),
