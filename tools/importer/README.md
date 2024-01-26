@@ -19,6 +19,8 @@ pip install python-magic
 
 ```
 # import cnn
+python importer/dwts_importer.py --input_dir /home/tfischer/Development/dwts/data/cnn_crawl_fixed --backend_url http://localhost:10220/ --project_id 1 --tag_name cnn --tag_description cnn --is_json --filter_duplicate_files_before_upload --metadata_keys author published_date visited_date origin --metadata_types STRING DATE DATE STRING --doctype text --content_key text
+
 python importer/dwts_importer.py --input_dir /home/tfischer/Development/dwts/data/cnn_crawl_fixed --backend_url http://localhost:19220/ --project_id 2 --tag_name cnn --tag_description cnn --is_json --filter_duplicate_files_before_upload --metadata_keys author published_date visited_date origin --metadata_types STRING DATE DATE STRING --doctype text --content_key text
 
 # import spiegel new
