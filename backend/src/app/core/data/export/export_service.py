@@ -1,6 +1,7 @@
 import zipfile
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from uuid import uuid4
 
 import pandas as pd
 from loguru import logger
@@ -120,7 +121,12 @@ class ExportService(metaclass=SingletonMeta):
         fn = Path(fn)
         if not fn.suffix == ".zip":
             fn = fn.with_suffix(".zip")
-        export_zip = self.repo.create_temp_file(fn)
+
+        # Put file into random subdirectory
+        random_prefix = Path(str(uuid4()))
+        (self.repo.temp_files_root / random_prefix).mkdir()
+
+        export_zip = self.repo.create_temp_file(Path(random_prefix / fn))
         with zipfile.ZipFile(export_zip, mode="w") as zipf:
             for file in map(Path, exported_files):
                 zipf.write(file, file.name)
@@ -131,9 +137,9 @@ class ExportService(metaclass=SingletonMeta):
         self,
         data: pd.DataFrame,
         export_format: ExportFormat,
-        fn: Optional[str] = None,
+        fn: str,
     ) -> Path:
-        temp_file = self.repo.create_temp_file(fn=fn)
+        temp_file = self.repo.create_temp_file(fn)
         temp_file = temp_file.replace(
             temp_file.with_suffix(f".{str(export_format.value).lower()}")
         )
