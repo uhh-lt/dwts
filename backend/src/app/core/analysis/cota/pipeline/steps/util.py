@@ -169,7 +169,7 @@ def _apply_umap(
     return_list: bool = True,
 ) -> np.ndarray | List[List[float]]:
     if isinstance(embs, torch.Tensor):
-        embs = embs.numpy()
+        embs = embs.cpu().numpy()
     reducer = umap.UMAP(n_components=n_components)
     reduced_embs = reducer.fit_transform(embs)
 
