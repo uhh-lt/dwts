@@ -171,10 +171,14 @@ class COTAService(metaclass=SingletonMeta):
         # make sure that cota with cota_id exists
         cota = self.read_by_id(db=db, cota_id=cota_id)
         # delete the model directories
-        shutil.rmtree(self.repo.get_model_dir(cota.project_id, str(cota.id)))
-        shutil.rmtree(
-            self.repo.get_model_dir(cota.project_id, str(cota.id) + "_best-model")
+        model_dir = self.repo.get_model_dir(cota.project_id, str(cota.id))
+        if model_dir.exists():
+            shutil.rmtree(model_dir)
+        best_model_dir = self.repo.get_model_dir(
+            cota.project_id, str(cota.id) + "-best-model"
         )
+        if best_model_dir.exists():
+            shutil.rmtree(best_model_dir)
         # delete the embeddings
         self.repo.get_embeddings_filename(cota.project_id, str(cota.id)).unlink(
             missing_ok=True
