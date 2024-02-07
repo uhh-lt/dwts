@@ -267,6 +267,8 @@ def upload_file_batch(file_batch: List[Tuple[str, Tuple[str, bytes, str]]]):
 
 
 print(f"Uploading {len(files)} files to project '{project['title']}'!")
+print(f"Limited to {args.max_num_docs}.")
+
 # upload files batchwise, 200 files at a time
 num_batches = math.ceil(len(files) / args.batch_size)
 for i in tqdm(
@@ -276,7 +278,7 @@ for i in tqdm(
 ):
     upload_file_batch(file_batch=files[i : i + args.batch_size])
     api.refresh_login()
-    if (i + 1) * args.batch_size > args.max_num_docs:
+    if (i + args.batch_size) >= args.max_num_docs:
         break
 
 
