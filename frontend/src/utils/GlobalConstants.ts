@@ -1,6 +1,7 @@
 export const SYSTEM_USER_ID = 1;
 export const SUPPORT_EMAIL = "dwise@uni-hamburg.de";
 export const EMAIL_REGEX = /^[A-Za-z0-9][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+export const BASE_ROUTE_REGEX = "/project/.*";
 export const HELP_MESSAGE_SUFFIX = "To learn more about this page, please click on the help icon.";
 export const USER_GUIDE_BASE_URL = "https://github.com/uhh-lt/dwts/wiki/User-Guide#";
 export const USER_GUIDE_ROUTE_MAP = {

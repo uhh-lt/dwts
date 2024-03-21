@@ -14,6 +14,7 @@ import logbookReducer from "../views/logbook/logbookSlice";
 import searchFilterReducer from "../views/search/searchFilterSlice";
 import searchReducer from "../views/search/searchSlice";
 import settingsReducer from "../views/settings/settingsSlice";
+import navReducer from "../components/NavTabs/navigationSlice";
 
 const persistConfig = {
   key: "root",
@@ -23,7 +24,7 @@ const persistConfig = {
 // store slices in local storage
 const persistedSettingsReducer = persistReducer(persistConfig, settingsReducer);
 const persistedAnnoReducer = persistReducer(persistConfig, annoReducer);
-
+const persistedNavReducer = persistReducer(persistConfig, navReducer);
 export const store = configureStore({
   reducer: {
     annotations: persistedAnnoReducer,
@@ -39,6 +40,7 @@ export const store = configureStore({
     timelineAnalysisFilter: timelineAnalysisFilterReducer,
     wordFrequency: wordFrequencyReducer,
     wordFrequencyFilter: wordFrequencyFilterReducer,
+    navTabs: persistedNavReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
