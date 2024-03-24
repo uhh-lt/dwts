@@ -5,7 +5,7 @@ export interface NavState {
 }
 
 const initialState: NavState = {
-  navPaths: ["/projects"],
+  navPaths: [],
 };
 
 export const navSlice = createSlice({
@@ -17,7 +17,6 @@ export const navSlice = createSlice({
     },
     removeNavPath: (state, action: PayloadAction<string>) => {
       const remainingNavPaths = state.navPaths.filter((path) => path !== action.payload);
-      // console.log("remainingNavPaths", remainingNavPaths);
       state.navPaths = remainingNavPaths;
     },
   },

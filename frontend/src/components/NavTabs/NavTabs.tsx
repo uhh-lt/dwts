@@ -3,12 +3,13 @@ import Box from "@mui/material/Box";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Typography } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../plugins/ReduxHooks";
 import { NavActions } from "./navigationSlice";
 import CancelIcon from "@mui/icons-material/Cancel";
 import HomeIcon from "@mui/icons-material/Home";
-import { TabContext } from "@mui/lab";
+import NewTabMenu from "./NewTabMenu";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 function samePageLinkNavigation(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) {
   if (
@@ -28,8 +29,11 @@ interface LinkTabProps {
   label?: string;
   href?: string;
   selected?: boolean;
-  navPaths?: string[];
+  navpaths?: string[];
   value?: string;
+  icon?: string | React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
+  disabletab?: string | undefined;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement> | undefined;
 }
 
 function LinkTab(props: LinkTabProps) {
@@ -41,33 +45,38 @@ function LinkTab(props: LinkTabProps) {
     event.stopPropagation();
     event.preventDefault();
     // console.log("handleClose", navPaths.at(0));
-    navigate(props.navPaths?.at(0) as string, { replace: true });
+    navigate("/projects", { replace: true });
     dispatch(NavActions.removeNavPath(props.href as string));
   };
-
+  const handleTabClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    if (samePageLinkNavigation(event)) {
+      event.preventDefault();
+    }
+    navigate(event.currentTarget.getAttribute("href") as string);
+  };
   return (
     <>
       <Tab
         component="a"
         value={props.value}
-        onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-          if (samePageLinkNavigation(event)) {
-            event.preventDefault();
-          }
-          navigate(event.currentTarget.getAttribute("href") as string);
-        }}
+        onClick={props.label === "newtab" ? props.onClick : handleTabClick}
         aria-current={props.selected && "page"}
         sx={{
-          backgroundColor: "white",
+          backgroundColor: props.href === "#" ? "#DDDDDD" : "white",
           border: "1",
-          borderRadius: "1em",
+          borderRadius: "0.2em",
           mr: 1,
-          width: props.href !== "/projects" ? "15em" : "9em",
+          pl: 2,
+          width: props.href !== "/projects" ? (props.href === "#" ? "0.1em" : "15em") : "9em",
+          // fontSize: "0.8rem",
           minHeight: "3em",
           "&:hover": { backgroundColor: "#e3f2fd" },
           "&.Mui-selected": {
             fontWeight: 900,
           },
+          minWidth: props.href !== "/projects" ? (props.href === "#" ? "0.1em" : "15em") : "9em",
+          overflow: "hidden",
+          // width: props.href === "#" ? "0.1em" : "inherit",
         }}
         icon={
           props.href !== "/projects" ? (
@@ -77,6 +86,7 @@ function LinkTab(props: LinkTabProps) {
           )
         }
         iconPosition={props.href !== "/projects" ? "end" : "start"}
+        disabled={props.disabletab === "true" ? true : false}
         {...props}
       />
     </>
@@ -92,35 +102,67 @@ export default function NavTabs() {
       event.type !== "click" ||
       (event.type === "click" && samePageLinkNavigation(event as React.MouseEvent<HTMLAnchorElement, MouseEvent>))
     ) {
-      // setValue(newValue);
     }
   };
 
   const location = useLocation();
   const navPaths = useAppSelector((state) => state.navTabs.navPaths);
   const navPathsSet = React.useMemo(() => Array.from(new Set(navPaths).values()), [navPaths]);
-
+  const homeTab = React.useRef("/projects");
   React.useEffect(() => {
-    if (navPathsSet.indexOf(location.pathname) === -1) {
+    console.log("NavPaths", navPathsSet, location.pathname, homeTab, location.pathname !== homeTab.current);
+    if (navPathsSet.indexOf(location.pathname) === -1 && location.pathname !== homeTab.current) {
       dispatch(NavActions.setNavPaths(location.pathname));
-      // setValue(navPathsSet.length);
     }
-    // console.log("NavPaths", navPathsSet);
-    // console.log("NewValue", value);
   }, [dispatch, location, navPaths, navPathsSet, setValue, value]);
 
+  //New tab
+  const [anchorEl, setAnchorEl] = React.useState<HTMLAnchorElement | null>(null);
+
+  const handleNewTabClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
   return (
-    <TabContext value={location.pathname}>
-      <Box sx={{ width: "100%", flexGrow: 1 }}>
-        <Typography variant="h5"></Typography>
+    <Box sx={{ width: "100%", flexGrow: 1 }}>
+      <Stack direction={"row"} spacing={1}>
+        <Button
+          LinkComponent={"a"}
+          startIcon={<HomeIcon fontSize="small" />}
+          href={location.pathname !== homeTab.current ? homeTab.current : "#"}
+          variant="text"
+          sx={{
+            minWidth: "10em",
+            height: "3em",
+            backgroundColor: "white",
+            color: location.pathname !== homeTab.current ? "gray" : "primary.main",
+            fontWeight: location.pathname === homeTab.current ? 900 : 500,
+            "&:hover": { backgroundColor: "#e3f2fd" },
+            "&.Mui-selected": {
+              fontWeight: 900,
+            },
+          }}
+        >
+          Projects
+        </Button>
         <Tabs
-          value={location.pathname}
+          value={navPathsSet.includes(location.pathname) ? location.pathname : false}
           onChange={handleChange}
           scrollButtons="auto"
           aria-label="scrollable auto tabs"
           role="navigation"
           variant="scrollable"
+          // variant="fullWidth"
+          // sx={{ maxWidth: "100em" }}
         >
+          {/* <LinkTab
+            key={homeTab.current}
+            label={homeTab.current.substring(1)}
+            href={homeTab.current}
+            navpaths={navPathsSet}
+            value={homeTab.current}
+          /> */}
+
           {navPathsSet.map((path) => (
             <LinkTab
               key={path}
@@ -131,12 +173,31 @@ export default function NavTabs() {
                   : path.match("^.*/([a-zA-Z]+.*)$")?.at(1)
               }
               href={path}
-              navPaths={navPaths}
+              navpaths={navPathsSet}
               value={path}
             />
           ))}
+
+          {/* <LinkTab
+          key={"newtab"}
+          label={""}
+          href={"#"}
+          icon={<AddIcon fontSize="small" />}
+          navpaths={navPathsSet}
+          value={"#"}
+          onClick={handleNewTabClick}
+        /> */}
         </Tabs>
-      </Box>
-    </TabContext>
+        <Button
+          endIcon={<AddCircleIcon fontSize="large" sx={{ width: 28, height: 28 }} />}
+          href={"#"}
+          onClick={handleNewTabClick}
+          variant="text"
+          color="inherit"
+          sx={{ minWidth: "1rem", pl: 0, height: "3em", borderRadius: "5em" }}
+        />
+      </Stack>
+      <NewTabMenu anchorEl={anchorEl} setAnchorEl={setAnchorEl} />
+    </Box>
   );
 }
