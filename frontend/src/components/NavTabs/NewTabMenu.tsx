@@ -17,6 +17,7 @@ interface NewTabMenuProps {
   anchorEl: HTMLAnchorElement | null;
   setAnchorEl: React.Dispatch<React.SetStateAction<HTMLAnchorElement | null>>;
 }
+
 function calculateValue(path: string) {
   if (path.match(/project\/\d+\/search.*/i)) {
     return 0;
@@ -65,7 +66,6 @@ export default function NewTabMenu({ anchorEl, setAnchorEl }: NewTabMenuProps) {
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLAnchorElement | HTMLDivElement | HTMLLIElement>) => {
-    console.log(event.currentTarget.getAttribute("href"));
     if (event.currentTarget.getAttribute("href") !== null)
       navigate(("../" + event.currentTarget.getAttribute("href")) as string);
     setAnchorEl(null);

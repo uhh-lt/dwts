@@ -5,15 +5,17 @@ export interface NavState {
 }
 
 const initialState: NavState = {
-  navPaths: [],
+  navPaths: ["/projects"],
 };
 
 export const navSlice = createSlice({
   name: "nav",
   initialState,
   reducers: {
-    setNavPaths: (state, action: PayloadAction<string>) => {
-      state.navPaths.push(action.payload);
+    addNavPaths: (state, action: PayloadAction<string>) => {
+      if (state.navPaths.indexOf(action.payload) === -1) {
+        state.navPaths.push(action.payload);
+      }
     },
     removeNavPath: (state, action: PayloadAction<string>) => {
       const remainingNavPaths = state.navPaths.filter((path) => path !== action.payload);
