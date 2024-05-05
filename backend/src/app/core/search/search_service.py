@@ -12,6 +12,7 @@ from app.core.data.dto.search import (
     SimSearchImageHit,
     SimSearchQuery,
     SimSearchSentenceHit,
+    ElasticSearchDocumentHit
 )
 from app.core.data.dto.search_stats import KeywordStat, SpanEntityStat, TagStat
 from app.core.data.orm.annotation_document import AnnotationDocumentORM
@@ -71,9 +72,10 @@ class SearchService(metaclass=SingletonMeta):
         project_id: int,
         search_query: str,
         expert_mode: bool,
+        highlight: bool,
         filter: Filter[SearchColumns],
         sorts: List[Sort[SearchColumns]],
-    ) -> List[int]:
+    ) -> list[ElasticSearchDocumentHit]:
         with self.sqls.db_session() as db:
             filtered_sdoc_ids = self._get_filtered_sdoc_ids(
                 db, project_id, filter, sorts
@@ -88,9 +90,10 @@ class SearchService(metaclass=SingletonMeta):
                 query=search_query,
                 sdoc_ids=set(filtered_sdoc_ids),
                 use_simple_query=not expert_mode,
+                highlight=highlight,
             )
 
-            return [hit.sdoc_id for hit in elastic_hits.hits]
+            return elastic_hits
 
     def _get_filtered_sdoc_ids(
         self,

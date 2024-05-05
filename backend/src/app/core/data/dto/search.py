@@ -123,8 +123,13 @@ class ElasticSearchDocumentHit(BaseModel):
     sdoc_id: int = Field(
         description="The ID of the SourceDocument as it is in the SQL DB"
     )
-    score: float = Field(
-        description="The score of the SourceDocument that was found by a ES Query"
+    score: Optional[float] = Field(
+        description="The score of the SourceDocument that was found by a ES Query",
+        default = None
+    )
+    highlights: Optional[list[str]] = Field(
+        description="The highlights found within the document.",
+        default = []
     )
 
 
@@ -194,7 +199,7 @@ class ElasticMemoHit(ElasticSearchMemoRead):
 class PaginatedElasticSearchDocumentHits(PaginatedResults):
     hits: List[ElasticSearchDocumentHit] = Field(
         description=(
-            "The IDs of SourceDocument search results on " "the requested page."
+            "The IDs, scores and (optional) highlights of SourceDocument search results on " "the requested page."
         )
     )
 

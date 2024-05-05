@@ -13,6 +13,7 @@ from app.core.data.dto.search import (
     SimSearchImageHit,
     SimSearchQuery,
     SimSearchSentenceHit,
+    ElasticSearchDocumentHit,
 )
 from app.core.data.dto.search_stats import KeywordStat, SpanEntityStat, TagStat
 from app.core.filters.columns import ColumnInfo
@@ -44,23 +45,25 @@ def search_sdocs_info(
 
 @router.post(
     "/sdoc",
-    response_model=List[int],
-    summary="Returns all SourceDocument Ids that match the query parameters.",
+    response_model=list[ElasticSearchDocumentHit],
+    summary="Returns all SourceDocument Ids and their scores and (optional) hightlights that match the query parameters.",
 )
 def search_sdocs(
     *,
     search_query: str,
     project_id: int,
     expert_mode: bool,
+    highlight: bool,
     filter: Filter[SearchColumns],
     sorts: List[Sort[SearchColumns]],
     authz_user: AuthzUser = Depends(),
-) -> List[int]:
+) -> list[ElasticSearchDocumentHit]:
     authz_user.assert_in_project(project_id)
 
     return SearchService().search(
         search_query=search_query,
         expert_mode=expert_mode,
+        highlight=highlight,
         project_id=project_id,
         filter=filter,
         sorts=sorts,
