@@ -184,34 +184,35 @@ const router = createBrowserRouter([
         path: "/project/:projectId/analysis/document-sampler",
         element: <DocumentSampler />,
       },
-      path: "/project/:projectId/analysis/concepts-over-time-analysis",
-      element: <CotaDashboard />,
+      {
+        path: "/project/:projectId/analysis/concepts-over-time-analysis",
+        element: <CotaDashboard />,
       },
-  {
-    path: "/project/:projectId/analysis/concepts-over-time-analysis/:cotaId",
-    element: <CotaView />,
-  },
-  {
-    path: "/project/:projectId/whiteboard",
-    element: <WhiteboardDashboard />,
-  },
-  {
-    path: "/project/:projectId/whiteboard/:whiteboardId",
-    element: <Whiteboard />,
-  },
-  {
-    path: "/project/:projectId/logbook",
-    element: <Logbook />,
-  },
-  {
-    path: "/project/:projectId/logbook/:category",
-    element: <Logbook />,
-  },
-  {
-    path: "/project/:projectId/autologbook",
-    element: <Autologbook />,
-  },
-],
+      {
+        path: "/project/:projectId/analysis/concepts-over-time-analysis/:cotaId",
+        element: <CotaView />,
+      },
+      {
+        path: "/project/:projectId/whiteboard",
+        element: <WhiteboardDashboard />,
+      },
+      {
+        path: "/project/:projectId/whiteboard/:whiteboardId",
+        element: <Whiteboard />,
+      },
+      {
+        path: "/project/:projectId/logbook",
+        element: <Logbook />,
+      },
+      {
+        path: "/project/:projectId/logbook/:category",
+        element: <Logbook />,
+      },
+      {
+        path: "/project/:projectId/autologbook",
+        element: <Autologbook />,
+      },
+    ],
   },
 ]);
 

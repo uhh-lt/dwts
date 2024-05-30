@@ -134,12 +134,7 @@ function CotaSettings({ cota }: CotaSettingsProps) {
             variant="outlined"
             value={cota.timeline_settings.date_metadata_id || -1}
             onChange={handleChangeMetadataId}
-            helperText={
-              <ValidDocumentsChecker
-                projectId={projectId}
-                dateMetadataId={cota.timeline_settings.date_metadata_id || -1}
-              />
-            }
+            helperText={<ValidDocumentsChecker projectId={projectId} />}
             error={filteredProjectMetadata?.length === 0}
             disabled={filteredProjectMetadata?.length === 0}
           >
