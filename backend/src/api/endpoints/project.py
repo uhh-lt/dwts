@@ -15,6 +15,7 @@ from app.core.data.crud.action import crud_action
 from app.core.data.crud.code import crud_code
 from app.core.data.crud.crud_base import NoSuchElementError
 from app.core.data.crud.document_tag import crud_document_tag
+from app.core.data.crud.entity import crud_entity
 from app.core.data.crud.memo import crud_memo
 from app.core.data.crud.project import crud_project
 from app.core.data.crud.project_metadata import crud_project_meta
@@ -22,6 +23,7 @@ from app.core.data.crud.source_document import crud_sdoc
 from app.core.data.dto.action import ActionQueryParameters, ActionRead
 from app.core.data.dto.code import CodeRead
 from app.core.data.dto.document_tag import DocumentTagRead
+from app.core.data.dto.entity import EntityRead
 from app.core.data.dto.memo import AttachedObjectType, MemoCreate, MemoInDB, MemoRead
 from app.core.data.dto.preprocessing_job import PreprocessingJobRead
 from app.core.data.dto.project import ProjectCreate, ProjectRead, ProjectUpdate
@@ -530,3 +532,22 @@ def find_duplicate_text_sdocs(
     return DuplicateFinderService().find_duplicate_text_sdocs(
         project_id=proj_id, max_different_words=max_different_words
     )
+
+
+@router.get(
+    "/{proj_id}/entity",
+    response_model=List[EntityRead],
+    summary="Returns all Entities of the Project with the given ID",
+)
+def get_project_entities(
+    *,
+    proj_id: int,
+    db: Session = Depends(get_db_session),
+    authz_user: AuthzUser = Depends(),
+) -> List[EntityRead]:
+    authz_user.assert_in_project(proj_id)
+
+    result = crud_entity.read_by_project(db=db, proj_id=proj_id)
+    result = [EntityRead.model_validate(entity) for entity in result]
+    result.sort(key=lambda c: c.id)
+    return result

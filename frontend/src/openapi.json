@@ -951,6 +951,35 @@
         }
       }
     },
+    "/project/{proj_id}/entity": {
+      "get": {
+        "tags": ["project"],
+        "summary": "Returns all Entities of the Project with the given ID",
+        "operationId": "get_project_entities",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          { "name": "proj_id", "in": "path", "required": true, "schema": { "type": "integer", "title": "Proj Id" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/EntityRead" },
+                  "title": "Response Project-Get Project Entities"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        }
+      }
+    },
     "/sdoc/{sdoc_id}": {
       "get": {
         "tags": ["sourceDocument"],
@@ -2999,6 +3028,83 @@
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
           }
         }
+      }
+    },
+    "/entity/{entity_id}": {
+      "patch": {
+        "tags": ["entity"],
+        "summary": "Updates the Entity with the given ID.",
+        "operationId": "update_by_id",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          { "name": "entity_id", "in": "path", "required": true, "schema": { "type": "integer", "title": "Entity Id" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EntityUpdate" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EntityRead" } } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        }
+      }
+    },
+    "/entity/merge": {
+      "put": {
+        "tags": ["entity"],
+        "summary": "Merges entities and/or span texts with given IDs.",
+        "operationId": "merge_entities",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EntityMerge" } } },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EntityRead" } } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/entity/release": {
+      "put": {
+        "tags": ["entity"],
+        "summary": "Releases entities and/or span texts with given IDs.",
+        "operationId": "release_entities",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EntityRelease" } } },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "$ref": "#/components/schemas/EntityRead" },
+                  "type": "array",
+                  "title": "Response Entity-Release Entities"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
       }
     },
     "/memo/{memo_id}": {
@@ -6812,6 +6918,126 @@
         "required": ["document_id"],
         "title": "ElasticSearchDocumentHit"
       },
+      "EntityMerge": {
+        "properties": {
+          "is_human": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Is Human",
+            "description": "Whether the link was created by a human",
+            "default": false
+          },
+          "knowledge_base_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Knowledge Base Id",
+            "description": "Link to wikidata",
+            "default": ""
+          },
+          "name": { "type": "string", "title": "Name", "description": "Name of the Entity" },
+          "project_id": { "type": "integer", "title": "Project Id", "description": "Id of the current Project" },
+          "spantext_ids": {
+            "items": { "type": "integer" },
+            "type": "array",
+            "title": "Spantext Ids",
+            "description": "List of Span Text IDs to merge"
+          }
+        },
+        "type": "object",
+        "required": ["name", "project_id", "spantext_ids"],
+        "title": "EntityMerge"
+      },
+      "EntityRead": {
+        "properties": {
+          "is_human": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Is Human",
+            "description": "Whether the link was created by a human",
+            "default": false
+          },
+          "knowledge_base_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Knowledge Base Id",
+            "description": "Link to wikidata",
+            "default": ""
+          },
+          "id": { "type": "integer", "title": "Id", "description": "ID of the Entity" },
+          "name": { "type": "string", "title": "Name", "description": "Name of the Entity" },
+          "project_id": { "type": "integer", "title": "Project Id", "description": "Project the Entity belongs to" },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created",
+            "description": "Created timestamp of the Entity"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated",
+            "description": "Updated timestamp of the Entity"
+          },
+          "span_texts": {
+            "items": { "$ref": "#/components/schemas/SpanTextRead" },
+            "type": "array",
+            "title": "Span Texts",
+            "description": "The SpanTexts belonging to this entity",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": ["id", "name", "project_id", "created", "updated"],
+        "title": "EntityRead"
+      },
+      "EntityRelease": {
+        "properties": {
+          "is_human": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Is Human",
+            "description": "Whether the link was created by a human",
+            "default": false
+          },
+          "knowledge_base_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Knowledge Base Id",
+            "description": "Link to wikidata",
+            "default": ""
+          },
+          "project_id": { "type": "integer", "title": "Project Id", "description": "Id of the current Project" },
+          "spantext_ids": {
+            "items": { "type": "integer" },
+            "type": "array",
+            "title": "Spantext Ids",
+            "description": "List of Span Text IDs to release"
+          }
+        },
+        "type": "object",
+        "required": ["project_id", "spantext_ids"],
+        "title": "EntityRelease"
+      },
+      "EntityUpdate": {
+        "properties": {
+          "is_human": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Is Human",
+            "description": "Whether the link was created by a human",
+            "default": false
+          },
+          "knowledge_base_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Knowledge Base Id",
+            "description": "Link to wikidata",
+            "default": ""
+          },
+          "name": { "type": "string", "title": "Name", "description": "Name of the Entity" },
+          "span_text_ids": {
+            "items": { "type": "integer" },
+            "type": "array",
+            "title": "Span Text Ids",
+            "description": "Span Text Ids which belong to this Entity"
+          }
+        },
+        "type": "object",
+        "required": ["name", "span_text_ids"],
+        "title": "EntityUpdate"
+      },
       "ExportFormat": { "type": "string", "enum": ["CSV", "JSON"], "title": "ExportFormat" },
       "ExportJobParameters": {
         "properties": {
@@ -8616,6 +8842,15 @@
         },
         "type": "object",
         "title": "SpanGroupUpdate"
+      },
+      "SpanTextRead": {
+        "properties": {
+          "text": { "type": "string", "title": "Text", "description": "Code of the SpanText" },
+          "id": { "type": "integer", "title": "Id", "description": "ID of the SpanText" }
+        },
+        "type": "object",
+        "required": ["id"],
+        "title": "SpanTextRead"
       },
       "StringOperator": {
         "type": "string",

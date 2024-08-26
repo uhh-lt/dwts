@@ -42,6 +42,7 @@ from api.endpoints import (
     concept_over_time_analysis,
     crawler,
     document_tag,
+    entity,
     export,
     feedback,
     general,
@@ -268,6 +269,7 @@ app.include_router(span_annotation.router)
 app.include_router(span_group.router)
 app.include_router(bbox_annotation.router)
 app.include_router(code.router)
+app.include_router(entity.router)
 app.include_router(memo.router)
 app.include_router(search.router)
 app.include_router(source_document_metadata.router)

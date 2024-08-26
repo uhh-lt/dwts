@@ -13,6 +13,7 @@ import CodeFrequencyAnalysis from "../views/analysis/CodeFrequency/CodeFrequency
 import CodeGraph from "../views/analysis/CodeGraph/CodeGraph.tsx";
 import CotaDashboard from "../views/analysis/ConceptsOverTime/CotaDashboard.tsx";
 import CotaView from "../views/analysis/ConceptsOverTime/CotaView.tsx";
+import EntityDashboard from "../views/analysis/EntityDashboard/EntityDashboard.tsx";
 import TableDashboard from "../views/analysis/Table/TableDashboard.tsx";
 import TableView from "../views/analysis/Table/TableView.tsx";
 import TimelineAnalysis from "../views/analysis/TimelineAnalysis/TimelineAnalysis.tsx";
@@ -150,6 +151,10 @@ const router = createBrowserRouter([
       {
         path: "/project/:projectId/analysis/annotated-segments",
         element: <AnnotatedSegments />,
+      },
+      {
+        path: "/project/:projectId/analysis/entity-dashboard",
+        element: <EntityDashboard />,
       },
       {
         path: "/project/:projectId/analysis/word-frequency",

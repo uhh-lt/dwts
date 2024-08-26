@@ -58,6 +58,13 @@ function Analysis() {
           color={"#77dd77"}
         />
 
+        <AnalysisCard
+          to={"entity-dashboard"}
+          title={"Entity Dashboard"}
+          description={"See and edit entities."}
+          color={"#77dd77"}
+        />
+
         <AnalysisCard to={"table"} title={"Table"} description={"Analyse with tables."} color={"#77dd77"} />
       </Box>
     </NoSidebarLayout>

@@ -8,6 +8,7 @@ from app.core.data.crud.code import crud_code
 from app.core.data.crud.concept_over_time_analysis import crud_cota
 from app.core.data.crud.current_code import crud_current_code
 from app.core.data.crud.document_tag import crud_document_tag
+from app.core.data.crud.entity import crud_entity
 from app.core.data.crud.memo import crud_memo
 from app.core.data.crud.object_handle import crud_object_handle
 from app.core.data.crud.preprocessing_job import crud_prepro_job
@@ -21,6 +22,7 @@ from app.core.data.crud.source_document_metadata import crud_sdoc_meta
 from app.core.data.crud.span_annotation import crud_span_anno
 from app.core.data.crud.span_group import crud_span_group
 from app.core.data.crud.span_text import crud_span_text
+from app.core.data.crud.span_text_entity_link import crud_span_text_entity_link
 from app.core.data.crud.timeline_analysis import crud_timeline_analysis
 from app.core.data.crud.user import crud_user
 from app.core.data.crud.whiteboard import crud_whiteboard
@@ -51,3 +53,5 @@ class Crud(Enum):
     COTA_ANALYSIS = crud_cota
     USER = crud_user
     WHITEBOARD = crud_whiteboard
+    ENTITY = crud_entity
+    SPAN_TEXT_ENTITY_LINK = crud_span_text_entity_link

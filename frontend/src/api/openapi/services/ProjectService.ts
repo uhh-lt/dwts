@@ -7,6 +7,7 @@ import type { ActionRead } from "../models/ActionRead";
 import type { Body_project_upload_project_sdoc } from "../models/Body_project_upload_project_sdoc";
 import type { CodeRead } from "../models/CodeRead";
 import type { DocumentTagRead } from "../models/DocumentTagRead";
+import type { EntityRead } from "../models/EntityRead";
 import type { MemoCreate } from "../models/MemoCreate";
 import type { MemoRead } from "../models/MemoRead";
 import type { PreprocessingJobRead } from "../models/PreprocessingJobRead";
@@ -519,6 +520,23 @@ export class ProjectService {
       },
       query: {
         max_different_words: maxDifferentWords,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+  /**
+   * Returns all Entities of the Project with the given ID
+   * @returns EntityRead Successful Response
+   * @throws ApiError
+   */
+  public static getProjectEntities({ projId }: { projId: number }): CancelablePromise<Array<EntityRead>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/project/{proj_id}/entity",
+      path: {
+        proj_id: projId,
       },
       errors: {
         422: `Validation Error`,

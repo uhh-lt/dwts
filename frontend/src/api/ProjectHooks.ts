@@ -7,6 +7,7 @@ import { ActionQueryParameters } from "./openapi/models/ActionQueryParameters.ts
 import { ActionRead } from "./openapi/models/ActionRead.ts";
 import { CodeRead } from "./openapi/models/CodeRead.ts";
 import { DocumentTagRead } from "./openapi/models/DocumentTagRead.ts";
+import { EntityRead } from "./openapi/models/EntityRead.ts";
 import { MemoRead } from "./openapi/models/MemoRead.ts";
 import { PreprocessingJobRead } from "./openapi/models/PreprocessingJobRead.ts";
 import { ProjectCreate } from "./openapi/models/ProjectCreate.ts";
@@ -146,7 +147,16 @@ const useGetAllCodes = (projectId: number, returnAll: boolean = false) => {
     select: returnAll ? undefined : selectEnabledCodes,
   });
 };
-
+// entities
+const useGetAllEntities = (projectId: number) => {
+  return useQuery<EntityRead[], Error>({
+    queryKey: [QueryKey.PROJECT_ENTITIES, projectId],
+    queryFn: () =>
+      ProjectService.getProjectEntities({
+        projId: projectId,
+      }),
+  });
+};
 // memo
 const useGetMemo = (projectId: number | null | undefined, userId: number | null | undefined) =>
   useQuery<MemoRead, Error>({
@@ -230,6 +240,8 @@ const ProjectHooks = {
   useRemoveUser,
   // codes
   useGetAllCodes,
+  // entities,
+  useGetAllEntities,
   // memo
   useGetMemo,
   useGetAllUserMemos,

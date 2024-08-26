@@ -11,6 +11,8 @@ export const QueryKey = {
   PROJECT_SDOCS_INFINITE: "projectDocumentsInfinite",
   // all codes of a project (by project id)
   PROJECT_CODES: "projectCodes",
+  // all entities of a project (by project id)
+  PROJECT_ENTITIES: "projectEntities",
   // all tags of a project (by project id)
   PROJECT_TAGS: "projectTags",
   // all crawler jobs of a project (by project id)
@@ -107,6 +109,9 @@ export const QueryKey = {
 
   // a single code (by code id)
   CODE: "code",
+
+  // a single entity (by entity id)
+  ENTITY: "entity",
 
   // a single tag (by tag id)
   TAG: "tag",
