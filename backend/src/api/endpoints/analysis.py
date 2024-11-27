@@ -9,10 +9,12 @@ from app.core.analysis.code_frequency_analysis.code_frequency import (
     find_code_occurrences,
 )
 from app.core.analysis.document_sampler.document_sampler import document_sampler_by_tags
+from app.core.analysis.my_new_analysis_feature import random_walk
 from app.core.analysis.statistics.count_metadata import (
     compute_num_sdocs_with_date_metadata,
 )
 from app.core.analysis.word_frequency_analysis.word_frequency import (
+    WordFrequencyColumns,
     word_frequency,
     word_frequency_export,
     word_frequency_info,
@@ -320,3 +322,16 @@ def sample_sdocs_by_tags(
     return document_sampler_by_tags(
         project_id=project_id, tag_ids=tag_groups, n=n, frac=frac
     )
+
+
+@router.post(
+    "/my_new_analysis",
+    response_model=List[dict],
+    summary="Hello World!",
+)
+def my_new_analysis_feature(
+    *,
+    db: Session = Depends(get_db_session),
+    authz_user: AuthzUser = Depends(),
+) -> List[dict]:
+    return random_walk()

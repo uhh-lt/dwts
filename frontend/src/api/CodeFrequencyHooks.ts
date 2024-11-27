@@ -31,9 +31,16 @@ const useCodeOccurrences = (projectId: number, userIds: number[], codeId: number
     enabled: userIds.length > 0 && !!codeId,
   });
 
+const useTestAnalysisFeature = () =>
+  useQuery<Array<Record<string, unknown>>, Error>({
+    queryKey: ["Test"],
+    queryFn: () => AnalysisService.myNewAnalysisFeature(),
+  });
+
 const AnalysisHooks = {
   useCodeFrequencies,
   useCodeOccurrences,
+  useTestAnalysisFeature,
 };
 
 export default AnalysisHooks;

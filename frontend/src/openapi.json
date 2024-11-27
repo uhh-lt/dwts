@@ -3438,6 +3438,28 @@
         }
       }
     },
+    "/analysis/my_new_analysis": {
+      "post": {
+        "tags": ["analysis"],
+        "summary": "Hello World!",
+        "operationId": "my_new_analysis_feature",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "type": "object" },
+                  "type": "array",
+                  "title": "Response Analysis-My New Analysis Feature"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
     "/prepro/{prepro_job_id}": {
       "get": {
         "tags": ["prepro"],

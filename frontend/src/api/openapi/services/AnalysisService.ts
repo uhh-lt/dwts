@@ -364,4 +364,15 @@ export class AnalysisService {
       },
     });
   }
+  /**
+   * Hello World!
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static myNewAnalysisFeature(): CancelablePromise<Array<Record<string, any>>> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/analysis/my_new_analysis",
+    });
+  }
 }
