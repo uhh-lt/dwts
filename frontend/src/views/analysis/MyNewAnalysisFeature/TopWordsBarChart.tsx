@@ -1,5 +1,6 @@
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import * as d3 from "d3";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 
 interface TopWordsProps {
   data: Record<string, { word: string; score: number }>[];
@@ -7,6 +8,7 @@ interface TopWordsProps {
 
 const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
   const amountTopics = Object.keys(data[0]).length;
+  const [currentTopic, setCurrentTopic] = useState(0);
   // change to current topic so the scale changes accordingly
   let maxScore = 0;
   for (const topic of data) {
@@ -17,9 +19,9 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
     }
   }
   let currentMaxScore = 0;
-  for (const word in data[0]) {
-    if (data[0][word]["score"] > currentMaxScore) {
-      currentMaxScore = data[0][word]["score"];
+  for (const word in data[currentTopic]) {
+    if (data[currentTopic][word]["score"] > currentMaxScore) {
+      currentMaxScore = data[currentTopic][word]["score"];
     }
   }
 
@@ -39,7 +41,7 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
 
   const y = d3
     .scaleBand()
-    .domain(d3.sort(Object.values(data[0]), (d) => -d.score).map((d) => d.word))
+    .domain(d3.sort(Object.values(data[currentTopic]), (d) => -d.score).map((d) => d.word))
     .rangeRound([marginTop, height - marginBottom])
     .padding(0.1);
 
@@ -63,7 +65,7 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
       .append("g")
       .attr("fill", "steelblue")
       .selectAll()
-      .data(Object.values(data[0]))
+      .data(Object.values(data[currentTopic]))
       .join("rect")
       .attr("x", x(0))
       .attr("y", (d) => y(d.word) ?? 0)
@@ -75,7 +77,7 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
       .attr("fill", "white")
       .attr("text-anchor", "end")
       .selectAll()
-      .data(Object.values(data[0]))
+      .data(Object.values(data[currentTopic]))
       .join("text")
       .attr("x", (d) => x(d.score))
       .attr("y", (d) => y(d.word) ?? 0 + y.bandwidth() / 2)
@@ -98,10 +100,24 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
       .call((g) => g.select(".domain").remove());
 
     svg.append("g").attr("transform", `translate(${marginLeft},0)`).call(d3.axisLeft(y).tickSizeOuter(0));
-  }, [data, formatScore, height, x, y]);
+  }, [currentTopic, data, formatScore, height, x, y]);
+
+  const handleChange = (event: SelectChangeEvent<number>) => {
+    setCurrentTopic(event.target.value as number);
+  };
 
   return (
     <div>
+      <FormControl fullWidth>
+        <InputLabel id="dynamic-dropdown-label">Select Key</InputLabel>
+        <Select labelId="dynamic-dropdown-label" value={currentTopic} onChange={handleChange}>
+          {Object.keys(data[0]).map((key) => (
+            <MenuItem key={key} value={key}>
+              {key}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
       <svg ref={svgRef}></svg>
     </div>
   );
