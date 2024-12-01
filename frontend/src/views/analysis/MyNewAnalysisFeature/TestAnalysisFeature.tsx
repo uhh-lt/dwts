@@ -13,7 +13,7 @@ import * as React from "react";
 //import { useParams } from "react-router-dom";
 import AnalysisHooks from "../../../api/AnalysisHooks.ts";
 import SdocHooks from "../../../api/SdocHooks.ts";
-import TestD3Object from "./testD3Object.tsx";
+import TopWordsBarChart from "./TopWordsBarChart.tsx";
 
 function TestAnalysisFeature() {
   const [document, setDocument] = React.useState("1");
@@ -22,6 +22,7 @@ function TestAnalysisFeature() {
   const sdoc1 = SdocHooks.useGetDocument(1);
   const sdocList = [sdoc1];
   const list_of_json_strings = AnalysisHooks.useTestAnalysisFeature();
+  const top_words_data = AnalysisHooks.useReturnTopWordsData();
   const handleChange = (event: SelectChangeEvent) => {
     setDocument(event.target.value as string);
   };
@@ -31,7 +32,10 @@ function TestAnalysisFeature() {
       console.log(`handleRun: ${list_of_json_strings.data}`);
     }
   };
-
+  //{list_of_json_strings.isLoading && <div>Loading...</div>}
+  //{list_of_json_strings.isSuccess && (
+  //  <TestD3Object data={list_of_json_strings.data as { x: number; y: number }[]}></TestD3Object>
+  //)}
   return (
     <div>
       <Card>
@@ -54,9 +58,12 @@ function TestAnalysisFeature() {
         </CardContent>
         {sdoc1.isLoading && <div>Loading...</div>}
         {sdoc1.isSuccess && <div>{JSON.stringify(sdocList[Number(document) - 1].data?.content)}</div>}
-        {list_of_json_strings.isLoading && <div>Loading...</div>}
-        {list_of_json_strings.isSuccess && (
-          <TestD3Object data={list_of_json_strings.data as { x: number; y: number }[]}></TestD3Object>
+
+        {top_words_data.isLoading && <div>Loading...</div>}
+        {top_words_data.isSuccess && (
+          <TopWordsBarChart
+            data={top_words_data.data as Record<string, { word: string; score: number }>[]}
+          ></TopWordsBarChart>
         )}
       </Card>
       <Button variant="outlined" onClick={handleRun}>

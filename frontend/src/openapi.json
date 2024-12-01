@@ -3460,6 +3460,50 @@
         "security": [{ "OAuth2PasswordBearer": [] }]
       }
     },
+    "/analysis/top_words_data": {
+      "post": {
+        "tags": ["analysis"],
+        "summary": "Returns the top words for 30 topics. This is still mock-data",
+        "operationId": "return_top_words_data",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "type": "object" },
+                  "type": "array",
+                  "title": "Response Analysis-Return Top Words Data"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/analysis/random_walk_dto": {
+      "post": {
+        "tags": ["analysis"],
+        "summary": "Hello World!",
+        "operationId": "dto",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "$ref": "#/components/schemas/PointDTO" },
+                  "type": "array",
+                  "title": "Response Analysis-Dto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
     "/prepro/{prepro_job_id}": {
       "get": {
         "tags": ["prepro"],
@@ -7475,6 +7519,15 @@
         "type": "object",
         "required": ["hits", "total_results"],
         "title": "PaginatedElasticSearchDocumentHits"
+      },
+      "PointDTO": {
+        "properties": {
+          "x": { "type": "integer", "title": "X", "description": "x-coord" },
+          "y": { "type": "integer", "title": "Y", "description": "y-coord" }
+        },
+        "type": "object",
+        "required": ["x", "y"],
+        "title": "PointDTO"
       },
       "PreProProjectStatus": {
         "properties": {
