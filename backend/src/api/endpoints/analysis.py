@@ -9,7 +9,12 @@ from app.core.analysis.code_frequency_analysis.code_frequency import (
     find_code_occurrences,
 )
 from app.core.analysis.document_sampler.document_sampler import document_sampler_by_tags
-from app.core.analysis.my_new_analysis_feature import random_walk
+from app.core.analysis.my_new_analysis_feature import (
+    PointDTO,
+    random_walk,
+    random_walk_DTO,
+    top_words_data,
+)
 from app.core.analysis.statistics.count_metadata import (
     compute_num_sdocs_with_date_metadata,
 )
@@ -335,3 +340,29 @@ def my_new_analysis_feature(
     authz_user: AuthzUser = Depends(),
 ) -> List[dict]:
     return random_walk()
+
+
+@router.post(
+    "/top_words_data",
+    response_model=List[dict],
+    summary="Returns the top words for 30 topics. This is still mock-data",
+)
+def return_top_words_data(
+    *,
+    db: Session = Depends(get_db_session),
+    authz_user: AuthzUser = Depends(),
+) -> List[dict]:
+    return top_words_data()
+
+
+@router.post(
+    "/random_walk_dto",
+    response_model=List[PointDTO],
+    summary="Hello World!",
+)
+def dto(
+    *,
+    db: Session = Depends(get_db_session),
+    authz_user: AuthzUser = Depends(),
+) -> List[PointDTO]:
+    return random_walk_DTO()
