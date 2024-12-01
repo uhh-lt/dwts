@@ -1,11 +1,11 @@
 import * as d3 from "d3";
 import React, { useRef } from "react";
 
-interface TestD3ObjectProps {
+interface LinePlotData {
   data: { x: number; y: number }[];
 }
 
-const TestD3Object: React.FC<TestD3ObjectProps> = ({ data }) => {
+const LinePlot: React.FC<LinePlotData> = ({ data }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const width = 960;
   const height = 450;
@@ -90,4 +90,4 @@ const TestD3Object: React.FC<TestD3ObjectProps> = ({ data }) => {
   );
 };
 
-export default TestD3Object;
+export default LinePlot;
