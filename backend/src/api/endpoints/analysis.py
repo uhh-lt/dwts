@@ -11,9 +11,9 @@ from app.core.analysis.code_frequency_analysis.code_frequency import (
 from app.core.analysis.document_sampler.document_sampler import document_sampler_by_tags
 from app.core.analysis.my_new_analysis_feature import (
     PointDTO,
-    random_walk,
     random_walk_DTO,
     top_words_data,
+    topic_distr_data,
 )
 from app.core.analysis.statistics.count_metadata import (
     compute_num_sdocs_with_date_metadata,
@@ -330,16 +330,16 @@ def sample_sdocs_by_tags(
 
 
 @router.post(
-    "/my_new_analysis",
+    "/topic_distr_data",
     response_model=List[dict],
-    summary="Hello World!",
+    summary="Returns the topic distribution based on number of documents",
 )
-def my_new_analysis_feature(
+def return_topic_distr_data(
     *,
     db: Session = Depends(get_db_session),
     authz_user: AuthzUser = Depends(),
 ) -> List[dict]:
-    return random_walk()
+    return topic_distr_data()
 
 
 @router.post(

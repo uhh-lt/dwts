@@ -366,14 +366,14 @@ export class AnalysisService {
     });
   }
   /**
-   * Hello World!
+   * Returns the topic distribution based on number of documents
    * @returns any Successful Response
    * @throws ApiError
    */
-  public static myNewAnalysisFeature(): CancelablePromise<Array<Record<string, any>>> {
+  public static returnTopicDistrData(): CancelablePromise<Array<Record<string, any>>> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/analysis/my_new_analysis",
+      url: "/analysis/topic_distr_data",
     });
   }
   /**

@@ -31,10 +31,10 @@ const useCodeOccurrences = (projectId: number, userIds: number[], codeId: number
     enabled: userIds.length > 0 && !!codeId,
   });
 
-const useTestAnalysisFeature = () =>
+const useReturnTopicDistrData = () =>
   useQuery<Array<Record<string, unknown>>, Error>({
     queryKey: ["Test1"],
-    queryFn: () => AnalysisService.myNewAnalysisFeature(),
+    queryFn: () => AnalysisService.returnTopicDistrData(),
   });
 
 const useReturnTopWordsData = () =>
@@ -46,7 +46,7 @@ const useReturnTopWordsData = () =>
 const AnalysisHooks = {
   useCodeFrequencies,
   useCodeOccurrences,
-  useTestAnalysisFeature,
+  useReturnTopicDistrData,
   useReturnTopWordsData,
 };
 

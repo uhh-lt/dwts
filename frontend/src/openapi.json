@@ -3438,11 +3438,11 @@
         }
       }
     },
-    "/analysis/my_new_analysis": {
+    "/analysis/topic_distr_data": {
       "post": {
         "tags": ["analysis"],
-        "summary": "Hello World!",
-        "operationId": "my_new_analysis_feature",
+        "summary": "Returns the topic distribution based on number of documents",
+        "operationId": "return_topic_distr_data",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3451,7 +3451,7 @@
                 "schema": {
                   "items": { "type": "object" },
                   "type": "array",
-                  "title": "Response Analysis-My New Analysis Feature"
+                  "title": "Response Analysis-Return Topic Distr Data"
                 }
               }
             }

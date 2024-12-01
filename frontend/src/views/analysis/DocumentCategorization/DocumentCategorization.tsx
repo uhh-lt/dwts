@@ -3,12 +3,12 @@ import AnalysisHooks from "../../../api/AnalysisHooks.ts";
 import TopWordsBarChart from "./TopWordsBarChart.tsx";
 
 function DocumentCategorization() {
-  const list_of_json_strings = AnalysisHooks.useTestAnalysisFeature();
+  const topic_distr_data = AnalysisHooks.useReturnTopicDistrData();
   const top_words_data = AnalysisHooks.useReturnTopWordsData();
 
   const handleRun = () => {
-    if (list_of_json_strings.data) {
-      console.log(`handleRun: ${list_of_json_strings.data}`);
+    if (topic_distr_data.data) {
+      console.log(`handleRun: ${topic_distr_data.data}`);
     }
   };
 
