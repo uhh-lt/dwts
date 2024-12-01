@@ -33,14 +33,21 @@ const useCodeOccurrences = (projectId: number, userIds: number[], codeId: number
 
 const useTestAnalysisFeature = () =>
   useQuery<Array<Record<string, unknown>>, Error>({
-    queryKey: ["Test"],
+    queryKey: ["Test1"],
     queryFn: () => AnalysisService.myNewAnalysisFeature(),
+  });
+
+const useReturnTopWordsData = () =>
+  useQuery<Array<Record<string, unknown>>, Error>({
+    queryKey: ["Test2"],
+    queryFn: () => AnalysisService.returnTopWordsData(),
   });
 
 const AnalysisHooks = {
   useCodeFrequencies,
   useCodeOccurrences,
   useTestAnalysisFeature,
+  useReturnTopWordsData,
 };
 
 export default AnalysisHooks;

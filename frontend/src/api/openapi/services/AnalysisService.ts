@@ -15,6 +15,7 @@ import type { ColumnInfo_BBoxColumns_ } from "../models/ColumnInfo_BBoxColumns_"
 import type { ColumnInfo_SentAnnoColumns_ } from "../models/ColumnInfo_SentAnnoColumns_";
 import type { ColumnInfo_SpanColumns_ } from "../models/ColumnInfo_SpanColumns_";
 import type { ColumnInfo_WordFrequencyColumns_ } from "../models/ColumnInfo_WordFrequencyColumns_";
+import type { PointDTO } from "../models/PointDTO";
 import type { SampledSdocsResults } from "../models/SampledSdocsResults";
 import type { SentenceAnnotationSearchResult } from "../models/SentenceAnnotationSearchResult";
 import type { SpanAnnotationSearchResult } from "../models/SpanAnnotationSearchResult";
@@ -373,6 +374,28 @@ export class AnalysisService {
     return __request(OpenAPI, {
       method: "POST",
       url: "/analysis/my_new_analysis",
+    });
+  }
+  /**
+   * Returns the top words for 30 topics. This is still mock-data
+   * @returns any Successful Response
+   * @throws ApiError
+   */
+  public static returnTopWordsData(): CancelablePromise<Array<Record<string, any>>> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/analysis/top_words_data",
+    });
+  }
+  /**
+   * Hello World!
+   * @returns PointDTO Successful Response
+   * @throws ApiError
+   */
+  public static dto(): CancelablePromise<Array<PointDTO>> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/analysis/random_walk_dto",
     });
   }
 }
