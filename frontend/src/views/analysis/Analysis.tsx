@@ -66,9 +66,9 @@ function Analysis() {
         />
 
         <AnalysisCard
-          to={"my-new-analysis-feature"}
-          title={"Test Analysis Feature"}
-          description={"Hello World"}
+          to={"document-categorization"}
+          title={"Document Categorization"}
+          description={"Categorize documents with both LLM's and Topic Modeling"}
           color={"#77dd77"}
         />
       </Box>

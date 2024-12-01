@@ -2,7 +2,7 @@ import { Button, Card, CardContent, Typography } from "@mui/material";
 import AnalysisHooks from "../../../api/AnalysisHooks.ts";
 import TopWordsBarChart from "./TopWordsBarChart.tsx";
 
-function TestAnalysisFeature() {
+function DocumentCategorization() {
   const list_of_json_strings = AnalysisHooks.useTestAnalysisFeature();
   const top_words_data = AnalysisHooks.useReturnTopWordsData();
 
@@ -33,4 +33,4 @@ function TestAnalysisFeature() {
     </div>
   );
 }
-export default TestAnalysisFeature;
+export default DocumentCategorization;

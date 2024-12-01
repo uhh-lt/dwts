@@ -20,6 +20,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
+  "include": ["src", "src/views/analysis/DocumentCategorization/DocumentCategorization.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
