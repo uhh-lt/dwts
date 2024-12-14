@@ -674,15 +674,13 @@ def get_prompt(index: int):
         top_words += top_words_data()[index][point]["word"] + " "
 
     system_prompt = (
-        "You are to find common terms and umbrella words for a given list of words"
+        "You are to find common words and umbrella terms for a given list of words"
     )
     user_prompt = (
-        "Give me 5 umbrella word for the given terms delimited by triple singlequotes "
-        + "'''"
+        "'''"
         + top_words
         + "'''"
-        + " use the example format delimited by triple singlequotes "
-        + "'''term1, term2, term3, term4, term5'''"
+        + " return a list of 5 umbrella terms for the previous words delimited by triple singlequotes, no explanation"
     )
     return [system_prompt, user_prompt]
 
