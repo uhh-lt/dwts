@@ -3482,26 +3482,33 @@
         "security": [{ "OAuth2PasswordBearer": [] }]
       }
     },
-    "/analysis/random_walk_dto": {
+    "/analysis/top_words_ollama": {
       "post": {
         "tags": ["analysis"],
-        "summary": "Hello World!",
-        "operationId": "dto",
+        "summary": "Return top words + ollama response",
+        "operationId": "return_top_words_ollama",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          { "name": "topic_id", "in": "query", "required": true, "schema": { "type": "integer", "title": "Topic Id" } }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": { "$ref": "#/components/schemas/PointDTO" },
                   "type": "array",
-                  "title": "Response Analysis-Dto"
+                  "items": { "type": "object" },
+                  "title": "Response Analysis-Return Top Words Ollama"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
           }
-        },
-        "security": [{ "OAuth2PasswordBearer": [] }]
+        }
       }
     },
     "/prepro/{prepro_job_id}": {
@@ -7519,15 +7526,6 @@
         "type": "object",
         "required": ["hits", "total_results"],
         "title": "PaginatedElasticSearchDocumentHits"
-      },
-      "PointDTO": {
-        "properties": {
-          "x": { "type": "integer", "title": "X", "description": "x-coord" },
-          "y": { "type": "integer", "title": "Y", "description": "y-coord" }
-        },
-        "type": "object",
-        "required": ["x", "y"],
-        "title": "PointDTO"
       },
       "PreProProjectStatus": {
         "properties": {
