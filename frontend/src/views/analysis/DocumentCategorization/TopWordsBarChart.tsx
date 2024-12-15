@@ -1,6 +1,7 @@
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import * as d3 from "d3";
 import React, { useRef, useState } from "react";
+import AnalysisHooks from "../../../api/AnalysisHooks.ts";
 
 interface TopWordsProps {
   data: Record<string, { word: string; score: number }>[];
@@ -12,6 +13,7 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
 
   const [currentTopic, setCurrentTopic] = useState(0);
   const [width, setWidth] = useState<number>(window.innerWidth);
+  const ollamaResponse = AnalysisHooks.useReturnTopWordsOllama(currentTopic);
 
   let maxScore = 0;
   for (const topic of data) {
@@ -94,7 +96,9 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
       .attr("y", marginTop * 0.7)
       .attr("text-anchor", "middle")
       .style("font-size", "16px")
-      .text("Top Words for Topic " + currentTopic);
+      .text(
+        ollamaResponse.isLoading ? "Loading..." : "Top Words for Topic " + ollamaResponse.data![0]["umbrella_term"],
+      );
 
     // set x-axis label
     svg
@@ -161,7 +165,21 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [currentTopic, data, formatScore, height, marginBottom, marginLeft, marginRight, marginTop, width, x, y]);
+  }, [
+    currentTopic,
+    data,
+    formatScore,
+    height,
+    marginBottom,
+    marginLeft,
+    marginRight,
+    marginTop,
+    ollamaResponse.data,
+    ollamaResponse.isLoading,
+    width,
+    x,
+    y,
+  ]);
 
   const handleChange = (event: SelectChangeEvent<number>) => {
     setCurrentTopic(event.target.value as number);
