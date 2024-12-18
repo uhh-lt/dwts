@@ -680,7 +680,7 @@ def get_prompt(index: int):
         "'''"
         + top_words
         + "'''"
-        + " return a list of 5 umbrella terms for the previous words delimited by triple singlequotes, no explanation"
+        + " return a list of 5 umbrella terms for the previous words as a comma seperated list, no explanation"
     )
     return [system_prompt, user_prompt]
 

@@ -97,7 +97,9 @@ const TopWordsBarChart: React.FC<TopWordsProps> = ({ data }) => {
       .attr("text-anchor", "middle")
       .style("font-size", "16px")
       .text(
-        ollamaResponse.isLoading ? "Loading..." : "Top Words for Topic " + ollamaResponse.data![0]["umbrella_term"],
+        ollamaResponse.isLoading
+          ? "Loading..."
+          : "Top Words for the Topics: " + ollamaResponse.data![0]["umbrella_term"],
       );
 
     // set x-axis label
