@@ -10,9 +10,9 @@ from app.core.analysis.code_frequency_analysis.code_frequency import (
 )
 from app.core.analysis.document_sampler.document_sampler import document_sampler_by_tags
 from app.core.analysis.my_new_analysis_feature import (
-    top_words_data,
+    top_words,
     top_words_ollama,
-    topic_distr_data,
+    topic_distr,
 )
 from app.core.analysis.statistics.count_metadata import (
     compute_num_sdocs_with_date_metadata,
@@ -338,7 +338,7 @@ def return_topic_distr_data(
     db: Session = Depends(get_db_session),
     authz_user: AuthzUser = Depends(),
 ) -> List[dict]:
-    return topic_distr_data()
+    return topic_distr()
 
 
 @router.post(
@@ -351,7 +351,7 @@ def return_top_words_data(
     db: Session = Depends(get_db_session),
     authz_user: AuthzUser = Depends(),
 ) -> List[dict]:
-    return top_words_data()
+    return top_words()
 
 
 @router.post(

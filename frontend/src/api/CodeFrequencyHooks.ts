@@ -43,11 +43,13 @@ const useReturnTopWordsData = () =>
     queryFn: () => AnalysisService.returnTopWordsData(),
   });
 
-const useReturnTopWordsOllama = (topic_id: number) =>
-  useQuery<Array<Record<string, unknown>>, Error>({
+const useReturnTopWordsOllama = (topic_id: number) => {
+  console.log("CALL");
+  return useQuery<Array<Record<string, unknown>>, Error>({
     queryKey: ["UseDTOHook", topic_id],
     queryFn: () => AnalysisService.returnTopWordsOllama({ topicId: topic_id }),
   });
+};
 
 const AnalysisHooks = {
   useCodeFrequencies,
