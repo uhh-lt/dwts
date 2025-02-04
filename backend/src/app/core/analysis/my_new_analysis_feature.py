@@ -8,6 +8,7 @@ from app.core.data.llm.ollama_service import OllamaService
 
 top_words_data = []
 topic_distr_data = []
+ollama_service = OllamaService()
 
 
 def top_words():
@@ -125,9 +126,6 @@ load_bertopic_model()
 
 
 def top_words_ollama(topic_id: int) -> List[dict]:
-    # read bertopic model and return data
-
-    ollama_service = OllamaService()
     ollama_responses = [
         {
             "prompt": "v2_prompt",

@@ -14,6 +14,10 @@ import AnalysisHooks from "../../../api/AnalysisHooks.ts";
 import TopWordsBarChart from "./TopWordsBarChart.tsx";
 import TopicDistrChart from "./TopicDistrBarChart.tsx";
 
+interface ollamaResponseInterface {
+  data: { prompt: string; response: string; top_words: string[] };
+}
+
 function DocumentCategorization() {
   const topic_distr_data = AnalysisHooks.useReturnTopicDistrData();
   const top_words_data = AnalysisHooks.useReturnTopWordsData();
@@ -23,9 +27,7 @@ function DocumentCategorization() {
 
   // Handle Ollama response changes
   useEffect(() => {
-    if (ollamaResponse) {
-      console.log("ollamaResponse data updated: ", ollamaResponse.data);
-    }
+    console.log("ollamaResponse data updated: ", ollamaResponse.data);
   }, [ollamaResponse]);
 
   const handleChange = (event: SelectChangeEvent<number>) => {
@@ -58,12 +60,6 @@ function DocumentCategorization() {
 
         <Grid container spacing={2}>
           <Grid item xs={6} style={{ textAlign: "center" }}>
-            TODO: Display ChatGPT Result
-          </Grid>
-          <Grid item xs={6} style={{ textAlign: "center" }}>
-            TODO: Display Ollama Result
-          </Grid>
-          <Grid item xs={6} style={{ textAlign: "center" }}>
             Top Words Graph
             {top_words_data.isLoading && <div>Loading...</div>}
             {top_words_data.isSuccess ? (
@@ -80,6 +76,19 @@ function DocumentCategorization() {
             {topic_distr_data.isLoading && <div>Loading...</div>}
             {topic_distr_data.isSuccess ? (
               <TopicDistrChart data={topic_distr_data.data as Record<string, number>[]}></TopicDistrChart>
+            ) : (
+              <div></div>
+            )}
+          </Grid>
+          <Grid item xs={6} style={{ textAlign: "center" }}>
+            TODO: Display ChatGPT Result
+          </Grid>
+          <Grid item xs={6} sx={{ textAlign: "center", overflowY: "auto" }}>
+            {ollamaResponse.isLoading && <div>Loading...</div>}
+            {ollamaResponse.isSuccess ? (
+              <div style={{ whiteSpace: "pre-line" }}>
+                {(ollamaResponse.data[0].response as ollamaResponseInterface).toString()}
+              </div>
             ) : (
               <div></div>
             )}
