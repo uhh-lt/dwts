@@ -85,6 +85,21 @@ class CRUDBase(Generic[ORMModelType, CreateDTOType, UpdateDTOType]):
 
         return db_obj
 
+    def update_multi(
+        self, db: Session, *, ids: List[int], update_dtos: List[UpdateDTOType]
+    ) -> List[ORMModelType]:
+        db_objects = self.read_by_ids(db, ids)
+
+        for db_obj, update_dto in zip(db_objects, update_dtos):
+            obj_data = jsonable_encoder(db_obj.as_dict())
+            update_data = update_dto.model_dump(exclude_unset=True)
+            for field in obj_data:
+                if field in update_data:
+                    setattr(db_obj, field, update_data[field])
+        db.add_all(db_objects)
+        db.commit()
+        return db_objects
+
     def remove(self, db: Session, *, id: int) -> ORMModelType:
         db_obj = self.read(db=db, id=id)
         db.delete(db_obj)

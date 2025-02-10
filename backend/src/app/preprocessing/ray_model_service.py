@@ -22,6 +22,7 @@ from app.preprocessing.ray_model_worker.dto.seqsenttagger import (
     SeqSentTaggerJobInput,
     SeqSentTaggerJobResponse,
 )
+from app.preprocessing.ray_model_worker.dto.quote import QuoteJobInput, QuoteJobOutput
 from app.preprocessing.ray_model_worker.dto.spacy import SpacyInput, SpacyPipelineOutput
 from app.preprocessing.ray_model_worker.dto.whisper import (
     WhisperFilePathInput,
@@ -130,3 +131,7 @@ class RayModelService(metaclass=SingletonMeta):
             "/seqsenttagger/train_apply", input.model_dump()
         )
         return SeqSentTaggerJobResponse.model_validate(response.json())
+
+    def quote_prediction(self, input: QuoteJobInput) -> QuoteJobOutput:
+        response = self._make_post_request("/quote/predict", input.model_dump())
+        return QuoteJobOutput.model_validate(response.json())

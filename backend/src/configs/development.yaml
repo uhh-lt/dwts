@@ -106,6 +106,7 @@ redis:
     cota: 5
     llm: 6
     import_: 7
+    ml: 8
 
 logging:
   max_file_size: 500 # MB
@@ -584,6 +585,30 @@ system_codes:
             desc: Object Category from COCO 2017
           TRUCK:
             desc: Object Category from COCO 2017
+      QUOTATIONS:
+        desc: Quotation parts
+        children:
+          QUOTE:
+            desc: the quotation uttered by the Speaker
+            children:
+              DIRECT:
+                desc: actual words of an utterance, usually in quotation marks
+              INDIRECT:
+                desc: content-wise equivalent utterance using different words, usually part of a sentence together with a Frame
+              REPORTED:
+                desc: report of a speech action, possibly far from the original quote, usually a full sentence, no Frame
+              FREE_INDIRECT:
+                desc: mix of article author & actual speaker, typically construct with "sollen" (shall) or "müssen" (must), full sentence
+              INDIRECT_FREE_INDIRECT:
+                desc: content-wise equivalent utterance written in conjunctive mood, full sentence
+          SPEAKER:
+            desc: entity in the text that utters the quotation
+          CUE:
+            desc: words that are part of a Frame and signal a Quote construction
+          ADDRESSEE:
+            desc: entity in the text that the quotation is directed at
+          FRAME:
+            desc: part of a sentence including Cue & Speaker, but not the quotation
 
 keyword_extraction:
   max_ngram_size: 2

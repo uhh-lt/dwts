@@ -1,11 +1,10 @@
 from typing import TYPE_CHECKING, List, Optional
 
+from app.core.data.dto.source_document_data import WordLevelTranscription
+from app.core.data.orm.orm_base import ORMBase
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.core.data.dto.source_document_data import WordLevelTranscription
-from app.core.data.orm.orm_base import ORMBase
 
 if TYPE_CHECKING:
     from app.core.data.orm.source_document import SourceDocumentORM
@@ -94,3 +93,15 @@ class SourceDocumentDataORM(ORMBase):
             ):
                 result.append(WordLevelTranscription(text=t, start_ms=s, end_ms=e))
             return result
+
+    @property
+    def token_sentence_ids(self):
+        sentence_ids = []
+        current_sent = 0
+        current_sent_end = self.sentence_ends[current_sent]
+        for c in self.token_starts:
+            while c >= current_sent_end:
+                current_sent = +1
+                current_sent_end = self.sentence_ends[current_sent]
+            sentence_ids.append(current_sent)
+        return sentence_ids

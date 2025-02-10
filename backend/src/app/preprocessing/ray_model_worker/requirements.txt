@@ -22,3 +22,4 @@ torchaudio==2.0.1
 torchvision==0.15.1
 transformers==4.30.2
 umap-learn==0.5.5
+quotect==1.0.1
