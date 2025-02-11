@@ -1,4 +1,5 @@
-import { Box, Button, ButtonProps, Dialog, DialogTitle, Stack } from "@mui/material";
+import DescriptionIcon from "@mui/icons-material/Description";
+import { Box, Button, ButtonProps, Dialog, DialogTitle, Stack, Tooltip } from "@mui/material";
 import { MRT_RowSelectionState } from "material-react-table";
 import { useState } from "react";
 import { XYPosition } from "reactflow";
@@ -38,7 +39,9 @@ function AddMemoNodeDialog({ projectId, buttonProps, onClick }: AddMemoNodeDialo
   return (
     <>
       <Button onClick={handleOpenDialogClick} {...buttonProps}>
-        Add memos
+        <Tooltip title="Add Memos" placement="right" arrow>
+          <DescriptionIcon />
+        </Tooltip>
       </Button>
       <Dialog onClose={handleClose} open={open} maxWidth="lg" fullWidth>
         <DialogTitle>Select memos to add to Whiteboard</DialogTitle>

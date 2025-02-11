@@ -36,7 +36,7 @@ function AddSentenceAnnotationNodeDialog({ projectId, buttonProps, ...props }: A
   return (
     <>
       <Button onClick={handleOpen} {...buttonProps}>
-        Add annotations
+        Add Sentence annotations
       </Button>
       <Dialog onClose={handleClose} open={open} maxWidth="lg" fullWidth PaperProps={{ style: { height: "100%" } }}>
         {metadata.isSuccess ? (

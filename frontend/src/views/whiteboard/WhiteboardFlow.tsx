@@ -1,7 +1,9 @@
+import AddIcon from "@mui/icons-material/Add";
+import AddBoxIcon from "@mui/icons-material/AddBox";
 import SaveIcon from "@mui/icons-material/Save";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import { LoadingButton } from "@mui/lab";
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Menu, MenuList, Paper, Stack, Tooltip } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker, useParams } from "react-router-dom";
@@ -164,6 +166,28 @@ function WhiteboardFlow({ whiteboard, readonly }: WhiteboardFlowProps) {
   const reactFlowService = useReactFlowService(reactFlowInstance);
   const resetSelection = useStore(resetSelectedElementsSelector);
   const connectionHandleId = useStore(connectionHandleIdSelector);
+
+  // For the annotations menu
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // For the shapes menu
+  const [anchorElShapes, setAnchorElShapes] = useState<null | HTMLElement>(null);
+
+  const handleMenuOpenShapes = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorElShapes(event.currentTarget);
+  };
+
+  const handleMenuCloseShapes = () => {
+    setAnchorElShapes(null);
+  };
 
   // global client state (react-router)
   const projectId = parseInt((useParams() as { projectId: string }).projectId);
@@ -505,27 +529,132 @@ function WhiteboardFlow({ whiteboard, readonly }: WhiteboardFlowProps) {
           >
             {!readonly && (
               <>
-                <Panel position="top-left">
-                  <Paper elevation={1} sx={{ mb: 3 }}>
-                    <Stack>
-                      <Typography p={1}>DATS Objects</Typography>
-                      <AddDocumentNodeDialog projectId={projectId} onClick={handleChangePendingAction} />
-                      <AddTagNodeDialog projectId={projectId} onClick={handleChangePendingAction} />
-                      <AddCodeNodeDialog projectId={projectId} onClick={handleChangePendingAction} />
-                      <AddSpanAnnotationNodeDialog projectId={projectId} onClick={handleChangePendingAction} />
-                      <AddSentenceAnnotationNodeDialog projectId={projectId} onClick={handleChangePendingAction} />
-                      <AddBBoxAnnotationNodeDialog projectId={projectId} onClick={handleChangePendingAction} />
-                      <AddMemoNodeDialog projectId={projectId} onClick={handleChangePendingAction} />
+                <Panel position="top-left" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <Paper elevation={1} sx={{ mt: 3, mb: 4, p: 0 }}>
+                    <Stack sx={{ border: "none" }}>
+                      {/* <Typography p={1}>DATS Objects</Typography> */}
+                      <AddDocumentNodeDialog
+                        projectId={projectId}
+                        onClick={handleChangePendingAction}
+                        buttonProps={{
+                          sx: { p: 1, minWidth: 0 },
+                        }}
+                      />
+                      <AddTagNodeDialog
+                        projectId={projectId}
+                        onClick={handleChangePendingAction}
+                        buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                      />
+                      <AddCodeNodeDialog
+                        projectId={projectId}
+                        onClick={handleChangePendingAction}
+                        buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                      />
+
+                      {/* Add button */}
+                      <Button id="add-annotation-button" onClick={handleMenuOpen} sx={{ minWidth: 0, p: 1 }}>
+                        <Tooltip title="Add Annotation" placement="right" arrow>
+                          <AddBoxIcon />
+                        </Tooltip>
+                      </Button>
+
+                      <Menu
+                        id="annotation-menu"
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={handleMenuClose}
+                        anchorOrigin={{
+                          vertical: "top",
+                          horizontal: "right",
+                        }}
+                        transformOrigin={{
+                          vertical: "top",
+                          horizontal: "left",
+                        }}
+                      >
+                        <MenuList sx={{ display: "flex", flexDirection: "column", p: 0 }}>
+                          <AddSpanAnnotationNodeDialog
+                            projectId={projectId}
+                            onClick={handleChangePendingAction}
+                            buttonProps={{ sx: { fontSize: "0.7rem" } }}
+                          />
+                          <AddSentenceAnnotationNodeDialog
+                            projectId={projectId}
+                            onClick={handleChangePendingAction}
+                            buttonProps={{ sx: { fontSize: "0.7rem" } }}
+                          />
+                          <AddBBoxAnnotationNodeDialog
+                            projectId={projectId}
+                            onClick={handleChangePendingAction}
+                            buttonProps={{ sx: { fontSize: "0.7rem" } }}
+                          />
+                        </MenuList>
+                      </Menu>
+
+                      <AddMemoNodeDialog
+                        projectId={projectId}
+                        onClick={handleChangePendingAction}
+                        buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                      />
                     </Stack>
                   </Paper>
                   <Paper elevation={1}>
                     <Stack>
-                      <Typography p={1}>Text Elements</Typography>
-                      <AddNoteNodeButton onClick={handleChangePendingAction} />
-                      <AddTextNodeButton onClick={handleChangePendingAction} />
-                      <AddBorderNodeButton type="Ellipse" onClick={handleChangePendingAction} />
-                      <AddBorderNodeButton type="Rectangle" onClick={handleChangePendingAction} />
-                      <AddBorderNodeButton type="Rounded" onClick={handleChangePendingAction} />
+                      {/* <Typography p={1}>Text Elements</Typography> */}
+                      <AddNoteNodeButton
+                        onClick={handleChangePendingAction}
+                        buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                      />
+                      <AddTextNodeButton
+                        onClick={handleChangePendingAction}
+                        buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                      />
+
+                      {/* Add button */}
+                      <Button id="add-shape-button" onClick={handleMenuOpenShapes} sx={{ minWidth: 0, p: 1 }}>
+                        <Tooltip title="Add Shape" placement="right" arrow>
+                          <AddIcon />
+                        </Tooltip>
+                      </Button>
+
+                      <Menu
+                        id="shape-menu"
+                        anchorEl={anchorElShapes}
+                        open={Boolean(anchorElShapes)}
+                        onClose={handleMenuCloseShapes}
+                        anchorOrigin={{
+                          vertical: "top",
+                          horizontal: "right",
+                        }}
+                        transformOrigin={{
+                          vertical: "top",
+                          horizontal: "left",
+                        }}
+                        sx={{
+                          "& .MuiPaper-root": {
+                            display: "flex",
+                            flexDirection: "column",
+                          },
+                        }}
+                      >
+                        <MenuList sx={{ display: "flex", flexDirection: "column", p: 0 }}>
+                          <AddBorderNodeButton
+                            type="Ellipse"
+                            onClick={handleChangePendingAction}
+                            buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                          />
+                          <AddBorderNodeButton
+                            type="Rectangle"
+                            onClick={handleChangePendingAction}
+                            buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                          />
+                          <AddBorderNodeButton
+                            type="Rounded"
+                            onClick={handleChangePendingAction}
+                            buttonProps={{ sx: { p: 1, minWidth: 0 } }}
+                          />
+                        </MenuList>
+                      </Menu>
                     </Stack>
                   </Paper>
                 </Panel>

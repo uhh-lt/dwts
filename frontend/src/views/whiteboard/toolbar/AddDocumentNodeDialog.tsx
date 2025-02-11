@@ -1,4 +1,5 @@
-import { Box, Button, ButtonProps, Dialog, DialogTitle } from "@mui/material";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import { Box, Button, ButtonProps, Dialog, DialogTitle, Tooltip } from "@mui/material";
 import { MRT_RowSelectionState, MRT_SortingState } from "material-react-table";
 import { useState } from "react";
 import { XYPosition } from "reactflow";
@@ -40,7 +41,9 @@ function AddDocumentNodeDialog({ projectId, buttonProps, onClick }: AddDocumentN
   return (
     <>
       <Button onClick={handleOpenDialogClick} {...buttonProps}>
-        Add documents
+        <Tooltip title="Add Documents" placement="right" arrow>
+          <NoteAddIcon />
+        </Tooltip>
       </Button>
       <Dialog onClose={handleClose} open={open} maxWidth="lg" fullWidth>
         <DialogTitle>Select documents to add to Whiteboard</DialogTitle>

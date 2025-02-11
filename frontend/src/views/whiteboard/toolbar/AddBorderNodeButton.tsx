@@ -1,4 +1,4 @@
-import { Button } from "@mui/material";
+import { Button, Tooltip } from "@mui/material";
 import React, { useCallback } from "react";
 import { XYPosition } from "reactflow";
 import { ReactFlowService } from "../hooks/ReactFlowService.ts";
@@ -21,7 +21,7 @@ interface AddBorderNodeButtonProps extends AddNodeDialogProps {
   type: BorderNodeType;
 }
 
-function AddBorderNodeButton({ type, onClick }: AddBorderNodeButtonProps) {
+function AddBorderNodeButton({ type, onClick, buttonProps }: AddBorderNodeButtonProps) {
   const handleAddBorderNode = useCallback(() => {
     const addNode = (position: XYPosition, reactFlowService: ReactFlowService) => {
       switch (type) {
@@ -40,9 +40,10 @@ function AddBorderNodeButton({ type, onClick }: AddBorderNodeButtonProps) {
   }, [onClick, type]);
 
   return (
-    <Button onClick={handleAddBorderNode}>
-      Add
-      {borderNodeType2Icons[type]} shape
+    <Button onClick={handleAddBorderNode} {...buttonProps}>
+      <Tooltip title={`Add shape`} arrow placement="right">
+        {borderNodeType2Icons[type]}
+      </Tooltip>
     </Button>
   );
 }

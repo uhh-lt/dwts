@@ -1,4 +1,5 @@
 import { Box, Button, ButtonProps, CircularProgress, Dialog } from "@mui/material";
+
 import { MRT_RowSelectionState, MRT_SortingState, MRT_VisibilityState } from "material-react-table";
 import { useState } from "react";
 import { XYPosition } from "reactflow";
@@ -36,7 +37,7 @@ function AddSpanAnnotationNodeDialog({ projectId, buttonProps, ...props }: AddSp
   return (
     <>
       <Button onClick={handleOpen} {...buttonProps}>
-        Add annotations
+        Add Span annotations
       </Button>
       <Dialog onClose={handleClose} open={open} maxWidth="lg" fullWidth PaperProps={{ style: { height: "100%" } }}>
         {metadata.isSuccess ? (

@@ -1,4 +1,5 @@
-import { Box, Button, ButtonProps, Dialog, DialogTitle, Stack } from "@mui/material";
+import StyleIcon from "@mui/icons-material/Style";
+import { Box, Button, ButtonProps, Dialog, DialogTitle, Stack, Tooltip } from "@mui/material";
 import { MRT_RowSelectionState } from "material-react-table";
 import { useState } from "react";
 import { XYPosition } from "reactflow";
@@ -38,7 +39,9 @@ function AddTagNodeDialog({ projectId, buttonProps, onClick }: AddTagNodeDialogP
   return (
     <>
       <Button onClick={handleOpenDialogClick} {...buttonProps}>
-        Add tags
+        <Tooltip title="Add Tags" placement="right" arrow>
+          <StyleIcon />
+        </Tooltip>
       </Button>
       <Dialog onClose={handleClose} open={open} maxWidth="lg" fullWidth>
         <DialogTitle>Select tags to add to Whiteboard</DialogTitle>

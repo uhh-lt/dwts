@@ -1,4 +1,5 @@
-import { Box, Button, ButtonProps, Dialog, DialogTitle, Stack } from "@mui/material";
+import CodeIcon from "@mui/icons-material/Code";
+import { Box, Button, ButtonProps, Dialog, DialogTitle, Stack, Tooltip } from "@mui/material";
 import { MRT_RowSelectionState } from "material-react-table";
 import { useState } from "react";
 import { XYPosition } from "reactflow";
@@ -38,7 +39,9 @@ function AddCodeNodeDialog({ projectId, buttonProps, onClick }: AddCodeNodeDialo
   return (
     <>
       <Button onClick={onOpenDialogClick} {...buttonProps}>
-        Add codes
+        <Tooltip title="Add Code" placement="right" arrow>
+          <CodeIcon />
+        </Tooltip>
       </Button>
       <Dialog onClose={handleClose} open={open} maxWidth="lg" fullWidth>
         <DialogTitle>Select codes to add to Whiteboard</DialogTitle>
