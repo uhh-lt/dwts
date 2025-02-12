@@ -181,6 +181,12 @@ cota:
 
 seqsenttagger:
   batch_size: 16
+
+quote:
+  model: "fynnos/quotect-mt5-base"
+  tmp_dir: "/tmp"
+  max_length: 4096
+  num_beams: 1
   device: cpu
   deployment:
     ray_actor_options:

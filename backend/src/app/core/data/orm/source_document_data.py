@@ -100,8 +100,8 @@ class SourceDocumentDataORM(ORMBase):
         current_sent = 0
         current_sent_end = self.sentence_ends[current_sent]
         for c in self.token_starts:
-            while c >= current_sent_end:
-                current_sent = +1
+            if c >= current_sent_end:
+                current_sent += 1
                 current_sent_end = self.sentence_ends[current_sent]
             sentence_ids.append(current_sent)
         return sentence_ids

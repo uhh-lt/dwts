@@ -6,7 +6,10 @@ from app.core.data.crud.code import crud_code
 from app.core.data.crud.source_document_job import crud_sdoc_job
 from app.core.data.crud.span_annotation import crud_span_anno
 from app.core.data.crud.user import SYSTEM_USER_ID
-from app.core.data.dto.source_document_job import SourceDocumentJobUpdate
+from app.core.data.dto.source_document_job import (
+    SourceDocumentJobCreate,
+    SourceDocumentJobUpdate,
+)
 from app.core.data.dto.span_annotation import SpanAnnotationCreateIntern
 from app.core.data.orm.source_document_data import SourceDocumentDataORM
 from app.core.data.orm.source_document_job import SourceDocumentJobORM
@@ -19,6 +22,7 @@ from app.preprocessing.ray_model_worker.dto.quote import (
     Token,
 )
 from app.util.singleton_meta import SingletonMeta
+from sqlalchemy import or_
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
 
@@ -58,12 +62,19 @@ class QuoteService(metaclass=SingletonMeta):
                 cue=self._get_code_id(db, "CUE", project_id),
             )
 
+        start_time = datetime.now()
         num_processed = -1
         while num_processed != 0:
-            num_processed = self._process_batch(filter_column, project_id, codes)
+            num_processed = self._process_batch(
+                filter_column, start_time, project_id, codes
+            )
 
     def _process_batch(
-        self, filter_column: InstrumentedAttribute, project_id: int, code: _CodeQuoteId
+        self,
+        filter_column: InstrumentedAttribute,
+        start_time: datetime,
+        project_id: int,
+        code: _CodeQuoteId,
     ):
         with self.sqls.db_session() as db:
             query = (
@@ -71,9 +82,12 @@ class QuoteService(metaclass=SingletonMeta):
                 .join(
                     SourceDocumentJobORM,
                     SourceDocumentJobORM.id == SourceDocumentDataORM.id,
+                    isouter=True,
                 )
-                .filter(filter_column == None)
-                .limit(2)
+                # TODO remove OR, only filter for null
+                .filter(or_(filter_column < start_time, filter_column == None))
+                # .filter(filter_column == None)
+                .limit(10)
             )
             sdoc_data = query.all()
         num_docs = len(sdoc_data)
@@ -87,6 +101,7 @@ class QuoteService(metaclass=SingletonMeta):
             documents=[
                 QuoteInputDoc(
                     id=sd.id,
+                    text=sd.content,
                     tokens=[
                         Token(start=start, end=end, sent=sid, text=text)
                         for start, end, sid, text in zip(
@@ -97,7 +112,7 @@ class QuoteService(metaclass=SingletonMeta):
                         )
                     ],
                     sentences=[
-                        Span(start=start, end=end, text=text)
+                        Span(start=start, end=end + 1, text=text)
                         for start, end, text in zip(
                             sd.sentence_token_starts,
                             sd.sentence_token_ends,
@@ -132,11 +147,11 @@ class QuoteService(metaclass=SingletonMeta):
                         code.speaker, quote.speaker, adoc.id, sdoc, dtos
                     )
             crud_span_anno.create_multi(db, create_dtos=dtos)
-            crud_sdoc_job.update_multi(
+            crud_sdoc_job.create_multi(
                 db,
-                ids=[doc.id for doc in quote_output.documents],
-                update_dtos=[
-                    SourceDocumentJobUpdate(
+                # ids=[doc.id for doc in quote_output.documents],
+                create_dtos=[
+                    SourceDocumentJobCreate(
                         id=doc.id, quotation_attribution_at=datetime.now()
                     )
                     for doc in quote_output.documents
@@ -172,9 +187,9 @@ class QuoteService(metaclass=SingletonMeta):
                 return code.indirect
             case "Reported":
                 return code.reported
-            case "Free indirect":
+            case "FreeIndirect":
                 return code.frin
-            case "Indirect/free indirect":
+            case "IndirectFreeIndirect":
                 return code.infr
         print(f"cannot find code for quote type {typ}, using fallback")
         return code.quote
@@ -187,4 +202,5 @@ class QuoteService(metaclass=SingletonMeta):
         )
         if db_code is None:
             raise ValueError(f"Code '{name}' not found for project {project_id}")
+        return db_code.id
         return db_code.id

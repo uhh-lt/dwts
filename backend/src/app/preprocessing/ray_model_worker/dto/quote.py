@@ -23,6 +23,7 @@ class Span(NamedTuple):
 
 class QuoteInputDoc(BaseModel):
     id: int
+    text: str = Field(description="Full text of the document")
     sentences: List[Span] = Field(description="sentences as spans")
     tokens: List[Token] = Field(description="tokens with offsets")
 
@@ -49,3 +50,4 @@ class QuoteJobInput(QuoteBase):
 
 class QuoteJobOutput(QuoteBase):
     documents: List[QuoteOutputDoc]
+    info: List[dict]

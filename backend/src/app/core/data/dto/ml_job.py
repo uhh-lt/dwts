@@ -1,18 +1,18 @@
 from datetime import datetime
-from enum import Enum, auto
-from typing import Literal
+from enum import StrEnum
+from typing import Literal, Optional
 
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from pydantic import BaseModel, Field
 
 
-class MLJobType(Enum):
-    QUOTATION_ATTRIBUTION = auto()
+class MLJobType(StrEnum):
+    QUOTATION_ATTRIBUTION = "QUOTATION_ATTRIBUTION"
 
 
-class QuotationAttributionLMJobParams:
+class QuotationAttributionLMJobParams(BaseModel):
     llm_job_type: Literal[MLJobType.QUOTATION_ATTRIBUTION]
-    model_name = Field(description="which model to use")
+    model: Optional[str] = Field(description="Which model to use")
 
 
 class MLJobParameters(BaseModel):
@@ -28,6 +28,7 @@ class MLJobBase(BaseModel):
     status: BackgroundJobStatus = Field(
         default=BackgroundJobStatus.WAITING, description="Status of the LLMJob"
     )
+    error: Optional[str] = Field(default=None, description="Error message (if any)")
 
 
 class MLJobRead(MLJobBase):

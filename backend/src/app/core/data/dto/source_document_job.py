@@ -7,6 +7,7 @@ from app.core.data.dto.dto_base import UpdateDTOBase
 
 
 class SourceDocumentJobBaseDTO(BaseModel):
+    id: int = Field(description="ID of the SourceDocument")
     quotation_attribution_at: Optional[datetime] = Field(
         description="timestamp when quotation attribution was performed on this document"
     )
@@ -22,4 +23,4 @@ class SourceDocumentJobCreate(SourceDocumentJobBaseDTO):
 
 
 class SourceDocumentJobUpdate(SourceDocumentJobBaseDTO, UpdateDTOBase):
-    id: int = Field(description="ID of the SourceDocument")
+    pass

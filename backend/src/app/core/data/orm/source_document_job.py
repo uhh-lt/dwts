@@ -18,7 +18,5 @@ class SourceDocumentJobORM(ORMBase):
         nullable=False,
         index=True,
     )
-    source_document: Mapped["SourceDocumentORM"] = relationship(
-        "SourceDocumentORM", back_populates="data"
-    )
+    source_document: Mapped["SourceDocumentORM"] = relationship("SourceDocumentORM")
     quotation_attribution_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
