@@ -23,7 +23,22 @@ function DocumentCategorization() {
   const top_words_data = AnalysisHooks.useReturnTopWordsData();
 
   const [currentTopic, setCurrentTopic] = useState(0);
+  //const [selectedTopic, setSelectedTopic] = useState(0);
   const ollamaResponse = AnalysisHooks.useReturnTopWordsOllama(currentTopic);
+
+  const [height, setHeight] = useState<number>(window.innerHeight);
+
+  // Window resize effect
+  useEffect(() => {
+    const handleResize = () => {
+      setHeight(window.innerHeight);
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   // Handle Ollama response changes
   useEffect(() => {
@@ -83,10 +98,10 @@ function DocumentCategorization() {
           <Grid item xs={6} style={{ textAlign: "center" }}>
             TODO: Display ChatGPT Result
           </Grid>
-          <Grid item xs={6} sx={{ textAlign: "center", overflowY: "auto" }}>
-            {ollamaResponse.isLoading && <div>Loading...</div>}
+          <Grid item xs={6} sx={{ textAlign: "left", overflowY: "auto" }}>
+            {ollamaResponse.isLoading && <div style={{ textAlign: "center" }}>Loading...</div>}
             {ollamaResponse.isSuccess ? (
-              <div style={{ whiteSpace: "pre-line" }}>
+              <div style={{ whiteSpace: "pre-line", height: height * 0.2 }}>
                 {(ollamaResponse.data[0].response as ollamaResponseInterface).toString()}
               </div>
             ) : (

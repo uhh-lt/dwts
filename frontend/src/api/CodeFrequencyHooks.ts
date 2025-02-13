@@ -35,12 +35,15 @@ const useReturnTopicDistrData = () =>
   useQuery<Array<Record<string, unknown>>, Error>({
     queryKey: ["Test1"],
     queryFn: () => AnalysisService.returnTopicDistrData(),
+    staleTime: Infinity,
   });
 
 const useReturnTopWordsData = () =>
   useQuery<Array<Record<string, unknown>>, Error>({
     queryKey: ["Test2"],
     queryFn: () => AnalysisService.returnTopWordsData(),
+    // only sends once
+    staleTime: Infinity,
   });
 
 const useReturnTopWordsOllama = (topic_id: number) => {

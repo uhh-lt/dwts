@@ -103,7 +103,7 @@ def get_prompt(index: int):
 
 
 def load_bertopic_model():
-    topic_model = BERTopic.load("app/core/analysis/bertopic_model_updated-80-5-20")
+    topic_model = BERTopic.load("app/core/analysis/bertopic_model")
     topic_info = topic_model.get_topic_info()
 
     for i in range(len(topic_info) - 1):
@@ -134,7 +134,7 @@ def top_words_ollama(topic_id: int) -> List[dict]:
         }
     ]
 
-    file_name = "ollama_responses.json"
+    file_name = "app/core/analysis/ollama_responses.json"
     if os.path.exists(file_name):
         print(f"The file '{file_name}' exists. Loading existing data.")
         with open(file_name, "r") as file:
