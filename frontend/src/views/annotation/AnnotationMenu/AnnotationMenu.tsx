@@ -211,7 +211,7 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
               }}
               options={codeOptions}
               getOptionLabel={(option) => {
-                // Value selected with enter, right from the input
+                // Value selected with enter, right from input
                 if (typeof option === "string") {
                   return option;
                 }
