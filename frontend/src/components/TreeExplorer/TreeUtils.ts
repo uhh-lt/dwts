@@ -51,13 +51,22 @@ function dataToTreeRecursion(root: IDataTree, nodes: IDataTree[]): IDataTree {
   return root;
 }
 
-export function flatTreeWithRoot(tree: IDataTree | null): (DocumentTagRead | CodeRead)[] {
+export function flatTreeWithRoot(tree: IDataTree | null): { data: DocumentTagRead | CodeRead; level: number }[] {
   if (!tree) {
     return [];
   }
 
-  const allChildren = flatTree(tree);
-  return [tree.data, ...allChildren];
+  const result: { data: DocumentTagRead | CodeRead; level: number }[] = [];
+
+  function traverse(node: IDataTree, level: number) {
+    result.push({ data: node.data, level });
+    if (node.children) {
+      node.children.forEach((child) => traverse(child, level + 1));
+    }
+  }
+
+  traverse(tree, 0);
+  return result;
 }
 
 export function flatTree(tree: IDataTree | null): (DocumentTagRead | CodeRead)[] {

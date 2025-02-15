@@ -27,11 +27,11 @@ import { Annotation, Annotations } from "../Annotation.ts";
 import { ICode } from "../ICode.ts";
 import { useComputeCodesForSelection } from "./useComputeCodesForSelection.ts";
 
-interface ICodeFilter extends CodeRead {
-  title: string;
-}
+// interface ICodeFilter extends CodeRead {
+//   title: string;
+// }
 
-const filter = createFilterOptions<ICodeFilter>();
+const filter = createFilterOptions<ICodeFilterWithLevel>();
 
 interface CodeSelectorProps {
   onClose?: (reason?: "backdropClick" | "escapeKeyDown") => void;
@@ -43,6 +43,11 @@ interface CodeSelectorProps {
 export interface CodeSelectorHandle {
   open: (position: PopoverPosition, annotations?: Annotations) => void;
   isOpen: boolean;
+}
+
+interface ICodeFilterWithLevel extends CodeRead {
+  level: number;
+  title: string;
 }
 
 const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
@@ -58,16 +63,15 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
     const [isAutoCompleteOpen, setIsAutoCompleteOpen] = useState(false);
     const [annotationsToEdit, setAnnotationsToEdit] = useState<Annotations | undefined>(undefined);
     const [editingAnnotation, setEditingAnnotation] = useState<Annotation | undefined>(undefined);
-    const [autoCompleteValue, setAutoCompleteValue] = useState<ICodeFilter | null>(null);
+    const [autoCompleteValue, setAutoCompleteValue] = useState<ICodeFilterWithLevel | null>(null);
 
     // computed
-    const codeOptions: ICodeFilter[] = useMemo(() => {
-      return codes.map((c) => {
-        return {
-          ...c,
-          title: c.name,
-        };
-      });
+    const codeOptions: ICodeFilterWithLevel[] = useMemo(() => {
+      return codes.map((c: { data: CodeRead; level: number }) => ({
+        ...c.data,
+        level: c.level,
+        title: c.data.name,
+      }));
     }, [codes]);
 
     // exposed methods (via ref)
@@ -104,7 +108,10 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
     }, [showCodeSelection]);
 
     // event handlers
-    const handleChange: UseAutocompleteProps<ICodeFilter, false, false, true>["onChange"] = (_event, newValue) => {
+    const handleChange: UseAutocompleteProps<ICodeFilterWithLevel, false, false, true>["onChange"] = (
+      _event,
+      newValue,
+    ) => {
       if (typeof newValue === "string") {
         alert("HOW DID YOU DO THIS? (Please tell Tim)");
         return;
@@ -125,7 +132,7 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
 
     const handleEdit = (annotationToEdit: Annotation, code: CodeRead) => {
       setEditingAnnotation(annotationToEdit);
-      setAutoCompleteValue({ ...code, title: code.name });
+      setAutoCompleteValue({ ...code, title: code.name, level: 0 });
       setShowCodeSelection(true);
     };
 
@@ -176,7 +183,7 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
           </List>
         ) : (
           <>
-            <Autocomplete
+            <Autocomplete<ICodeFilterWithLevel, false, false, true>
               value={autoCompleteValue}
               onChange={handleChange}
               filterOptions={(options, params) => {
@@ -184,7 +191,7 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
 
                 const { inputValue } = params;
                 // Suggest the creation of a new value
-                const isExisting = options.some((option: ICode) => inputValue === option.name);
+                const isExisting = options.some((option: ICodeFilterWithLevel) => inputValue === option.name);
                 if (inputValue.trim() !== "" && !isExisting) {
                   filtered.push({
                     title: `Add "${inputValue.trim()}"`,
@@ -196,6 +203,7 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
                     description: "",
                     project_id: -1,
                     is_system: false,
+                    level: 0,
                   });
                 }
 
@@ -209,12 +217,15 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
                 }
                 return option.name;
               }}
-              renderOption={(props, option) => (
-                <li {...props} key={option.id}>
-                  <Box style={{ width: 20, height: 20, backgroundColor: option.color, marginRight: 8 }}></Box>{" "}
-                  {option.title}
-                </li>
-              )}
+              renderOption={(props, option) => {
+                const indent = option.level * 10 + 10;
+                return (
+                  <li {...props} key={option.id} style={{ paddingLeft: indent }}>
+                    <Box style={{ width: 20, height: 20, backgroundColor: option.color, marginRight: 8 }}></Box>{" "}
+                    {option.title}
+                  </li>
+                );
+              }}
               sx={{ width: 300 }}
               renderInput={(params) => <TextField autoFocus {...params} />}
               autoHighlight

@@ -14,21 +14,23 @@ export const useComputeCodesForSelection = () => {
 
   // computed
   const codesForSelection = useMemo(() => {
-    let codesForSelection: CodeRead[] = [];
+    type CodeWithLevel = { data: CodeRead; level: number };
+    let codesForSelection: CodeWithLevel[] = [];
+
     if (!selectedCodeId) {
-      // if no code is selected, return all codes
-      codesForSelection = allCodes.data || [];
+      // if no code is selected, return all codes with level 0
+      codesForSelection = (allCodes.data || []).map((code) => ({ data: code, level: 0 }));
     } else {
-      // if a code is selected, return itself and its children
+      // if a code is selected, return itself and its children with levels
       const parentCode = codeTree?.first((node) => node.model.data.id === selectedCodeId);
       if (!parentCode) {
         return [];
       }
-      codesForSelection = flatTreeWithRoot(parentCode.model) as CodeRead[];
+      codesForSelection = flatTreeWithRoot(parentCode.model) as CodeWithLevel[];
     }
 
     // add the most recent code to the top of the list
-    const idx = codesForSelection.findIndex((t) => t.id === mostRecentCode?.id);
+    const idx = codesForSelection.findIndex((t) => t.data.id === mostRecentCode?.id);
     if (idx !== -1) {
       const code = codesForSelection[idx];
       codesForSelection.splice(idx, 1);
