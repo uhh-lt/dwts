@@ -2,7 +2,7 @@ ci:
   skip: [eslint, pyright]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
@@ -10,7 +10,7 @@ repos:
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.6.7
+    rev: v0.9.6
     hooks:
       # Run the linter.
       - id: ruff
@@ -25,7 +25,7 @@ repos:
         entry: ./bin/run-pyright.sh
         language: script
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.11.0
+    rev: v9.20.1
     hooks:
       - id: eslint
         files: \.[jt]sx?$ # *.js, *.jsx, *.ts and *.tsx
