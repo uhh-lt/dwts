@@ -26,15 +26,15 @@ class DETRModel:
     def __init__(self):
         logger.debug(f"Loading DetrFeatureExtractor {MODEL} ...")
         feature_extractor = DetrFeatureExtractor.from_pretrained(MODEL, device=DEVICE)
-        assert isinstance(
-            feature_extractor, DetrFeatureExtractor
-        ), "Failed to load feature extractor"
+        assert isinstance(feature_extractor, DetrFeatureExtractor), (
+            "Failed to load feature extractor"
+        )
 
         logger.debug(f"Loading DetrForObjectDetection {MODEL} ...")
         object_detection_model = DetrForObjectDetection.from_pretrained(MODEL)
-        assert isinstance(
-            object_detection_model, DetrForObjectDetection
-        ), "Failed to load object detection model"
+        assert isinstance(object_detection_model, DetrForObjectDetection), (
+            "Failed to load object detection model"
+        )
 
         object_detection_model.to(DEVICE)
         object_detection_model.eval()

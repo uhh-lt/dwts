@@ -142,9 +142,9 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreateIntern, MemoUpdate]):
                 raise NotImplementedError(
                     f"Unknown AttachedObjectType: {attached_object_type}"
                 )
-        assert (
-            oh_create_dto is not None
-        ), f"Unknown AttachedObjectType: {attached_object_type}"
+        assert oh_create_dto is not None, (
+            f"Unknown AttachedObjectType: {attached_object_type}"
+        )
 
         # create an ObjectHandle for the attached object
         oh_db_obj = crud_object_handle.create(db=db, create_dto=oh_create_dto)

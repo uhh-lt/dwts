@@ -211,9 +211,9 @@ class PreprocessingService(metaclass=SingletonMeta):
         # append cargo for each payload and respective metadata/annotations
         for payload in ppj.payloads:
             filename = payload.filename
-            assert (
-                filename in sdoc_specific_payloads
-            ), f"Expected filename {filename} to be in dict, but was not in {sdoc_specific_payloads.keys()}, {payload.source_document_id}"
+            assert filename in sdoc_specific_payloads, (
+                f"Expected filename {filename} to be in dict, but was not in {sdoc_specific_payloads.keys()}, {payload.source_document_id}"
+            )
 
             # generate cargo with one payload
             cargo = PipelineCargo(ppj_payload=payload, ppj_id=ppj.id)

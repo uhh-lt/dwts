@@ -143,9 +143,7 @@ class PreprocessingPipeline:
     ) -> PipelineCargo:
         ppj_id = cargo.ppj_payload.prepro_job_id
         update_dto = PreprocessingJobUpdate(status=status)
-        logger.info(
-            f"Updating PreprocessingJob {ppj_id} " f"Status to {status.value}..."
-        )
+        logger.info(f"Updating PreprocessingJob {ppj_id} Status to {status.value}...")
         with self.sqls.db_session() as db:
             _ = crud_prepro_job.update(db=db, uuid=ppj_id, update_dto=update_dto)
         return cargo

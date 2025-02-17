@@ -41,9 +41,9 @@ def test_authentication_required():
                 and dep.dependency.__qualname__ == "get_current_user"
             ]
 
-            assert (
-                len(auth_dep) == 1
-            ), f"route {route.methods} {route.path} is not protected by authentication"
+            assert len(auth_dep) == 1, (
+                f"route {route.methods} {route.path} is not protected by authentication"
+            )
         elif isinstance(route, starlette.routing.Route):
             # These routes are usually built into FastAPI, and
             # we expect them to not require authentication.
