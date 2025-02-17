@@ -11,9 +11,9 @@ def create_pptd_from_caption(cargo: PipelineCargo) -> PipelineCargo:
     caption = ppid.metadata["caption"]
     if isinstance(caption, list):
         caption = " ".join(caption)
-    assert isinstance(
-        caption, str
-    ), f"Caption has to be string, but was {type(caption)} instead"
+    assert isinstance(caption, str), (
+        f"Caption has to be string, but was {type(caption)} instead"
+    )
     # we don't need to set the filepath and filename as they are not used for the text
     # tasks  we apply on the caption.
     pptd = PreProTextDoc(

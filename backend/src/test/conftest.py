@@ -317,9 +317,9 @@ def api_document(client: TestClient):
             response = client.put(
                 f"/project/{project['id']}/sdoc", headers=user_headers, files=files
             )
-            assert (
-                response.status_code == 200
-            ), f"Failed to upload files. Response: {response}. Files: {files}"
+            assert response.status_code == 200, (
+                f"Failed to upload files. Response: {response}. Files: {files}"
+            )
             response = response.json()
             docs = {}
             for file in response["payloads"]:

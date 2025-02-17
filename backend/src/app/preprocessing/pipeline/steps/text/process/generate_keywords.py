@@ -22,9 +22,9 @@ def generate_keywords(cargo: PipelineCargo) -> PipelineCargo:
         if isinstance(language, list):
             language = language[0]
 
-        assert isinstance(
-            language, str
-        ), f"Language has to be string, but was {type(language)} instead."
+        assert isinstance(language, str), (
+            f"Language has to be string, but was {type(language)} instead."
+        )
         kw_extractor = yake.KeywordExtractor(
             lan=language,
             n=conf.keyword_extraction.max_ngram_size,

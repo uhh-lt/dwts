@@ -57,9 +57,9 @@ def get_all_sdoc_transcripts_in_project_for_export(
         logger.info(f"Export sdoc datas transcript for {sdoc_ids}")
         sdoc_datas = crud_sdoc.read_data_batch(db=db, ids=sdoc_ids)
         for sdoc_data, sdoc in zip(sdoc_datas, sdocs):
-            assert (
-                sdoc_data
-            ), f"Expected sdoc data for id {sdoc.id} to exist, because sdocs exist."
+            assert sdoc_data, (
+                f"Expected sdoc data for id {sdoc.id} to exist, because sdocs exist."
+            )
             wlt = sdoc_data.word_level_transcriptions
             if wlt is not None:
                 logger.info(f"Exporting word_level_transcript of file {sdoc.filename}")

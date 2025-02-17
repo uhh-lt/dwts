@@ -40,9 +40,9 @@ class OllamaService(metaclass=SingletonMeta):
                 )
                 logger.info(f"Model {model} has been created successfully.")
             available_models = [x.model for x in ollamac.list()["models"]]
-            assert (
-                model in available_models
-            ), f"Model {model} is not available. Available models are: {available_models}"
+            assert model in available_models, (
+                f"Model {model} is not available. Available models are: {available_models}"
+            )
 
             cls.__model = model
             cls.__client = ollamac

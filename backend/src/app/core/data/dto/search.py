@@ -70,7 +70,7 @@ class ElasticSearchMemoRead(BaseModel):
         description="The ID of the Object the Memo is attached to"
     )
     attached_object_type: Optional[AttachedObjectType] = Field(
-        description=("The type of the Object the Memo is " "attached to")
+        description=("The type of the Object the Memo is attached to")
     )
     updated: Optional[datetime] = Field(
         description="The created date of the Memo", default=datetime.now()
