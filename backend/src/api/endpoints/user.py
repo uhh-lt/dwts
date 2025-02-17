@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from api.dependencies import get_current_user, get_db_session, skip_limit_params
 from app.core.authorization.authz_user import AuthzUser
-from app.core.data.crud.annotation_document import crud_adoc
 from app.core.data.crud.user import crud_user
 from app.core.data.dto.project import ProjectRead
 from app.core.data.dto.user import PublicUserRead, UserRead, UserUpdate
@@ -90,24 +89,3 @@ def get_user_projects(
 ) -> List[ProjectRead]:
     db_obj = crud_user.read(db=db, id=authz_user.user.id)
     return [ProjectRead.model_validate(proj) for proj in db_obj.projects]
-
-
-@router.get(
-    "/recent_activity",
-    response_model=List[int],
-    summary="Returns the top k sdoc ids that the logged-in User recently modified (annotated)",
-)
-def recent_activity(
-    *,
-    k: int,
-    db: Session = Depends(get_db_session),
-    authz_user: AuthzUser = Depends(),
-) -> List[int]:
-    # get all adocs of a user
-    user_adocs = crud_adoc.read_by_user(db=db, user_id=authz_user.user.id)
-
-    # sort by updated (desc)
-    user_adocs.sort(key=lambda adoc: adoc.updated, reverse=True)
-
-    # get the topk k sdocs associated with the adocs
-    return [adoc.source_document_id for adoc in user_adocs[:k]]

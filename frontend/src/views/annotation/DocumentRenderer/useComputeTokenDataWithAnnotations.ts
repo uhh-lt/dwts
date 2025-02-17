@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { SourceDocumentDataRead } from "../../../api/openapi/models/SourceDocumentDataRead.ts";
-import { SpanAnnotationReadResolved } from "../../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../../api/openapi/models/SpanAnnotationRead.ts";
 import { IToken } from "./IToken.ts";
 
 function useComputeTokenDataWithAnnotations({
@@ -8,7 +8,7 @@ function useComputeTokenDataWithAnnotations({
   annotations,
 }: {
   sdocData: SourceDocumentDataRead;
-  annotations: SpanAnnotationReadResolved[];
+  annotations: SpanAnnotationRead[];
 }) {
   // computed
   // todo: maybe implement with selector?
@@ -27,9 +27,9 @@ function useComputeTokenDataWithAnnotations({
   }, [sdocData]);
 
   // todo: maybe implement with selector?
-  // this map stores annotationId -> SpanAnnotationReadResolved
+  // this map stores annotationId -> SpanAnnotationRead
   const annotationMap = useMemo(() => {
-    const result = new Map<number, SpanAnnotationReadResolved>();
+    const result = new Map<number, SpanAnnotationRead>();
     annotations.forEach((a) => result.set(a.id, a));
     return result;
   }, [annotations]);

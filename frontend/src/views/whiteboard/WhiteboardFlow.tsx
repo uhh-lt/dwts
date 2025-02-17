@@ -32,7 +32,6 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import BboxAnnotationHooks from "../../api/BboxAnnotationHooks.ts";
 import CodeHooks from "../../api/CodeHooks.ts";
-import ProjectHooks from "../../api/ProjectHooks.ts";
 import SentenceAnnotationHooks from "../../api/SentenceAnnotationHooks.ts";
 import SpanAnnotationHooks from "../../api/SpanAnnotationHooks.ts";
 import TagHooks from "../../api/TagHooks.ts";
@@ -169,15 +168,15 @@ function WhiteboardFlow({ whiteboard, readonly }: WhiteboardFlowProps) {
   const projectId = parseInt((useParams() as { projectId: string }).projectId);
 
   // global server state (react query)
-  const projectCodes = ProjectHooks.useGetAllCodes(projectId, true);
-  const projectTags = ProjectHooks.useGetAllTags(projectId);
+  const projectCodes = CodeHooks.useGetAllCodesList();
+  const projectTags = TagHooks.useGetAllTags();
 
   // mutations
   const bulkLinkDocumentTagsMutation = TagHooks.useBulkLinkDocumentTags();
   const updateCodeMutation = CodeHooks.useUpdateCode();
-  const updateSpanAnnotationMutation = SpanAnnotationHooks.useUpdateSpan();
-  const updateSentenceAnnotationMutation = SentenceAnnotationHooks.useUpdateSentenceAnno();
-  const updateBBoxAnnotationMutation = BboxAnnotationHooks.useUpdateBBox();
+  const updateSpanAnnotationMutation = SpanAnnotationHooks.useUpdateSpanAnnotation();
+  const updateSentenceAnnotationMutation = SentenceAnnotationHooks.useUpdateSentenceAnnotation();
+  const updateBBoxAnnotationMutation = BboxAnnotationHooks.useUpdateBBoxAnnotation();
 
   // refs
   const flowRef = useRef<HTMLDivElement>(null);
@@ -269,64 +268,34 @@ function WhiteboardFlow({ whiteboard, readonly }: WhiteboardFlowProps) {
         // codes can be manually connected to annotations
         if (isCodeNode(sourceNode) && isSpanAnnotationNode(targetNode)) {
           const mutation = updateSpanAnnotationMutation.mutate;
-          mutation(
-            {
-              spanAnnotationId: targetNode.data.spanAnnotationId,
-              requestBody: {
-                code_id: sourceNode.data.codeId,
-              },
+          mutation({
+            spanAnnotationToUpdate: targetNode.data.spanAnnotationId,
+            requestBody: {
+              code_id: sourceNode.data.codeId,
             },
-            {
-              onSuccess() {
-                openSnackbar({
-                  text: "Updated span annotation",
-                  severity: "success",
-                });
-              },
-            },
-          );
+          });
         }
 
         // codes can be manually connected to annotations
         if (isCodeNode(sourceNode) && isSentenceAnnotationNode(targetNode)) {
           const mutation = updateSentenceAnnotationMutation.mutate;
-          mutation(
-            {
-              sentenceAnnoId: targetNode.data.sentenceAnnotationId,
-              requestBody: {
-                code_id: sourceNode.data.codeId,
-              },
+          mutation({
+            sentenceAnnoToUpdate: targetNode.data.sentenceAnnotationId,
+            update: {
+              code_id: sourceNode.data.codeId,
             },
-            {
-              onSuccess() {
-                openSnackbar({
-                  text: "Updated sentence annotation",
-                  severity: "success",
-                });
-              },
-            },
-          );
+          });
         }
 
         // codes can be manually connected to annotations
         if (isCodeNode(sourceNode) && isBBoxAnnotationNode(targetNode)) {
           const mutation = updateBBoxAnnotationMutation.mutate;
-          mutation(
-            {
-              bboxId: targetNode.data.bboxAnnotationId,
-              requestBody: {
-                code_id: sourceNode.data.codeId,
-              },
+          mutation({
+            bboxToUpdate: targetNode.data.bboxAnnotationId,
+            requestBody: {
+              code_id: sourceNode.data.codeId,
             },
-            {
-              onSuccess() {
-                openSnackbar({
-                  text: "Updated bbox annotation",
-                  severity: "success",
-                });
-              },
-            },
-          );
+          });
         }
       } else {
         setEdges((e) => addEdge(connection, e));

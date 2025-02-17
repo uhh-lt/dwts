@@ -7,6 +7,7 @@ import type { CodeRead } from "../models/CodeRead";
 import type { DocumentTagRead } from "../models/DocumentTagRead";
 import type { MemoRead } from "../models/MemoRead";
 import type { PreprocessingJobRead } from "../models/PreprocessingJobRead";
+import type { ProjectAddUser } from "../models/ProjectAddUser";
 import type { ProjectCreate } from "../models/ProjectCreate";
 import type { ProjectMetadataRead } from "../models/ProjectMetadataRead";
 import type { ProjectRead } from "../models/ProjectRead";
@@ -140,17 +141,35 @@ export class ProjectService {
    */
   public static associateUserToProject({
     projId,
-    userId,
+    requestBody,
   }: {
     projId: number;
-    userId: number;
+    requestBody: ProjectAddUser;
   }): CancelablePromise<UserRead> {
     return __request(OpenAPI, {
       method: "PATCH",
-      url: "/project/{proj_id}/user/{user_id}",
+      url: "/project/{proj_id}/user",
       path: {
         proj_id: projId,
-        user_id: userId,
+      },
+      body: requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+  /**
+   * Returns all Users of the Project with the given ID
+   * @returns UserRead Successful Response
+   * @throws ApiError
+   */
+  public static getProjectUsers({ projId }: { projId: number }): CancelablePromise<Array<UserRead>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/project/{proj_id}/user",
+      path: {
+        proj_id: projId,
       },
       errors: {
         422: `Validation Error`,
@@ -175,23 +194,6 @@ export class ProjectService {
       path: {
         proj_id: projId,
         user_id: userId,
-      },
-      errors: {
-        422: `Validation Error`,
-      },
-    });
-  }
-  /**
-   * Returns all Users of the Project with the given ID
-   * @returns UserRead Successful Response
-   * @throws ApiError
-   */
-  public static getProjectUsers({ projId }: { projId: number }): CancelablePromise<Array<UserRead>> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/project/{proj_id}/user",
-      path: {
-        proj_id: projId,
       },
       errors: {
         422: `Validation Error`,
@@ -289,23 +291,6 @@ export class ProjectService {
       },
       query: {
         only_starred: onlyStarred,
-      },
-      errors: {
-        422: `Validation Error`,
-      },
-    });
-  }
-  /**
-   * Returns the Memos of the current User for the Project with the given ID.
-   * @returns MemoRead Successful Response
-   * @throws ApiError
-   */
-  public static getMemos({ projId }: { projId: number }): CancelablePromise<Array<MemoRead>> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/project/{proj_id}/memo",
-      path: {
-        proj_id: projId,
       },
       errors: {
         422: `Validation Error`,

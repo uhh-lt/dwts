@@ -2,8 +2,8 @@ import { Box, Button, ButtonProps, CircularProgress, Dialog } from "@mui/materia
 import { MRT_RowSelectionState, MRT_SortingState, MRT_VisibilityState } from "material-react-table";
 import { useState } from "react";
 import { XYPosition } from "reactflow";
+import MetadataHooks from "../../../api/MetadataHooks.ts";
 import { ProjectMetadataRead } from "../../../api/openapi/models/ProjectMetadataRead.ts";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
 import SpanAnnotationTable from "../../../components/SpanAnnotation/SpanAnnotationTable/SpanAnnotationTable.tsx";
 import { ReactFlowService } from "../hooks/ReactFlowService.ts";
 import { AddNodeDialogProps } from "../types/AddNodeDialogProps.ts";
@@ -22,7 +22,7 @@ function AddSpanAnnotationNodeDialog({ projectId, buttonProps, ...props }: AddSp
   const [open, setOpen] = useState(false);
 
   // global server state
-  const metadata = ProjectHooks.useGetMetadata(projectId);
+  const metadata = MetadataHooks.useGetProjectMetadataList();
 
   // actions
   const handleOpen = () => {

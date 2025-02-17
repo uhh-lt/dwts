@@ -16,7 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import { Node } from "ts-tree-structure";
-import AnalysisHooks from "../../../api/AnalysisHooks.ts";
+import AnalysisHooks from "../../../api/CodeFrequencyHooks.ts";
 import { CodeFrequency } from "../../../api/openapi/models/CodeFrequency.ts";
 import { CodeRead } from "../../../api/openapi/models/CodeRead.ts";
 import { DocType } from "../../../api/openapi/models/DocType.ts";

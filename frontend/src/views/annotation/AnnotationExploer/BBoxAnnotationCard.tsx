@@ -8,10 +8,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import BboxAnnotationHooks from "../../../api/BboxAnnotationHooks.ts";
+import CodeHooks from "../../../api/CodeHooks.ts";
 import SdocHooks from "../../../api/SdocHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
-import { BBoxAnnotationReadResolved } from "../../../api/openapi/models/BBoxAnnotationReadResolved.ts";
+import { BBoxAnnotationRead } from "../../../api/openapi/models/BBoxAnnotationRead.ts";
 import CodeRenderer from "../../../components/Code/CodeRenderer.tsx";
 import UserName from "../../../components/User/UserName.tsx";
 import ImageCropper from "../../whiteboard/nodes/ImageCropper.tsx";
@@ -19,18 +19,14 @@ import AnnotationCardActionsMenu from "./AnnotationCardActionMenu.tsx";
 import AnnotationCardMemo from "./AnnotationCardMemo.tsx";
 import { AnnotationCardProps } from "./types/AnnotationCardProps.ts";
 
-function BBoxAnnotationCard({
-  isSelected,
-  annotation,
-  onClick,
-  cardProps,
-}: AnnotationCardProps<BBoxAnnotationReadResolved>) {
+function BBoxAnnotationCard({ isSelected, annotation, onClick, cardProps }: AnnotationCardProps<BBoxAnnotationRead>) {
   const sdocData = SdocHooks.useGetDocumentData(annotation.sdoc_id);
+  const code = CodeHooks.useGetCode(annotation.code_id);
 
   return (
     <Card {...cardProps}>
       <CardHeader
-        title={<CodeRenderer key={annotation.code.id} code={annotation.code} />}
+        title={<CodeRenderer key={annotation.code_id} code={annotation.code_id} />}
         action={
           <AnnotationCardActionsMenu
             annotationId={annotation.id}
@@ -48,9 +44,9 @@ function BBoxAnnotationCard({
       <Divider />
       <CardActionArea onClick={onClick}>
         <CardContent sx={{ p: 1, pb: "0px !important", textAlign: "center" }}>
-          {sdocData.isSuccess ? (
+          {sdocData.isSuccess && code.isSuccess ? (
             <ImageCropper
-              imageUrl={encodeURI(import.meta.env.VITE_APP_CONTENT + "/" + sdocData.data.html)}
+              imageUrl={encodeURI(import.meta.env.VITE_APP_CONTENT + "/" + sdocData.data.repo_url)}
               x={annotation.x_min}
               y={annotation.y_min}
               width={annotation.x_max - annotation.x_min}
@@ -58,7 +54,7 @@ function BBoxAnnotationCard({
               height={annotation.y_max - annotation.y_min}
               targetHeight={100}
               style={{
-                border: "4px solid " + annotation.code.color,
+                border: "4px solid " + code.data.color,
               }}
             />
           ) : (
@@ -71,15 +67,14 @@ function BBoxAnnotationCard({
           </Stack>
         </CardContent>
       </CardActionArea>
-      {isSelected && (
+      {isSelected && code.isSuccess && (
         <>
           <Divider />
           <AnnotationCardMemo
             annotationId={annotation.id}
             annotationType={AttachedObjectType.BBOX_ANNOTATION}
-            useGetAnnotationMemo={BboxAnnotationHooks.useGetUserMemo}
             annotationText="Image"
-            codeName={annotation.code.name}
+            codeName={code.data.name}
           />
         </>
       )}

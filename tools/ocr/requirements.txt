@@ -1,0 +1,5 @@
+docling>=2.15.1
+gmft>=0.4.0
+gmft_pymupdf @ git+https://github.com/conjuncts/gmft_pymupdf.git
+img2table>=1.4.0
+unstructured[all-docs]>=0.14.10

@@ -120,6 +120,10 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreateIntern, MemoUpdate]):
                 oh_create_dto = ObjectHandleCreate(
                     span_annotation_id=attached_object_id
                 )
+            case AttachedObjectType.sentence_annotation:
+                oh_create_dto = ObjectHandleCreate(
+                    sentence_annotation_id=attached_object_id
+                )
             case AttachedObjectType.span_group:
                 oh_create_dto = ObjectHandleCreate(span_group_id=attached_object_id)
             case AttachedObjectType.bbox_annotation:
@@ -138,9 +142,9 @@ class CRUDMemo(CRUDBase[MemoORM, MemoCreateIntern, MemoUpdate]):
                 raise NotImplementedError(
                     f"Unknown AttachedObjectType: {attached_object_type}"
                 )
-        assert (
-            oh_create_dto is not None
-        ), f"Unknown AttachedObjectType: {attached_object_type}"
+        assert oh_create_dto is not None, (
+            f"Unknown AttachedObjectType: {attached_object_type}"
+        )
 
         # create an ObjectHandle for the attached object
         oh_db_obj = crud_object_handle.create(db=db, create_dto=oh_create_dto)

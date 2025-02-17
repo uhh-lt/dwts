@@ -1,6 +1,7 @@
 import { Action, ThunkAction, configureStore } from "@reduxjs/toolkit";
 import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE } from "redux-persist";
 import bboxFilterReducer from "../components/BBoxAnnotation/BBoxAnnotationTable/bboxFilterSlice.ts";
+import memoFilterReducer from "../components/Memo/MemoTable/memoFilterSlice.ts";
 import projectReducer from "../components/Project/projectSlice.ts";
 import seatFilterReducer from "../components/SentenceAnnotation/SentenceAnnotationTable/seatFilterSlice.ts";
 import documentTableFilterReducer from "../components/SourceDocument/SdocTable/documentTableFilterSlice.ts";
@@ -36,6 +37,7 @@ export const store = configureStore({
     satFilter: satFilterReducer,
     seatFilter: seatFilterReducer,
     bboxFilter: bboxFilterReducer,
+    memoFilter: memoFilterReducer,
     documentTableFilter: documentTableFilterReducer,
     wordFrequency: wordFrequencyReducer,
     cota: cotaReducer,

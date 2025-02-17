@@ -5,7 +5,7 @@ import { TabContext } from "@mui/lab";
 import { Box, BoxProps, IconButton, Stack, Tab, Tabs, TextField, Tooltip } from "@mui/material";
 import React, { useCallback, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
+import CodeHooks from "../../../api/CodeHooks.ts";
 import { SpanEntityStat } from "../../../api/openapi/models/SpanEntityStat.ts";
 import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks.ts";
 import { SearchActions } from "../DocumentSearch/searchSlice.ts";
@@ -21,11 +21,6 @@ interface SearchStatisticsProps {
   handleCodeClick: (stat: SpanEntityStat) => void;
 }
 
-/**
- * The search statistics component.
- * If `sdocIds` is provided, it will filter the statistics by the given sdocIds.
- * Otherwise, it will show the statistics based on search parameters,
- */
 function SearchStatistics({
   sdocIds,
   handleCodeClick,
@@ -43,7 +38,7 @@ function SearchStatistics({
   const projectId = parseInt((useParams() as { projectId: string }).projectId);
 
   // query all codes of the current project
-  const projectCodes = ProjectHooks.useGetAllCodes(projectId);
+  const projectCodes = CodeHooks.useGetEnabledCodes();
 
   // menu
   const handleMenuItemClick = useCallback((navigateTo: string) => {
@@ -109,6 +104,7 @@ function SearchStatistics({
         <Box ref={parentRef} className="myFlexFillAllContainer" p={2}>
           <KeywordStats
             sdocIds={sdocIds}
+            currentTab={tab}
             projectId={projectId}
             handleClick={handleKeywordClick}
             parentRef={parentRef}
@@ -116,6 +112,7 @@ function SearchStatistics({
           />
           <DocumentTagStats
             sdocIds={sdocIds}
+            currentTab={tab}
             projectId={projectId}
             handleClick={handleTagClick}
             parentRef={parentRef}
@@ -127,7 +124,6 @@ function SearchStatistics({
               currentTab={tab}
               key={code.id}
               codeId={code.id}
-              projectId={projectId}
               handleClick={handleCodeClick}
               parentRef={parentRef}
               filterBy={filterStatsBy}

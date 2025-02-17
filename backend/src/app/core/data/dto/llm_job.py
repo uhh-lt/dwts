@@ -7,12 +7,12 @@ from pydantic import BaseModel, Field
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.dto_base import UpdateDTOBase
 from app.core.data.dto.sentence_annotation import (
-    SentenceAnnotationReadResolved,
+    SentenceAnnotationRead,
 )
 from app.core.data.dto.source_document_metadata import (
     SourceDocumentMetadataReadResolved,
 )
-from app.core.data.dto.span_annotation import SpanAnnotationReadResolved
+from app.core.data.dto.span_annotation import SpanAnnotationRead
 
 # --- START TASK PARAMETERS ---
 
@@ -187,7 +187,7 @@ class MetadataExtractionLLMJobResult(BaseModel):
 
 class AnnotationResult(LLMResultWithStatus):
     sdoc_id: int = Field(description="ID of the source document")
-    suggested_annotations: List[SpanAnnotationReadResolved] = Field(
+    suggested_annotations: List[SpanAnnotationRead] = Field(
         description="Suggested annotations"
     )
 
@@ -199,7 +199,7 @@ class AnnotationLLMJobResult(BaseModel):
 
 class SentenceAnnotationResult(LLMResultWithStatus):
     sdoc_id: int = Field(description="ID of the source document")
-    suggested_annotations: List[SentenceAnnotationReadResolved] = Field(
+    suggested_annotations: List[SentenceAnnotationRead] = Field(
         description="Suggested annotations"
     )
 

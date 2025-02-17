@@ -1,7 +1,7 @@
 import { Divider, Typography } from "@mui/material";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
+import MetadataHooks from "../../../api/MetadataHooks.ts";
 import { SpanEntityStat } from "../../../api/openapi/models/SpanEntityStat.ts";
 import DocumentInformation from "../../../components/SourceDocument/DocumentInformation/DocumentInformation.tsx";
 import TagExplorer from "../../../components/Tag/TagExplorer/TagExplorer.tsx";
@@ -22,7 +22,7 @@ function Search() {
   const dispatch = useAppDispatch();
 
   // filter
-  const projectMetadata = ProjectHooks.useGetMetadata(projectId);
+  const projectMetadata = MetadataHooks.useGetProjectMetadataList();
 
   // computed (local client state)
   const keywordMetadataIds = useMemo(() => {
@@ -50,6 +50,13 @@ function Search() {
     [dispatch],
   );
 
+  // search results
+  const [sdocIds, setSdocIds] = useState<number[]>([]);
+  const handleSearchResultsChange = useCallback((sdocIds: number[]) => {
+    console.log("Search results changed", sdocIds);
+    setSdocIds(sdocIds);
+  }, []);
+
   // render
   return (
     <TwoSidebarsLayout
@@ -59,13 +66,14 @@ function Search() {
           <Divider />
           <SearchStatistics
             sx={{ height: "50%" }}
+            sdocIds={sdocIds}
             handleKeywordClick={handleAddKeywordFilter}
             handleTagClick={handleAddTagFilter}
             handleCodeClick={handleAddCodeFilter}
           />
         </>
       }
-      content={<SearchDocumentTable projectId={projectId} />}
+      content={<SearchDocumentTable projectId={projectId} onSearchResultsChange={handleSearchResultsChange} />}
       rightSidebar={
         <DocumentInformation
           sdocId={selectedDocumentId}

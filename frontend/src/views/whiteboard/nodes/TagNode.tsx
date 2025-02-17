@@ -2,6 +2,7 @@ import { CardContent, CardHeader, Divider, MenuItem, Typography } from "@mui/mat
 import { intersection } from "lodash";
 import { useEffect, useRef } from "react";
 import { NodeProps, useReactFlow } from "reactflow";
+import MemoHooks from "../../../api/MemoHooks.ts";
 import SdocHooks from "../../../api/SdocHooks.ts";
 import TagHooks from "../../../api/TagHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
@@ -38,8 +39,8 @@ function TagNode(props: NodeProps<TagNodeData>) {
 
   // global server state (react-query)
   const tag = TagHooks.useGetTag(props.data.tagId);
-  const sdocIds = SdocHooks.useGetByTagId(props.data.tagId);
-  const memo = TagHooks.useGetMemo(props.data.tagId);
+  const sdocIds = SdocHooks.useGetSdocIdsByTagId(props.data.tagId);
+  const memo = MemoHooks.useGetUserMemo(AttachedObjectType.DOCUMENT_TAG, props.data.tagId);
 
   // effects
   useEffect(() => {

@@ -5,13 +5,11 @@ import { Box, CardActions, CardContent, Divider, Stack } from "@mui/material";
 import { SubmitErrorHandler, SubmitHandler, useForm } from "react-hook-form";
 import ProjectHooks from "../../../api/ProjectHooks.ts";
 import { ProjectUpdate } from "../../../api/openapi/models/ProjectUpdate.ts";
-import { useAuth } from "../../../auth/useAuth.ts";
 import FormText from "../../FormInputs/FormText.tsx";
 import FormTextMultiline from "../../FormInputs/FormTextMultiline.tsx";
 import { ProjectProps } from "../ProjectProps.ts";
 
 function ProjectDetails({ project }: ProjectProps) {
-  const { user } = useAuth();
   const {
     handleSubmit,
     formState: { errors },
@@ -28,10 +26,7 @@ function ProjectDetails({ project }: ProjectProps) {
 
   // form handling
   const handleProjectUpdate: SubmitHandler<ProjectUpdate> = (data) => {
-    if (!user?.id) return;
-
     updateProjectMutation.mutate({
-      userId: user.id!,
       projId: project.id,
       requestBody: data,
     });
@@ -85,7 +80,6 @@ function ProjectDetails({ project }: ProjectProps) {
           type="submit"
           loading={updateProjectMutation.isPending}
           loadingPosition="start"
-          disabled={!user}
         >
           Update project
         </LoadingButton>

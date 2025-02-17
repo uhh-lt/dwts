@@ -1,7 +1,7 @@
 import { difference, intersection } from "lodash";
 import { useMemo } from "react";
-import SdocHooks from "../../../api/SdocHooks.ts";
 import { SentenceAnnotatorResult } from "../../../api/openapi/models/SentenceAnnotatorResult.ts";
+import SentenceAnnotationHooks from "../../../api/SentenceAnnotationHooks.ts";
 
 export interface UseGetSentenceAnnotator {
   annotatorResult: SentenceAnnotatorResult | undefined;
@@ -16,7 +16,7 @@ export function useGetSentenceAnnotator({
   sdocId: number;
   userId: number | undefined;
 }): UseGetSentenceAnnotator {
-  const annotatorResult = SdocHooks.useGetSentenceAnnotator(sdocId, userId);
+  const annotatorResult = SentenceAnnotationHooks.useGetSentenceAnnotator(sdocId, userId);
   const { annotationPositions, numPositions } = useMemo(() => {
     if (!annotatorResult.data?.sentence_annotations) return { annotationPositions: [], numPositions: 0 };
     const sentenceAnnotations = Object.values(annotatorResult.data.sentence_annotations);

@@ -1,9 +1,9 @@
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { IconButton, IconButtonProps, Menu } from "@mui/material";
 import { useState } from "react";
+import MemoHooks from "../../../api/MemoHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
 import MemoDeleteMenuItem from "../../../components/Memo/MemoDeleteMenuItem.tsx";
-import { useGetMemoQuery } from "../../../components/Memo/useGetMemoQuery.ts";
 import BBoxAnnotationDeleteMenuItem from "./BBoxAnnotationDeleteMenuItem.tsx";
 import SpanAnnotationDeleteMenuItem from "./SpanAnnotationDeleteMenuItem.tsx";
 
@@ -14,7 +14,7 @@ interface MemoMenuItemsProps {
 }
 
 function MemoMenuItems({ annotationId, annotationType, handleClose }: MemoMenuItemsProps) {
-  const memo = useGetMemoQuery(annotationType)(annotationId);
+  const memo = MemoHooks.useGetUserMemo(annotationType, annotationId);
 
   if (memo.isSuccess) {
     return (

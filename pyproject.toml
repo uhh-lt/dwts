@@ -9,7 +9,7 @@ src = ["backend/src"]
 extend-select = ["I", "W292", "W291"]
 
 [tool.pyright]
-include = ["backend/src", "tools"]
+include = ["backend/src"]
 exclude = ["**/__pycache__",
     "backend/src/dev_notebooks",
 ]

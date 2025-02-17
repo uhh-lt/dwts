@@ -17,6 +17,7 @@ import { SpanAnnotationRow } from "../../../api/openapi/models/SpanAnnotationRow
 import { SpanAnnotationSearchResult } from "../../../api/openapi/models/SpanAnnotationSearchResult.ts";
 import { SpanColumns } from "../../../api/openapi/models/SpanColumns.ts";
 import { AnalysisService } from "../../../api/openapi/services/AnalysisService.ts";
+import { QueryKey } from "../../../api/QueryKey.ts";
 import { useAuth } from "../../../auth/useAuth.ts";
 import { useAppSelector } from "../../../plugins/ReduxHooks.ts";
 import { useTableInfiniteScroll } from "../../../utils/useTableInfiniteScroll.ts";
@@ -102,8 +103,8 @@ function SpanAnnotationTable({
         case SpanColumns.SP_DOCUMENT_DOCUMENT_TAG_ID_LIST:
           return {
             ...colDef,
-            accessorFn: (row) => row.tags,
-            Cell: ({ row }) => <SdocTagsRenderer tags={row.original.tags} />,
+            accessorFn: (row) => row.tag_ids,
+            Cell: ({ row }) => <SdocTagsRenderer tagIds={row.original.tag_ids} />,
           } as MRT_ColumnDef<SpanAnnotationRow>;
         case SpanColumns.SP_CODE_ID:
           return {
@@ -162,7 +163,7 @@ function SpanAnnotationTable({
   // table data
   const { data, fetchNextPage, isError, isFetching, isLoading } = useInfiniteQuery<SpanAnnotationSearchResult>({
     queryKey: [
-      "annotation-table-data",
+      QueryKey.SPAN_ANNO_TABLE,
       projectId,
       filter, //refetch when columnFilters changes
       sortingModel, //refetch when sorting changes

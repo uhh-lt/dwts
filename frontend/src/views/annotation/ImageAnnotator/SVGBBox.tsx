@@ -1,6 +1,6 @@
 import React from "react";
 import CodeHooks from "../../../api/CodeHooks.ts";
-import { BBoxAnnotationReadResolved } from "../../../api/openapi/models/BBoxAnnotationReadResolved.ts";
+import { BBoxAnnotationRead } from "../../../api/openapi/models/BBoxAnnotationRead.ts";
 
 type CustomSVGProps = Omit<
   React.SVGProps<SVGRectElement>,
@@ -8,11 +8,13 @@ type CustomSVGProps = Omit<
 >;
 
 interface SVGBBoxProps {
-  bbox: BBoxAnnotationReadResolved;
+  bbox: BBoxAnnotationRead;
+  xCentering?: number;
+  scaledRatio?: number;
 }
 
-function SVGBBox({ bbox, ...props }: SVGBBoxProps & CustomSVGProps) {
-  const code = CodeHooks.useGetCode(bbox.code.id);
+function SVGBBox({ bbox, xCentering = 0, scaledRatio = 1, ...props }: SVGBBoxProps & CustomSVGProps) {
+  const code = CodeHooks.useGetCode(bbox.code_id);
 
   return (
     <>
@@ -20,10 +22,10 @@ function SVGBBox({ bbox, ...props }: SVGBBoxProps & CustomSVGProps) {
         <rect
           className={`bbox-${bbox.id}`}
           key={bbox.id}
-          x={bbox.x_min}
-          y={bbox.y_min}
-          width={bbox.x_max - bbox.x_min}
-          height={bbox.y_max - bbox.y_min}
+          x={scaledRatio * bbox.x_min + xCentering}
+          y={scaledRatio * bbox.y_min}
+          width={scaledRatio * (bbox.x_max - bbox.x_min)}
+          height={scaledRatio * (bbox.y_max - bbox.y_min)}
           stroke={code.data.color}
           strokeWidth={3}
           fill={"transparent"}

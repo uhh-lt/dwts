@@ -1,53 +1,35 @@
 import { TabPanel } from "@mui/lab";
-import { UseQueryResult } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import React, { useMemo } from "react";
-import SearchHooks from "../../../api/SearchHooks.ts";
+import SearchHooks from "../../../api/SearchStatisticsHooks.ts";
 import TagHooks from "../../../api/TagHooks.ts";
 import { TagStat } from "../../../api/openapi/models/TagStat.ts";
 import StatsDisplayButton, { StatsDisplayButtonProps } from "./StatsDisplayButton.tsx";
 import { useFilterStats } from "./useFilterStats.ts";
 
 interface DocumentTagStatsProps {
+  currentTab: string;
   projectId: number;
+  sdocIds?: number[];
   handleClick: (tagId: number) => void;
   parentRef: React.RefObject<HTMLDivElement>;
   filterBy: string;
 }
 
-/**
- * The tag statistics component.
- * If `sdocIds` is provided, it will filter the tag stats by the given sdocIds.
- * Otherwise, it will show the tag stats based on search parameters,
- */
-function DocumentTagStats({ sdocIds, ...props }: DocumentTagStatsProps & { sdocIds?: number[] }) {
-  if (sdocIds) {
-    return <DocumentTagStatsFilter sdocIds={sdocIds} {...props} />;
+function DocumentTagStats(props: DocumentTagStatsProps) {
+  if (props.currentTab !== `tags`) {
+    return null;
   } else {
-    return <DocumentTagStatsSearch {...props} />;
+    return <DocumentTagStatsContent {...props} />;
   }
 }
 
-function DocumentTagStatsFilter({ sdocIds, ...props }: DocumentTagStatsProps & { sdocIds: number[] }) {
-  // global server state (react-query)
-  const tagStats = SearchHooks.useFilterTagStats(sdocIds);
-  return <DocumentTagStatsLoader tagStats={tagStats} {...props} />;
-}
-
-function DocumentTagStatsSearch(props: DocumentTagStatsProps) {
-  // global server state (react-query)
-  const tagStats = SearchHooks.useSearchTagStats(props.projectId);
-  return <DocumentTagStatsLoader tagStats={tagStats} {...props} />;
-}
-
-function DocumentTagStatsLoader({
-  tagStats,
-  ...props
-}: DocumentTagStatsProps & { tagStats: UseQueryResult<TagStat[]> }) {
+function DocumentTagStatsContent({ ...props }: DocumentTagStatsProps) {
+  const tagStats = SearchHooks.useFilterTagStats(props.sdocIds);
   return (
     <>
       {tagStats.isSuccess ? (
-        <DocumentTagStatsContent tagStats={tagStats.data} {...props} />
+        <DocumentTagStatsWithData tagStats={tagStats.data} {...props} />
       ) : tagStats.isError ? (
         <TabPanel value="tags" style={{ padding: 0 }}>
           Error: {tagStats.error.message}
@@ -67,7 +49,7 @@ function DocumentTagStatsLoader({
 
 export default DocumentTagStats;
 
-function DocumentTagStatsContent({
+function DocumentTagStatsWithData({
   tagStats,
   handleClick,
   parentRef,
@@ -103,7 +85,6 @@ function DocumentTagStatsContent({
           <DocumentTagStatButtonContent
             tagId={tagStat.tag.id}
             key={virtualItem.key}
-            term={""}
             count={tagStat.filtered_count}
             totalCount={tagStat.global_count}
             maxCount={maxValue}
@@ -116,7 +97,10 @@ function DocumentTagStatsContent({
   );
 }
 
-function DocumentTagStatButtonContent({ tagId, ...props }: { tagId: number } & StatsDisplayButtonProps) {
+function DocumentTagStatButtonContent({
+  tagId,
+  ...props
+}: { tagId: number } & Omit<StatsDisplayButtonProps, "term" | "disabled">) {
   const tag = TagHooks.useGetTag(tagId);
 
   return (

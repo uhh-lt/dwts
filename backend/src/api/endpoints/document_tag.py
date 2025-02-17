@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_current_user, get_db_session
-from api.util import get_object_memo_for_user, get_object_memos
 from api.validation import Validate
 from app.core.authorization.authz_user import AuthzUser
 from app.core.data.crud import Crud
@@ -15,9 +14,6 @@ from app.core.data.dto.document_tag import (
     DocumentTagUpdate,
     SourceDocumentDocumentTagLinks,
     SourceDocumentDocumentTagMultiLink,
-)
-from app.core.data.dto.memo import (
-    MemoRead,
 )
 
 router = APIRouter(
@@ -226,42 +222,6 @@ def delete_by_id(
 
     db_obj = crud_document_tag.remove(db=db, id=tag_id)
     return DocumentTagRead.model_validate(db_obj)
-
-
-@router.get(
-    "/{tag_id}/memo",
-    response_model=List[MemoRead],
-    summary="Returns the Memos attached to the DocumentTag with the given ID if it exists.",
-)
-def get_memos(
-    *,
-    db: Session = Depends(get_db_session),
-    tag_id: int,
-    authz_user: AuthzUser = Depends(),
-) -> List[MemoRead]:
-    authz_user.assert_in_same_project_as(Crud.DOCUMENT_TAG, tag_id)
-
-    db_obj = crud_document_tag.read(db=db, id=tag_id)
-    return get_object_memos(db_obj=db_obj)
-
-
-@router.get(
-    "/{tag_id}/memo/user",
-    response_model=MemoRead,
-    summary=(
-        "Returns the Memo attached to the document tag with the given ID of the logged-in User if it exists."
-    ),
-)
-def get_user_memo(
-    *,
-    db: Session = Depends(get_db_session),
-    tag_id: int,
-    authz_user: AuthzUser = Depends(),
-) -> MemoRead:
-    authz_user.assert_in_same_project_as(Crud.DOCUMENT_TAG, tag_id)
-
-    db_obj = crud_document_tag.read(db=db, id=tag_id)
-    return get_object_memo_for_user(db_obj=db_obj, user_id=authz_user.user.id)
 
 
 @router.get(

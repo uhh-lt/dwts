@@ -10,6 +10,7 @@ class ObjectHandleBaseDTO(BaseModel):
     code_id: Optional[int] = None
     source_document_id: Optional[int] = None
     span_annotation_id: Optional[int] = None
+    sentence_annotation_id: Optional[int] = None
     span_group_id: Optional[int] = None
     bbox_annotation_id: Optional[int] = None
     document_tag_id: Optional[int] = None

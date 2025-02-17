@@ -21,8 +21,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import eventBus from "../../EventBus.ts";
 import ExporterHooks from "../../api/ExporterHooks.ts";
-import ProjectHooks from "../../api/ProjectHooks.ts";
 
+import UserHooks from "../../api/UserHooks.ts";
 import { BackgroundJobStatus } from "../../api/openapi/models/BackgroundJobStatus.ts";
 import { ExportFormat } from "../../api/openapi/models/ExportFormat.ts";
 import { ExportJobParameters } from "../../api/openapi/models/ExportJobParameters.ts";
@@ -157,7 +157,7 @@ function ExporterDialog() {
   const startExport = ExporterHooks.useStartExportJob();
   const exportJob = ExporterHooks.usePollExportJob(startExport.data?.id);
   const { user } = useAuth();
-  const projectUsers = ProjectHooks.useGetAllUsers(projectId);
+  const projectUsers = UserHooks.useGetAllUsers();
 
   // snackbar
   const openSnackbar = useOpenSnackbar();

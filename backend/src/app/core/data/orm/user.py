@@ -8,7 +8,6 @@ from app.core.data.orm.orm_base import ORMBase
 from app.core.data.orm.timeline_analysis import TimelineAnalysisORM
 
 if TYPE_CHECKING:
-    from app.core.data.orm.analysis_table import AnalysisTableORM
     from app.core.data.orm.annotation_document import AnnotationDocumentORM
     from app.core.data.orm.concept_over_time_analysis import ConceptOverTimeAnalysisORM
     from app.core.data.orm.memo import MemoORM
@@ -43,10 +42,6 @@ class UserORM(ORMBase):
 
     memos: Mapped[List["MemoORM"]] = relationship(
         "MemoORM", back_populates="user", passive_deletes=True
-    )
-
-    analysis_tables: Mapped[List["AnalysisTableORM"]] = relationship(
-        "AnalysisTableORM", back_populates="user", passive_deletes=True
     )
 
     timeline_analysis: Mapped[List["TimelineAnalysisORM"]] = relationship(

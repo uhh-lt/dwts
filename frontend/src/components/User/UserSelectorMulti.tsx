@@ -9,25 +9,18 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import React from "react";
-import ProjectHooks from "../../api/ProjectHooks.ts";
+import UserHooks from "../../api/UserHooks.ts";
 import UserName from "./UserName.tsx";
 
 interface UserSelectorProps {
-  projectId: number | undefined;
   userIds: number[];
   onUserIdChange: (userIds: number[]) => void;
   title: string;
 }
 
-function UserSelectorMulti({
-  projectId,
-  userIds,
-  onUserIdChange,
-  title,
-  ...props
-}: UserSelectorProps & FormControlProps) {
+function UserSelectorMulti({ userIds, onUserIdChange, title, ...props }: UserSelectorProps & FormControlProps) {
   // global server state (react query)
-  const projectUsers = ProjectHooks.useGetAllUsers(projectId);
+  const projectUsers = UserHooks.useGetAllUsers();
 
   // handlers (for ui)
   const handleChange = (event: SelectChangeEvent<number[]>) => {

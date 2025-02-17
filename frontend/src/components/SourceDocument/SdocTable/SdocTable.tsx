@@ -13,6 +13,7 @@ import {
   useMaterialReactTable,
 } from "material-react-table";
 import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
+import { QueryKey } from "../../../api/QueryKey.ts";
 import { ElasticSearchDocumentHit } from "../../../api/openapi/models/ElasticSearchDocumentHit.ts";
 import { PaginatedElasticSearchDocumentHits } from "../../../api/openapi/models/PaginatedElasticSearchDocumentHits.ts";
 import { SdocColumns } from "../../../api/openapi/models/SdocColumns.ts";
@@ -175,7 +176,7 @@ function SdocTableContent({
   // table data
   const { data, fetchNextPage, isError, isFetching, isLoading } = useInfiniteQuery<PaginatedElasticSearchDocumentHits>({
     queryKey: [
-      "document-table-data",
+      QueryKey.SDOC_TABLE,
       projectId,
       searchQuery, // refetch when searchQuery changes
       filter, // refetch when columnFilters changes

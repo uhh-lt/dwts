@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import SdocHooks from "../../api/SdocHooks.ts";
+import MetadataHooks from "../../api/MetadataHooks.ts";
 import { MetaType } from "../../api/openapi/models/MetaType.ts";
-import { SourceDocumentMetadataReadResolved } from "../../api/openapi/models/SourceDocumentMetadataReadResolved.ts";
+import { ProjectMetadataRead } from "../../api/openapi/models/ProjectMetadataRead.ts";
+import { SourceDocumentMetadataRead } from "../../api/openapi/models/SourceDocumentMetadataRead.ts";
 import { dateToLocaleDateString } from "../../utils/DateUtils.ts";
 
 interface SdocMetadataRendererProps {
@@ -10,26 +10,28 @@ interface SdocMetadataRendererProps {
 }
 
 function SdocMetadataRenderer({ sdocId, projectMetadataId }: SdocMetadataRendererProps) {
-  const sdocMetadatas = SdocHooks.useGetMetadata(sdocId);
+  const sdocMetadata = MetadataHooks.useGetSdocMetadataByProjectMetadataId(sdocId, projectMetadataId);
+  const projectMetadata = MetadataHooks.useGetProjectMetadata(projectMetadataId);
 
-  // todo: this transformation causes a rerender :/
-  const sdocMetadata = useMemo(() => {
-    return sdocMetadatas.data?.find((metadata) => metadata.project_metadata.id === projectMetadataId);
-  }, [sdocMetadatas.data, projectMetadataId]);
-
-  if (sdocMetadatas.isSuccess && sdocMetadata !== undefined) {
-    return <SdocMetadataRendererWithData sdocMetadata={sdocMetadata} />;
-  } else if (sdocMetadatas.isSuccess && sdocMetadata === undefined) {
+  if (projectMetadata.isSuccess && sdocMetadata.isSuccess && sdocMetadata.data !== undefined) {
+    return <SdocMetadataRendererWithData sdocMetadata={sdocMetadata.data} projectMetadata={projectMetadata.data} />;
+  } else if (sdocMetadata.isSuccess && sdocMetadata.data === undefined) {
     return <i>empty</i>;
-  } else if (sdocMetadatas.isError) {
-    return <div>{sdocMetadatas.error.message}</div>;
+  } else if (sdocMetadata.isError) {
+    return <div>{sdocMetadata.error.message}</div>;
   } else {
     return <div>Loading...</div>;
   }
 }
 
-export function SdocMetadataRendererWithData({ sdocMetadata }: { sdocMetadata: SourceDocumentMetadataReadResolved }) {
-  switch (sdocMetadata.project_metadata.metatype) {
+export function SdocMetadataRendererWithData({
+  sdocMetadata,
+  projectMetadata,
+}: {
+  sdocMetadata: SourceDocumentMetadataRead;
+  projectMetadata: ProjectMetadataRead;
+}) {
+  switch (projectMetadata.metatype) {
     case MetaType.STRING:
       return <>{sdocMetadata.str_value ? sdocMetadata.str_value : <i>empty</i>}</>;
     case MetaType.NUMBER:

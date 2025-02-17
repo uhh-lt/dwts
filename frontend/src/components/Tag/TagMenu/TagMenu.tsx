@@ -17,8 +17,6 @@ import {
 } from "@mui/material";
 import { isEqual } from "lodash";
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
 import TagHooks from "../../../api/TagHooks.ts";
 import { DocumentTagRead } from "../../../api/openapi/models/DocumentTagRead.ts";
 import { useOpenSnackbar } from "../../../components/SnackbarDialog/useOpenSnackbar.ts";
@@ -33,11 +31,8 @@ interface TagMenuProps {
 }
 
 function TagMenu(props: TagMenuProps) {
-  // react router
-  const projId = parseInt((useParams() as { projectId: string }).projectId);
-
   // global server state (react-query)
-  const allTags = ProjectHooks.useGetAllTags(projId);
+  const allTags = TagHooks.useGetAllTags();
   const tagCounts = TagHooks.useGetTagDocumentCounts(props.sdocIds);
   const initialChecked: Map<number, CheckboxState> | undefined = useMemo(() => {
     if (!tagCounts.data) return undefined;

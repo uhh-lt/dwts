@@ -1,7 +1,8 @@
-import { MouseEventHandler, useRef } from "react";
+import { MouseEventHandler, useMemo, useRef } from "react";
+import CodeHooks from "../../../../api/CodeHooks.ts";
 import { CodeRead } from "../../../../api/openapi/models/CodeRead.ts";
 import { SourceDocumentDataRead } from "../../../../api/openapi/models/SourceDocumentDataRead.ts";
-import { SpanAnnotationReadResolved } from "../../../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../../../api/openapi/models/SpanAnnotationRead.ts";
 import SdocHooks from "../../../../api/SdocHooks.ts";
 import DocumentRenderer from "../../../../views/annotation/DocumentRenderer/DocumentRenderer.tsx";
 import useComputeTokenDataWithAnnotations from "../../../../views/annotation/DocumentRenderer/useComputeTokenDataWithAnnotations.ts";
@@ -12,24 +13,29 @@ import TextAnnotationValidationMenu, {
 import "./validatorStyles.css";
 
 interface TextAnnotatorValidatorSharedProps {
-  codesForSelection: CodeRead[];
-  annotations: SpanAnnotationReadResolved[];
-  handleChangeAnnotations: (annotations: SpanAnnotationReadResolved[]) => void;
+  annotations: SpanAnnotationRead[];
+  handleChangeAnnotations: (annotations: SpanAnnotationRead[]) => void;
 }
 
 interface TextAnnotatorValidatorProps extends TextAnnotatorValidatorSharedProps {
+  codeIdsForSelection: number[];
   sdocId: number;
 }
 
 function TextAnnotationValidator({
   sdocId,
-  codesForSelection,
+  codeIdsForSelection,
   annotations,
   handleChangeAnnotations,
 }: TextAnnotatorValidatorProps) {
   const sdocData = SdocHooks.useGetDocumentData(sdocId);
+  const projectCodes = CodeHooks.useGetAllCodesList();
+  const codesForSelection = useMemo(() => {
+    if (!projectCodes.data) return undefined;
+    return projectCodes.data.filter((code) => codeIdsForSelection.includes(code.id));
+  }, [projectCodes.data, codeIdsForSelection]);
 
-  if (sdocData.isSuccess) {
+  if (sdocData.isSuccess && codesForSelection) {
     return (
       <TextAnnotationValidatorWithSdoc
         sdocData={sdocData.data}
@@ -43,6 +49,7 @@ function TextAnnotationValidator({
 }
 
 interface TextAnnotatorValidatorWithSdocProps extends TextAnnotatorValidatorSharedProps {
+  codesForSelection: CodeRead[];
   sdocData: SourceDocumentDataRead;
 }
 
@@ -58,7 +65,7 @@ function TextAnnotationValidatorWithSdoc({
   // computed
   const { tokenData, annotationsPerToken, annotationMap } = useComputeTokenDataWithAnnotations({
     sdocData,
-    annotations: annotations,
+    annotations,
   });
 
   // actions

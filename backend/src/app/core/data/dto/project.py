@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from .dto_base import UpdateDTOBase
 
@@ -31,3 +31,7 @@ class ProjectRead(ProjectBaseDTO):
     created: datetime = Field(description="Created timestamp of the Project")
     updated: datetime = Field(description="Updated timestamp of the Project")
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectAddUser(BaseModel):
+    email: EmailStr = Field(description="E-Mail of the User")

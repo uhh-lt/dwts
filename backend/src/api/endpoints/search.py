@@ -74,46 +74,6 @@ def search_sdocs(
 
 
 @router.post(
-    "/code_stats_by_search",
-    response_model=List[SpanEntityStat],
-    summary="Returns SpanEntityStats for the given search parameters.",
-)
-def search_code_stats(
-    *,
-    authz_user: AuthzUser = Depends(),
-    # code stat params
-    code_id: int,
-    sort_by_global: bool = False,
-    # search params
-    project_id: int,
-    search_query: str,
-    expert_mode: bool,
-    filter: Filter[SdocColumns],
-    sorts: List[Sort[SdocColumns]],
-) -> List[SpanEntityStat]:
-    # search for relevant sdoc_ids
-    authz_user.assert_in_project(project_id)
-    search_result = sdoc_search.search(
-        project_id=project_id,
-        search_query=search_query,
-        expert_mode=expert_mode,
-        filter=filter,
-        sorts=sorts,
-        highlight=False,
-    )
-    sdoc_ids = [hit.document_id for hit in search_result.hits]
-    if len(sdoc_ids) == 0:
-        return []
-
-    # compute code stats
-    authz_user.assert_in_same_project_as(Crud.CODE, code_id)
-    code_stats = compute_code_statistics(code_id=code_id, sdoc_ids=set(sdoc_ids))
-    if sort_by_global:
-        code_stats.sort(key=lambda x: x.global_count, reverse=True)
-    return code_stats
-
-
-@router.post(
     "/code_stats_by_sdocs",
     response_model=List[SpanEntityStat],
     summary="Returns SpanEntityStats for the given SourceDocuments.",
@@ -136,47 +96,6 @@ def filter_code_stats(
     if sort_by_global:
         code_stats.sort(key=lambda x: x.global_count, reverse=True)
     return code_stats
-
-
-@router.post(
-    "/keyword_stats_by_search",
-    response_model=List[KeywordStat],
-    summary="Returns KeywordStats for the given seach parameters.",
-)
-def search_keyword_stats(
-    *,
-    authz_user: AuthzUser = Depends(),
-    project_id: int,
-    # keyword stat params
-    sort_by_global: bool = False,
-    top_k: int = 50,
-    # search params
-    search_query: str,
-    expert_mode: bool,
-    filter: Filter[SdocColumns],
-    sorts: List[Sort[SdocColumns]],
-) -> List[KeywordStat]:
-    # search for relevant sdoc_ids
-    authz_user.assert_in_project(project_id)
-    search_result = sdoc_search.search(
-        project_id=project_id,
-        search_query=search_query,
-        expert_mode=expert_mode,
-        filter=filter,
-        sorts=sorts,
-        highlight=False,
-    )
-    sdoc_ids = [hit.document_id for hit in search_result.hits]
-    if len(sdoc_ids) == 0:
-        return []
-
-    # compute keyword stats
-    keyword_stats = compute_keyword_statistics(
-        proj_id=project_id, sdoc_ids=set(sdoc_ids), top_k=top_k
-    )
-    if sort_by_global:
-        keyword_stats.sort(key=lambda x: x.global_count, reverse=True)
-    return keyword_stats
 
 
 @router.post(
@@ -204,44 +123,6 @@ def filter_keyword_stats(
     if sort_by_global:
         keyword_stats.sort(key=lambda x: x.global_count, reverse=True)
     return keyword_stats
-
-
-@router.post(
-    "/tag_stats_by_search",
-    response_model=List[TagStat],
-    summary="Returns Stat for the given search parameters.",
-)
-def search_tag_stats(
-    *,
-    authz_user: AuthzUser = Depends(),
-    # keyword stat params
-    sort_by_global: bool = False,
-    # search params
-    project_id: int,
-    search_query: str,
-    expert_mode: bool,
-    filter: Filter[SdocColumns],
-    sorts: List[Sort[SdocColumns]],
-) -> List[TagStat]:
-    # search for relevant sdoc_ids
-    authz_user.assert_in_project(project_id)
-    search_result = sdoc_search.search(
-        project_id=project_id,
-        search_query=search_query,
-        expert_mode=expert_mode,
-        filter=filter,
-        sorts=sorts,
-        highlight=False,
-    )
-    sdoc_ids = [hit.document_id for hit in search_result.hits]
-    if len(sdoc_ids) == 0:
-        return []
-
-    # compute tag stats
-    tag_stats = compute_tag_statistics(sdoc_ids=set(sdoc_ids))
-    if sort_by_global:
-        tag_stats.sort(key=lambda x: x.global_count, reverse=True)
-    return tag_stats
 
 
 @router.post(

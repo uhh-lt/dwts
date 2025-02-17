@@ -8,11 +8,11 @@ import useGetMemosAttachedObject from "../../../components/Memo/useGetMemosAttac
 import { useReactFlowService } from "../hooks/ReactFlowService.ts";
 
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
-import { BBoxAnnotationReadResolved } from "../../../api/openapi/models/BBoxAnnotationReadResolved.ts";
+import { BBoxAnnotationRead } from "../../../api/openapi/models/BBoxAnnotationRead.ts";
 import { CodeRead } from "../../../api/openapi/models/CodeRead.ts";
 import { DocumentTagRead } from "../../../api/openapi/models/DocumentTagRead.ts";
 import { SourceDocumentRead } from "../../../api/openapi/models/SourceDocumentRead.ts";
-import { SpanAnnotationReadResolved } from "../../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../../api/openapi/models/SpanAnnotationRead.ts";
 import GenericPositionMenu, { GenericPositionMenuHandle } from "../../../components/GenericPositionMenu.tsx";
 import { attachedObjectTypeToText } from "../../../components/Memo/attachedObjectTypeToText.ts";
 import MemoRenderer from "../../../components/Memo/MemoRenderer.tsx";
@@ -132,12 +132,7 @@ const createMemoAttachedObjectEdge = (
 
 const createAttachedObjectNodes = (
   attachedObjectType: AttachedObjectType,
-  attachedObject:
-    | DocumentTagRead
-    | CodeRead
-    | SpanAnnotationReadResolved
-    | BBoxAnnotationReadResolved
-    | SourceDocumentRead,
+  attachedObject: DocumentTagRead | CodeRead | SpanAnnotationRead | BBoxAnnotationRead | SourceDocumentRead,
   position: XYPosition,
 ): Node<DATSNodeData>[] => {
   switch (attachedObjectType) {
@@ -158,11 +153,11 @@ const createAttachedObjectNodes = (
       });
     case AttachedObjectType.SPAN_ANNOTATION:
       return createSpanAnnotationNodes({
-        spanAnnotations: [attachedObject as SpanAnnotationReadResolved],
+        spanAnnotations: [attachedObject as SpanAnnotationRead],
       });
     case AttachedObjectType.BBOX_ANNOTATION:
       return createBBoxAnnotationNodes({
-        bboxAnnotations: [attachedObject as BBoxAnnotationReadResolved],
+        bboxAnnotations: [attachedObject as BBoxAnnotationRead],
         position,
       });
     default:

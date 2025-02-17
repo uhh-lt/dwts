@@ -1,15 +1,10 @@
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { TabContext, TabPanel } from "@mui/lab";
-import { Box, BoxProps, Button, CircularProgress, List, Stack, Tab, Tabs } from "@mui/material";
+import { Box, BoxProps, Tab, Tabs } from "@mui/material";
 import { useState } from "react";
-import SdocHooks from "../../../api/SdocHooks.ts";
-import { DocumentTagRead } from "../../../api/openapi/models/DocumentTagRead.ts";
-import TagMenuButton from "../../Tag/TagMenu/TagMenuButton.tsx";
 import DocumentMemos from "./DocumentMemos.tsx";
-import DocumentMetadataRow from "./DocumentMetadataRow/DocumentMetadataRow.tsx";
-import DocumentTagRow from "./DocumentTagRow.tsx";
-import MetadataCreateButton from "./MetadataCreateButton.tsx";
-import SdocListItem from "./SdocListItem.tsx";
+import MetadataPanel from "./Info/MetadataPanel.tsx";
+import LinksPanel from "./Links/LinksPanel.tsx";
+import TagPanel from "./Tags/TagPanel.tsx";
 
 interface DocumentInformationProps {
   sdocId: number | undefined;
@@ -23,11 +18,6 @@ export default function DocumentInformation({
   filterName,
   ...props
 }: DocumentInformationProps & Omit<BoxProps, "className">) {
-  // global server state (react-query)
-  const metadata = SdocHooks.useGetMetadata(sdocId);
-  const documentTags = SdocHooks.useGetAllDocumentTags(sdocId);
-  const linkedSdocIds = SdocHooks.useGetLinkedSdocIds(sdocId);
-
   // tabs
   const [tab, setTab] = useState("info");
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string): void => {
@@ -51,60 +41,9 @@ export default function DocumentInformation({
           </Tabs>
         </Box>
         <Box className="myFlexFillAllContainer">
-          <TabPanel value="info" sx={{ p: 1 }} className="h100">
-            <MetadataCreateButton sdocId={sdocId} />
-            <Stack direction="column" spacing={0.5}>
-              {metadata.isLoading && (
-                <Box textAlign={"center"} pt={2}>
-                  <CircularProgress />
-                </Box>
-              )}
-              {metadata.isError && <span>{metadata.error.message}</span>}
-              {metadata.isSuccess &&
-                metadata.data
-                  .sort((a, b) => a.id - b.id)
-                  .map((data) => <DocumentMetadataRow key={data.id} metadata={data} filterName={filterName} />)}
-            </Stack>
-          </TabPanel>
-          <TabPanel value="tags" sx={{ p: 1 }} className="h100">
-            <TagMenuButton
-              popoverOrigin={{ horizontal: "center", vertical: "bottom" }}
-              type={"addBtn"}
-              selectedSdocIds={[sdocId]}
-            />
-            <Stack direction="column" spacing={0.5}>
-              {documentTags.isLoading && (
-                <Box textAlign={"center"} pt={2}>
-                  <CircularProgress />
-                </Box>
-              )}
-              {documentTags.isError && <span>{documentTags.error.message}</span>}
-              {documentTags.isSuccess &&
-                documentTags.data.map((tag: DocumentTagRead) => (
-                  <DocumentTagRow key={`sdoc-${sdocId}-tag${tag.id}`} sdocId={sdocId} tag={tag} />
-                ))}
-            </Stack>
-          </TabPanel>
-          <TabPanel value="links" sx={{ p: 1 }} className="h100">
-            <Button variant="text" size="small" startIcon={<AddCircleIcon />} disabled>
-              Link documents
-            </Button>
-            <Stack direction="column" spacing={0.5}>
-              {linkedSdocIds.isLoading && (
-                <Box textAlign={"center"} pt={2}>
-                  <CircularProgress />
-                </Box>
-              )}
-              {linkedSdocIds.isError && <span>{linkedSdocIds.error.message}</span>}
-              {linkedSdocIds.isSuccess && (
-                <List>
-                  {linkedSdocIds.data.map((sdocId) => (
-                    <SdocListItem key={sdocId} sdocId={sdocId} />
-                  ))}
-                </List>
-              )}
-            </Stack>
-          </TabPanel>
+          <MetadataPanel currentTab={tab} sdocId={sdocId} filterName={filterName} />
+          <TagPanel currentTab={tab} sdocId={sdocId} />
+          <LinksPanel currentTab={tab} sdocId={sdocId} />
           <TabPanel value="memos" sx={{ p: 0 }} className="h100">
             <DocumentMemos sdocId={sdocId} key={sdocId} />
           </TabPanel>

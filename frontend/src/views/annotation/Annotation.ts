@@ -1,9 +1,6 @@
-import { BBoxAnnotationReadResolved } from "../../api/openapi/models/BBoxAnnotationReadResolved.ts";
-import { SentenceAnnotationReadResolved } from "../../api/openapi/models/SentenceAnnotationReadResolved.ts";
-import { SpanAnnotationReadResolved } from "../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { BBoxAnnotationRead } from "../../api/openapi/models/BBoxAnnotationRead.ts";
+import { SentenceAnnotationRead } from "../../api/openapi/models/SentenceAnnotationRead.ts";
+import { SpanAnnotationRead } from "../../api/openapi/models/SpanAnnotationRead.ts";
 
-export type Annotation = SpanAnnotationReadResolved | BBoxAnnotationReadResolved | SentenceAnnotationReadResolved;
-export type Annotations =
-  | SpanAnnotationReadResolved[]
-  | BBoxAnnotationReadResolved[]
-  | SentenceAnnotationReadResolved[];
+export type Annotation = SpanAnnotationRead | BBoxAnnotationRead | SentenceAnnotationRead;
+export type Annotations = SpanAnnotationRead[] | BBoxAnnotationRead[] | SentenceAnnotationRead[];

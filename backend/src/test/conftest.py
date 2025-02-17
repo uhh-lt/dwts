@@ -210,7 +210,7 @@ def api_user(client: TestClient):
 
         def create(self, first_name):
             # Create
-            email = "".join(random.choices(string.ascii_letters, k=10)) + "@aol.com"
+            email = f"{first_name}@dats.com"
             password = "".join(random.choices(string.ascii_letters, k=20))
             last_name = "".join(random.choices(string.ascii_letters, k=10))
             credentials = {
@@ -317,9 +317,9 @@ def api_document(client: TestClient):
             response = client.put(
                 f"/project/{project['id']}/sdoc", headers=user_headers, files=files
             )
-            assert (
-                response.status_code == 200
-            ), f"Failed to upload files. Response: {response}. Files: {files}"
+            assert response.status_code == 200, (
+                f"Failed to upload files. Response: {response}. Files: {files}"
+            )
             response = response.json()
             docs = {}
             for file in response["payloads"]:

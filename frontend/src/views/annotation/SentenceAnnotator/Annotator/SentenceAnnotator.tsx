@@ -1,23 +1,18 @@
 import { Box, BoxProps } from "@mui/material";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { difference, intersection } from "lodash";
 import { useMemo, useRef, useState } from "react";
+import CodeHooks from "../../../../api/CodeHooks.ts";
 import { CodeRead } from "../../../../api/openapi/models/CodeRead.ts";
-import { SentenceAnnotationReadResolved } from "../../../../api/openapi/models/SentenceAnnotationReadResolved.ts";
+import { SentenceAnnotationRead } from "../../../../api/openapi/models/SentenceAnnotationRead.ts";
 import { SourceDocumentDataRead } from "../../../../api/openapi/models/SourceDocumentDataRead.ts";
-import SdocHooks from "../../../../api/SdocHooks.ts";
-import { useAuth } from "../../../../auth/useAuth.ts";
-import { useOpenSnackbar } from "../../../../components/SnackbarDialog/useOpenSnackbar.ts";
 import { useAppDispatch, useAppSelector } from "../../../../plugins/ReduxHooks.ts";
 import { AnnoActions } from "../../annoSlice.ts";
 import { Annotation } from "../../Annotation.ts";
 import AnnotationMenu, { CodeSelectorHandle } from "../../AnnotationMenu/AnnotationMenu.tsx";
 import { ICode } from "../../ICode.ts";
-import {
-  useCreateSentenceAnnotation,
-  useDeleteSentenceAnnotation,
-  useUpdateSentenceAnnotation,
-} from "../sentenceAnnotationHooks.ts";
+
+import SentenceAnnotationHooks from "../../../../api/SentenceAnnotationHooks.ts";
+import { useGetSentenceAnnotator } from "../useGetSentenceAnnotator.ts";
 import DocumentSentence from "./DocumentSentence.tsx";
 
 interface SentenceAnnotatorProps {
@@ -26,79 +21,12 @@ interface SentenceAnnotatorProps {
 }
 
 function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: SentenceAnnotatorProps & BoxProps) {
-  // auth state
-  const user = useAuth().user;
-
   // global client state (redux)
   const visibleUserId = useAppSelector((state) => state.annotations.visibleUserId);
 
   // global server state (react-query)
-  const annotatorResult = SdocHooks.useGetSentenceAnnotator(sdocData.id, visibleUserId);
-  const { annotationPositions, numPositions } = useMemo(() => {
-    if (!annotatorResult.data?.sentence_annotations) return { annotationPositions: [], numPositions: 0 };
-    const sentenceAnnotations = Object.values(annotatorResult.data.sentence_annotations);
-
-    if (sentenceAnnotations.length === 0) return { annotationPositions: [], numPositions: 0 };
-
-    // map from annotation id to position
-    const annotationPositions: Record<number, number>[] = [
-      sentenceAnnotations[0].reduce(
-        (acc, sentAnno) => {
-          acc[sentAnno.id] = Object.keys(acc).length;
-          return acc;
-        },
-        {} as Record<number, number>,
-      ),
-    ];
-    let numPositions = sentenceAnnotations[0].length;
-
-    for (let i = 1; i < sentenceAnnotations.length; i++) {
-      const annotations = sentenceAnnotations[i];
-      const prevAnnotationPositions = annotationPositions[i - 1];
-
-      const prevAnnotations = Object.keys(prevAnnotationPositions).map((id) => parseInt(id));
-      const currentAnnotations = annotations.map((sentAnno) => sentAnno.id);
-
-      const sameAnnotations = intersection(prevAnnotations, currentAnnotations);
-      const newAnnotations = difference(currentAnnotations, prevAnnotations);
-
-      const annotationPosition: Record<number, number> = {};
-      const occupiedPositions: number[] = [];
-
-      // fill with positions of same annotations
-      for (const annoId of sameAnnotations) {
-        annotationPosition[annoId] = prevAnnotationPositions[annoId];
-        occupiedPositions.push(prevAnnotationPositions[annoId]);
-      }
-
-      // fill with positions of new annotations
-      for (const annoId of newAnnotations) {
-        const maxPosition = Math.max(0, ...occupiedPositions);
-        const allPositions = Array.from({ length: maxPosition + 2 }, (_, i) => i);
-        const availablePositions = difference(allPositions, occupiedPositions);
-
-        annotationPosition[annoId] = Math.min(...availablePositions);
-        occupiedPositions.push(annotationPosition[annoId]);
-
-        if (annotationPosition[annoId] > numPositions) {
-          numPositions = annotationPosition[annoId];
-        }
-      }
-
-      annotationPositions.push(annotationPosition);
-    }
-
-    // flip keys and values of annotationPositions (key: position, value: annotation id)
-    const flippedAnnotationPositions = annotationPositions.map((positions) => {
-      const flipped: Record<number, number> = {};
-      for (const [annoId, position] of Object.entries(positions)) {
-        flipped[position] = parseInt(annoId);
-      }
-      return flipped;
-    });
-
-    return { annotationPositions: flippedAnnotationPositions, numPositions };
-  }, [annotatorResult.data?.sentence_annotations]);
+  const codeMap = CodeHooks.useGetAllCodesMap();
+  const annotator = useGetSentenceAnnotator({ sdocId: sdocData.id, userId: visibleUserId });
 
   // selection
   const mostRecentCode = useAppSelector((state) => state.annotations.mostRecentCode);
@@ -114,68 +42,38 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
   // annotation menu
   const annotationMenuRef = useRef<CodeSelectorHandle>(null);
   const dispatch = useAppDispatch();
-  const openSnackbar = useOpenSnackbar();
-  const createMutation = useCreateSentenceAnnotation(user?.id || -1);
-  const deleteMutation = useDeleteSentenceAnnotation();
-  const updateMutation = useUpdateSentenceAnnotation();
+  const createMutation = SentenceAnnotationHooks.useCreateSentenceAnnotation();
+  const deleteMutation = SentenceAnnotationHooks.useDeleteSentenceAnnotation();
+  const updateMutation = SentenceAnnotationHooks.useUpdateSentenceAnnotation();
   const handleCodeSelectorDeleteAnnotation = (annotation: Annotation) => {
-    deleteMutation.mutate(
-      { sentenceAnnotationToDelete: annotation as SentenceAnnotationReadResolved },
-      {
-        onSuccess: (sentenceAnnotation) => {
-          openSnackbar({
-            text: `Deleted Sentence Annotation ${sentenceAnnotation.id}`,
-            severity: "success",
-          });
-        },
-      },
-    );
+    deleteMutation.mutate(annotation as SentenceAnnotationRead);
   };
   const handleCodeSelectorEditCode = (annotation: Annotation, code: ICode) => {
-    updateMutation.mutate(
-      {
-        sentenceAnnoToUpdate: annotation as SentenceAnnotationReadResolved,
-        code: {
-          id: code.id,
-          name: code.name,
-          color: code.color,
-          description: "",
-          project_id: sdocData.project_id,
-          created: "",
-          updated: "",
-          is_system: false,
-        },
+    updateMutation.mutate({
+      sentenceAnnoToUpdate: annotation as SentenceAnnotationRead,
+      update: {
+        code_id: code.id,
       },
-      {
-        onSuccess: (sentenceAnnotation) => {
-          openSnackbar({
-            text: `Updated Sentence Annotation ${sentenceAnnotation.id}`,
-            severity: "success",
-          });
-        },
-      },
-    );
+    });
   };
   const handleCodeSelectorAddCode = (code: CodeRead, isNewCode: boolean) => {
     setSelectedSentences([]);
     setLastClickedIndex(null);
     createMutation.mutate(
       {
-        code,
-        sdocId: sdocData.id,
-        start: selectedSentences[0],
-        end: selectedSentences[selectedSentences.length - 1],
+        requestBody: {
+          code_id: code.id,
+          sdoc_id: sdocData.id,
+          sentence_id_start: selectedSentences[0],
+          sentence_id_end: selectedSentences[selectedSentences.length - 1],
+        },
       },
       {
-        onSuccess: (sentenceAnnotation) => {
+        onSuccess: () => {
           if (!isNewCode) {
             // if we use an existing code to annotate, we move it to the top
             dispatch(AnnoActions.moveCodeToTop(code));
           }
-          openSnackbar({
-            text: `Created Sentence Annotation ${sentenceAnnotation.id}`,
-            severity: "success",
-          });
         },
       },
     );
@@ -183,22 +81,14 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
   const handleCodeSelectorClose = (reason?: "backdropClick" | "escapeKeyDown") => {
     // i clicked away because i like the annotation as is
     if (selectedSentences.length > 0 && reason === "backdropClick" && mostRecentCode) {
-      createMutation.mutate(
-        {
-          code: mostRecentCode,
-          sdocId: sdocData.id,
-          start: selectedSentences[0],
-          end: selectedSentences[selectedSentences.length - 1],
+      createMutation.mutate({
+        requestBody: {
+          code_id: mostRecentCode.id,
+          sdoc_id: sdocData.id,
+          sentence_id_start: selectedSentences[0],
+          sentence_id_end: selectedSentences[selectedSentences.length - 1],
         },
-        {
-          onSuccess: (sentenceAnnotation) => {
-            openSnackbar({
-              text: `Created Sentence Annotation ${sentenceAnnotation.id}`,
-              severity: "success",
-            });
-          },
-        },
-      );
+      });
     }
     // i clicked escape because i want to cancel the annotation
     if (reason === "escapeKeyDown") {
@@ -216,10 +106,10 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
     sentAnnoId: number,
     sentenceIdx: number,
   ) => {
-    if (!annotatorResult.data) return;
+    if (!annotator.annotatorResult) return;
 
     // annotation to display
-    const annotation = annotatorResult.data.sentence_annotations[sentenceIdx].find(
+    const annotation = annotator.annotatorResult.sentence_annotations[sentenceIdx].find(
       (sentAnno) => sentAnno.id === sentAnnoId,
     );
 
@@ -227,8 +117,6 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
       console.error(`Annotation with id ${sentAnnoId} not found.`);
       return;
     }
-
-    console.log("CLICK!");
 
     // highlight annotation
     setHoverSentAnnoId(sentAnnoId);
@@ -255,7 +143,8 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
     setHoverSentAnnoId(null);
   };
 
-  const handleSentenceClick = (_: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
+  const handleSentenceMouseDown = (_: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
+    setIsDragging(true);
     setSelectedSentences((selectedSentences) => {
       if (selectedSentences.includes(index)) {
         return [];
@@ -263,11 +152,6 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
       return [index];
     });
     setLastClickedIndex((lastClickedIndex) => (lastClickedIndex === index ? null : index));
-  };
-
-  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
-    setIsDragging(true);
-    handleSentenceClick(event, index);
   };
 
   const handleMouseUp = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -291,7 +175,7 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
     annotationMenuRef.current!.open(position);
   };
 
-  const handleMouseEnter = (index: number) => {
+  const handleSentenceMouseEnter = (_: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
     if (lastClickedIndex === null) return;
 
     if (isDragging) {
@@ -318,65 +202,68 @@ function SentenceAnnotator({ sdocData, virtualizerScrollElementRef, ...props }: 
   // rendering
   const numSentenceDigits = useMemo(() => Math.ceil(Math.log10(sdocData.sentences.length + 1)), [sdocData.sentences]);
 
-  if (!annotatorResult.data) return null;
-  return (
-    <>
-      <AnnotationMenu
-        ref={annotationMenuRef}
-        onAdd={handleCodeSelectorAddCode}
-        onClose={handleCodeSelectorClose}
-        onEdit={handleCodeSelectorEditCode}
-        onDelete={handleCodeSelectorDeleteAnnotation}
-      />
-      <Box {...props}>
-        <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative",
-          }}
-          onMouseUp={handleMouseUp}
-        >
-          {virtualizer.getVirtualItems().map((item) => {
-            const sentence = sdocData.sentences[item.index];
-            return (
-              <div
-                key={item.key}
-                data-index={item.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  transform: `translateY(${item.start}px)`,
-                }}
-              >
-                <DocumentSentence
-                  sentenceId={item.index}
-                  sentenceAnnotations={annotatorResult.data.sentence_annotations[item.index]}
-                  sentence={sentence}
-                  isSelected={selectedSentences.includes(item.index)}
-                  selectedCode={mostRecentCode}
-                  onMouseDown={(event) => handleMouseDown(event, item.index)}
-                  onMouseEnter={() => handleMouseEnter(item.index)}
-                  onAnnotationClick={(event, sentAnnoId) => handleAnnotationClick(event, sentAnnoId, item.index)}
-                  onAnnotationMouseEnter={handleAnnotationMouseEnter}
-                  onAnnotationMouseLeave={handleAnnotationMouseLeave}
-                  hoveredSentAnnoId={hoverSentAnnoId}
-                  annotationPositions={annotationPositions[item.index]}
-                  numPositions={numPositions}
-                  numSentenceDigits={numSentenceDigits}
-                  hoveredCodeId={hoveredCodeId}
-                  selectedSentAnnoId={selectedAnnotationId}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </Box>
-    </>
-  );
+  if (annotator.annotatorResult?.sentence_annotations && codeMap.data) {
+    return (
+      <>
+        <AnnotationMenu
+          ref={annotationMenuRef}
+          onAdd={handleCodeSelectorAddCode}
+          onClose={handleCodeSelectorClose}
+          onEdit={handleCodeSelectorEditCode}
+          onDelete={handleCodeSelectorDeleteAnnotation}
+        />
+        <Box {...props}>
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+            onMouseUp={handleMouseUp}
+          >
+            {virtualizer.getVirtualItems().map((item) => {
+              const sentence = sdocData.sentences[item.index];
+              return (
+                <div
+                  key={item.key}
+                  data-index={item.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${item.start}px)`,
+                  }}
+                >
+                  <DocumentSentence
+                    sentenceId={item.index}
+                    sentenceAnnotations={annotator.annotatorResult!.sentence_annotations[item.index]}
+                    sentence={sentence}
+                    isSelected={selectedSentences.includes(item.index)}
+                    selectedCode={mostRecentCode}
+                    onAnnotationClick={(event, sentAnnoId) => handleAnnotationClick(event, sentAnnoId, item.index)}
+                    onAnnotationMouseEnter={handleAnnotationMouseEnter}
+                    onAnnotationMouseLeave={handleAnnotationMouseLeave}
+                    onSentenceMouseDown={handleSentenceMouseDown}
+                    onSentenceMouseEnter={handleSentenceMouseEnter}
+                    hoveredSentAnnoId={hoverSentAnnoId}
+                    annotationPositions={annotator.annotationPositions[item.index]}
+                    numPositions={annotator.numPositions}
+                    numSentenceDigits={numSentenceDigits}
+                    hoveredCodeId={hoveredCodeId}
+                    selectedSentAnnoId={selectedAnnotationId}
+                    codeMap={codeMap.data}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </Box>
+      </>
+    );
+  }
+  return null;
 }
 
 export default SentenceAnnotator;

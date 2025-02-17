@@ -105,8 +105,15 @@ class SpanColumns(str, AbstractColumns):
                         label=SpanColumns.DOCUMENT_TAG_ID_LIST.value,
                     )
                 )
-                query_builder._join_subquery(SpanAnnotationORM.annotation_document)
-                query_builder._join_subquery(AnnotationDocumentORM.source_document)
+                query_builder._join_subquery(
+                    AnnotationDocumentORM,
+                    AnnotationDocumentORM.id
+                    == SpanAnnotationORM.annotation_document_id,
+                )
+                query_builder._join_subquery(
+                    SourceDocumentORM,
+                    SourceDocumentORM.id == AnnotationDocumentORM.source_document_id,
+                )
                 query_builder._join_subquery(
                     SourceDocumentORM.document_tags, isouter=True
                 )

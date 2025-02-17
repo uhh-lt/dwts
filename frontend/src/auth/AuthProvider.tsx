@@ -6,6 +6,7 @@ import { UserAuthorizationHeaderData } from "../api/openapi/models/UserAuthoriza
 import { UserRead } from "../api/openapi/models/UserRead.ts";
 import { AuthenticationService } from "../api/openapi/services/AuthenticationService.ts";
 import { UserService } from "../api/openapi/services/UserService.ts";
+import { QueryKey } from "../api/QueryKey.ts";
 import queryClient from "../plugins/ReactQueryClient.ts";
 import { LoginStatus } from "./LoginStatus.ts";
 
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }: AuthContextProps) => {
 
   // fetch user data
   const internalUser = useQuery<UserRead, Error>({
-    queryKey: ["me", accessToken],
+    queryKey: [QueryKey.ME, accessToken],
     queryFn: UserService.getMe,
     retry: false,
   });

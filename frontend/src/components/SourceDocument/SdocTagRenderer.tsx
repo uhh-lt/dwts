@@ -1,6 +1,5 @@
 import { Stack, StackProps } from "@mui/material";
-import SdocHooks from "../../api/SdocHooks.ts";
-import { DocumentTagRead } from "../../api/openapi/models/DocumentTagRead.ts";
+import TagHooks from "../../api/TagHooks.ts";
 import TagRenderer from "../Tag/TagRenderer.tsx";
 
 interface SharedProps {
@@ -8,16 +7,16 @@ interface SharedProps {
 }
 interface SdocTagsRendererProps {
   sdocId?: number;
-  tags?: number[] | DocumentTagRead[];
+  tagIds?: number[];
 }
 
-function SdocTagsRenderer({ sdocId, tags, ...props }: SdocTagsRendererProps & SharedProps) {
-  if (sdocId === undefined && tags === undefined) {
+function SdocTagsRenderer({ sdocId, tagIds, ...props }: SdocTagsRendererProps & SharedProps) {
+  if (sdocId === undefined && tagIds === undefined) {
     return <>Nothing to show :(</>;
   }
 
-  if (tags) {
-    return <SdocTagsRendererWithData tags={tags} {...props} />;
+  if (tagIds) {
+    return <SdocTagsRendererWithData tagIds={tagIds} {...props} />;
   }
 
   if (sdocId) {
@@ -27,10 +26,10 @@ function SdocTagsRenderer({ sdocId, tags, ...props }: SdocTagsRendererProps & Sh
 }
 
 function SdocTagsRendererWithoutData({ sdocId, ...props }: { sdocId: number } & SharedProps) {
-  const tags = SdocHooks.useGetAllDocumentTags(sdocId);
+  const tags = TagHooks.useGetAllTagIdsBySdocId(sdocId);
 
   if (tags.isSuccess) {
-    return <SdocTagsRendererWithData tags={tags.data.map((tag) => tag.id)} {...props} />;
+    return <SdocTagsRendererWithData tagIds={tags.data} {...props} />;
   } else if (tags.isError) {
     return <div>{tags.error.message}</div>;
   } else {
@@ -38,11 +37,11 @@ function SdocTagsRendererWithoutData({ sdocId, ...props }: { sdocId: number } & 
   }
 }
 
-function SdocTagsRendererWithData({ tags, stackProps }: { tags: number[] | DocumentTagRead[] } & SharedProps) {
+function SdocTagsRendererWithData({ tagIds, stackProps }: { tagIds: number[] } & SharedProps) {
   return (
     <Stack direction="row" alignItems="center" {...stackProps}>
-      {tags.map((tag) => (
-        <TagRenderer key={typeof tag === "number" ? tag : tag.id} tag={tag} mr={0.5} sx={{ textWrap: "nowrap" }} />
+      {tagIds.map((tagId) => (
+        <TagRenderer key={tagId} tag={tagId} mr={0.5} sx={{ textWrap: "nowrap" }} />
       ))}
     </Stack>
   );

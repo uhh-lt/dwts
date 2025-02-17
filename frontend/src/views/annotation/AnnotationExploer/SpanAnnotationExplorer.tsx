@@ -1,19 +1,23 @@
-import { SpanAnnotationReadResolved } from "../../../api/openapi/models/SpanAnnotationReadResolved.ts";
-import SdocHooks from "../../../api/SdocHooks.ts";
+import { SpanAnnotationRead } from "../../../api/openapi/models/SpanAnnotationRead.ts";
+import SpanAnnotationHooks from "../../../api/SpanAnnotationHooks.ts";
 import { useAppSelector } from "../../../plugins/ReduxHooks.ts";
 import AnnotationExplorer from "./AnnotationExplorer.tsx";
 import SpanAnnotationCard from "./SpanAnnotationCard.tsx";
 
-const filterByText = (text: string) => (annotation: SpanAnnotationReadResolved) => annotation.text.includes(text);
+const filterByText = (text: string) => (annotation: SpanAnnotationRead) => annotation.text.includes(text);
 
 function SpanAnnotationExplorer({ sdocId }: { sdocId: number }) {
   // data
   const visibleUserId = useAppSelector((state) => state.annotations.visibleUserId);
-  const annotations = SdocHooks.useGetSpanAnnotationsBatch(sdocId, visibleUserId ? [visibleUserId] : undefined);
+  const annotations = SpanAnnotationHooks.useGetSpanAnnotationsBatch(sdocId, visibleUserId);
 
   return (
     <AnnotationExplorer
-      annotations={annotations.data}
+      annotations={annotations.data?.map((annotation) => ({
+        ...annotation,
+        code_id: annotation.code_id,
+        span_text_id: 1,
+      }))}
       filterByText={filterByText}
       renderAnnotationCard={SpanAnnotationCard}
     />

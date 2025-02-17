@@ -100,7 +100,6 @@ redis:
   port: 6379
   password: ${oc.env:REDIS_PASSWORD, dats123}
   clients:
-    feedback: 1 # name: redis db index -- DO NOT USE DB 0, it's reserved for RabbitMQ!
     export: 2
     crawler: 3
     trainer: 4

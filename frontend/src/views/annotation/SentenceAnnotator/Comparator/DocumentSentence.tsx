@@ -4,12 +4,13 @@ import ClearIcon from "@mui/icons-material/Clear";
 import SquareIcon from "@mui/icons-material/Square";
 import { Box, IconButton, ListItemButton, Stack, Tooltip } from "@mui/material";
 import { useMemo } from "react";
+import { CodeMap } from "../../../../api/CodeHooks.ts";
 import { CodeRead } from "../../../../api/openapi/models/CodeRead.ts";
-import { SentenceAnnotationReadResolved } from "../../../../api/openapi/models/SentenceAnnotationReadResolved.ts";
+import { SentenceAnnotationRead } from "../../../../api/openapi/models/SentenceAnnotationRead.ts";
 import ColorUtils from "../../../../utils/ColorUtils.ts";
 import { UseGetSentenceAnnotator } from "../useGetSentenceAnnotator.ts";
 import { isAnnotationSame } from "./comparisonUtils.ts";
-import { AnnotatorMaps, useComputeAnnotatorMaps } from "./useComputeAnnotatorMaps.ts";
+import { SentAnnoMap, useComputeSentAnnoMap } from "./useComputeSentAnnoMap.ts";
 
 interface DocumentSentenceProps {
   sentenceId: number;
@@ -20,19 +21,20 @@ interface DocumentSentenceProps {
   sentence: string;
   onAnnotationClick: (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    sentenceAnnotation: SentenceAnnotationReadResolved,
+    sentenceAnnotation: SentenceAnnotationRead,
   ) => void;
   onAnnotationMouseEnter: (sentAnnoId: number) => void;
   onAnnotationMouseLeave: (sentAnnoId: number) => void;
   onSentenceMouseDown: (event: React.MouseEvent<HTMLDivElement, MouseEvent>, sentenceId: number) => void;
   onSentenceMouseEnter: (event: React.MouseEvent<HTMLDivElement, MouseEvent>, sentenceId: number) => void;
-  onApplyAnnotation: (annotation: SentenceAnnotationReadResolved) => void;
-  onRevertAnnotation: (annotation: SentenceAnnotationReadResolved) => void;
+  onApplyAnnotation: (annotation: SentenceAnnotationRead) => void;
+  onRevertAnnotation: (annotation: SentenceAnnotationRead) => void;
   numSentenceDigits: number;
   annotatorLeft: UseGetSentenceAnnotator;
   annotatorRight: UseGetSentenceAnnotator;
   isAnnotationAllowedLeft: boolean;
   isAnnotationAllowedRight: boolean;
+  codeMap: CodeMap;
 }
 
 function DocumentSentence({
@@ -54,9 +56,10 @@ function DocumentSentence({
   annotatorRight,
   isAnnotationAllowedLeft,
   isAnnotationAllowedRight,
+  codeMap,
 }: DocumentSentenceProps) {
-  const leftMaps = useComputeAnnotatorMaps(annotatorLeft.annotatorResult, sentenceId);
-  const rightMaps = useComputeAnnotatorMaps(annotatorRight.annotatorResult, sentenceId);
+  const leftSentAnnoMap = useComputeSentAnnoMap(annotatorLeft.annotatorResult, sentenceId);
+  const rightSentAnnoMap = useComputeSentAnnoMap(annotatorRight.annotatorResult, sentenceId);
 
   return (
     <Stack direction="row" width="100%">
@@ -74,21 +77,23 @@ function DocumentSentence({
         onSentenceMouseEnter={isAnnotationAllowedLeft ? onSentenceMouseEnter : undefined}
         numSentenceDigits={numSentenceDigits}
         annotator={annotatorLeft}
-        annotatorMaps={leftMaps}
+        sentAnnoMap={leftSentAnnoMap}
+        codeMap={codeMap}
       />
 
       {(isAnnotationAllowedLeft || isAnnotationAllowedRight) && (
         <AnnotationApplyPart
           isDirectionLeft={isAnnotationAllowedLeft}
           sentenceId={sentenceId}
-          annotatorLeftMaps={leftMaps}
+          annotatorLeftMap={leftSentAnnoMap}
           annotatorLeft={annotatorLeft}
-          annotatorRightMaps={rightMaps}
+          annotatorRightMap={rightSentAnnoMap}
           annotatorRight={annotatorRight}
           onApplyAnnotation={onApplyAnnotation}
           onRevertAnnotation={onRevertAnnotation}
           onAnnotationMouseEnter={onAnnotationMouseEnter}
           onAnnotationMouseLeave={onAnnotationMouseLeave}
+          codeMap={codeMap}
         />
       )}
 
@@ -106,7 +111,8 @@ function DocumentSentence({
         onSentenceMouseEnter={isAnnotationAllowedRight ? onSentenceMouseEnter : undefined}
         numSentenceDigits={numSentenceDigits}
         annotator={annotatorRight}
-        annotatorMaps={rightMaps}
+        sentAnnoMap={rightSentAnnoMap}
+        codeMap={codeMap}
       />
     </Stack>
   );
@@ -121,7 +127,7 @@ interface DocumentSentencePartProps {
   sentence: string;
   onAnnotationClick: (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    sentenceAnnotation: SentenceAnnotationReadResolved,
+    sentenceAnnotation: SentenceAnnotationRead,
   ) => void;
   onAnnotationMouseEnter: (sentAnnoId: number) => void;
   onAnnotationMouseLeave: (sentAnnoId: number) => void;
@@ -129,7 +135,8 @@ interface DocumentSentencePartProps {
   onSentenceMouseEnter?: (event: React.MouseEvent<HTMLDivElement, MouseEvent>, sentenceId: number) => void;
   numSentenceDigits: number;
   annotator: UseGetSentenceAnnotator;
-  annotatorMaps: AnnotatorMaps;
+  sentAnnoMap: SentAnnoMap;
+  codeMap: CodeMap;
 }
 
 function DocumentSentencePart({
@@ -146,26 +153,23 @@ function DocumentSentencePart({
   onSentenceMouseDown,
   numSentenceDigits,
   annotator,
-  annotatorMaps,
+  sentAnnoMap,
+  codeMap,
 }: DocumentSentencePartProps) {
+  const sentAnnoCodeIds = useMemo(() => Object.values(sentAnnoMap).map((anno) => anno.code_id), [sentAnnoMap]);
+
   const highlightedColor = useMemo(() => {
     if (isSelected) {
       return selectedCode?.color || "rgb(255, 0, 0)";
     }
     if (hoveredSentAnnoId) {
-      return annotatorMaps.sentAnnoId2sentAnnoMap[hoveredSentAnnoId]?.code.color;
+      const sa = sentAnnoMap[hoveredSentAnnoId];
+      return codeMap[sa?.code_id]?.color;
     }
-    if (hoveredCodeId) {
-      return annotatorMaps.codeId2CodeMap[hoveredCodeId]?.color;
+    if (hoveredCodeId && sentAnnoCodeIds.includes(hoveredCodeId)) {
+      return codeMap[hoveredCodeId]?.color;
     }
-  }, [
-    hoveredCodeId,
-    hoveredSentAnnoId,
-    isSelected,
-    annotatorMaps.codeId2CodeMap,
-    annotatorMaps.sentAnnoId2sentAnnoMap,
-    selectedCode?.color,
-  ]);
+  }, [isSelected, hoveredSentAnnoId, hoveredCodeId, sentAnnoCodeIds, selectedCode?.color, sentAnnoMap, codeMap]);
 
   return (
     <>
@@ -236,11 +240,12 @@ function DocumentSentencePart({
         }
         const key = `${sentenceId}-${annoPosition}`;
         if (annoId) {
-          const annotation = annotatorMaps.sentAnnoId2sentAnnoMap[annoId];
+          const annotation = sentAnnoMap[annoId];
+          const code = codeMap[annotation.code_id];
           const isStartOfAnnotation = sentenceId === annotation.sentence_id_start;
           const isEndOfAnnotation = sentenceId === annotation.sentence_id_end;
           return (
-            <Tooltip key={key} title={annotation.code.name} placement="top">
+            <Tooltip key={key} title={code.name} placement="top">
               <div
                 onClick={(event) => onAnnotationClick(event, annotation)}
                 onMouseEnter={() => onAnnotationMouseEnter(annoId)}
@@ -258,9 +263,9 @@ function DocumentSentencePart({
                     height: "100%",
                     borderTopRightRadius: isStartOfAnnotation ? "8px" : undefined,
                     borderBottomRightRadius: isEndOfAnnotation ? "8px" : undefined,
-                    borderTop: isStartOfAnnotation ? `4px solid ${annotation.code.color}` : undefined,
-                    borderBottom: isEndOfAnnotation ? `4px solid ${annotation.code.color}` : undefined,
-                    borderRight: `4px solid ${annotation.code.color}`,
+                    borderTop: isStartOfAnnotation ? `4px solid ${code.color}` : undefined,
+                    borderBottom: isEndOfAnnotation ? `4px solid ${code.color}` : undefined,
+                    borderRight: `4px solid ${code.color}`,
                     paddingLeft: "8px",
                   }}
                 />
@@ -277,27 +282,29 @@ function DocumentSentencePart({
 interface AnnotationApplyPartProps {
   isDirectionLeft: boolean;
   sentenceId: number;
-  annotatorLeftMaps: AnnotatorMaps;
+  annotatorLeftMap: SentAnnoMap;
   annotatorLeft: UseGetSentenceAnnotator;
-  annotatorRightMaps: AnnotatorMaps;
+  annotatorRightMap: SentAnnoMap;
   annotatorRight: UseGetSentenceAnnotator;
-  onApplyAnnotation: (annotation: SentenceAnnotationReadResolved) => void;
-  onRevertAnnotation: (annotation: SentenceAnnotationReadResolved) => void;
+  onApplyAnnotation: (annotation: SentenceAnnotationRead) => void;
+  onRevertAnnotation: (annotation: SentenceAnnotationRead) => void;
   onAnnotationMouseEnter: (sentAnnoId: number) => void;
   onAnnotationMouseLeave: (sentAnnoId: number) => void;
+  codeMap: CodeMap;
 }
 
 function AnnotationApplyPart({
   isDirectionLeft,
   sentenceId,
-  annotatorLeftMaps,
+  annotatorLeftMap,
   annotatorLeft,
   annotatorRight,
-  annotatorRightMaps,
+  annotatorRightMap,
   onApplyAnnotation,
   onRevertAnnotation,
   onAnnotationMouseEnter,
   onAnnotationMouseLeave,
+  codeMap,
 }: AnnotationApplyPartProps) {
   return (
     <>
@@ -323,7 +330,8 @@ function AnnotationApplyPart({
               }
               const key = `${sentenceId}-${annoPosition}`;
               if (annoId) {
-                const annotation = annotatorRightMaps.sentAnnoId2sentAnnoMap[annoId];
+                const annotation = annotatorRightMap[annoId];
+                const code = codeMap[annotation.code_id];
                 const isStartOfAnnotation = sentenceId === annotation.sentence_id_start;
                 const sameAnnotation = leftAnnotations.find((leftAnno) => isAnnotationSame(annotation, leftAnno));
                 if (isStartOfAnnotation) {
@@ -354,7 +362,7 @@ function AnnotationApplyPart({
                         >
                           <ClearIcon fontSize="small" />
                         </IconButton>
-                        <SquareIcon style={{ color: annotation.code.color }} fontSize="small" />
+                        <SquareIcon style={{ color: code.color }} fontSize="small" />
                       </Stack>
                     </Box>
                   );
@@ -371,7 +379,8 @@ function AnnotationApplyPart({
               }
               const key = `${sentenceId}-${annoPosition}`;
               if (annoId) {
-                const annotation = annotatorLeftMaps.sentAnnoId2sentAnnoMap[annoId];
+                const annotation = annotatorLeftMap[annoId];
+                const code = codeMap[annotation.code_id];
                 const isStartOfAnnotation = sentenceId === annotation.sentence_id_start;
                 const sameAnnotation = rightAnnotations.find((rightAnno) => isAnnotationSame(annotation, rightAnno));
                 if (isStartOfAnnotation) {
@@ -382,18 +391,24 @@ function AnnotationApplyPart({
                       onMouseLeave={() => onAnnotationMouseLeave(sameAnnotation ? sameAnnotation.id : annotation.id)}
                     >
                       <Stack key={key} direction="row" alignItems="center" justifyContent="center">
-                        <SquareIcon style={{ color: annotation.code.color }} fontSize="small" />
+                        <SquareIcon style={{ color: code.color }} fontSize="small" />
                         <IconButton
                           sx={{ p: 0.5 }}
-                          disabled={!!sameAnnotation}
-                          onClick={() => onApplyAnnotation(annotation)}
+                          disabled={!sameAnnotation}
+                          onClick={() => onRevertAnnotation(sameAnnotation!)}
+                          onMouseEnter={() =>
+                            onAnnotationMouseEnter(sameAnnotation ? sameAnnotation.id : annotation.id)
+                          }
                         >
                           <ClearIcon fontSize="small" />
                         </IconButton>
                         <IconButton
                           sx={{ p: 0.5, ml: -0.5 }}
-                          disabled={!sameAnnotation}
-                          onClick={() => onRevertAnnotation(sameAnnotation!)}
+                          disabled={!!sameAnnotation}
+                          onClick={() => onApplyAnnotation(annotation)}
+                          onMouseEnter={() =>
+                            onAnnotationMouseEnter(sameAnnotation ? sameAnnotation.id : annotation.id)
+                          }
                         >
                           <ArrowForwardIcon fontSize="small" />
                         </IconButton>

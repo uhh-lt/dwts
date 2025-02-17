@@ -4,7 +4,6 @@ import { Box, Button, CircularProgress, IconButton, Stack } from "@mui/material"
 import { useState } from "react";
 import MemoHooks from "../../../api/MemoHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
-import SdocHooks from "../../../api/SdocHooks.ts";
 import { useAuth } from "../../../auth/useAuth.ts";
 import MemoBlockEditor from "../../Memo/MemoBlockEditor.tsx";
 import MemoCard from "../../Memo/MemoCard.tsx";
@@ -44,7 +43,7 @@ function DocumentMemos({ sdocId }: DocumentMemosProps) {
 
 function DocumentMemoList({ sdocId, onClick }: { sdocId: number; onClick: (memoId: number) => void }) {
   const { user } = useAuth();
-  const memos = SdocHooks.useGetMemos(sdocId);
+  const memos = MemoHooks.useGetObjectMemos(AttachedObjectType.SOURCE_DOCUMENT, sdocId);
 
   // create memo
   const { mutate: createMemo, isPending } = MemoHooks.useCreateMemo();

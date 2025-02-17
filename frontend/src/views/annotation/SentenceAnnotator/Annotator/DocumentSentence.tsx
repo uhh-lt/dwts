@@ -1,7 +1,8 @@
 import { ListItemButton, Stack, StackProps, Tooltip } from "@mui/material";
 import { useMemo } from "react";
+import { CodeMap } from "../../../../api/CodeHooks.ts";
 import { CodeRead } from "../../../../api/openapi/models/CodeRead.ts";
-import { SentenceAnnotationReadResolved } from "../../../../api/openapi/models/SentenceAnnotationReadResolved.ts";
+import { SentenceAnnotationRead } from "../../../../api/openapi/models/SentenceAnnotationRead.ts";
 import ColorUtils from "../../../../utils/ColorUtils.ts";
 
 interface DocumentSentenceProps {
@@ -12,13 +13,16 @@ interface DocumentSentenceProps {
   hoveredSentAnnoId: number | null;
   hoveredCodeId: number | undefined;
   sentence: string;
-  sentenceAnnotations: SentenceAnnotationReadResolved[];
+  sentenceAnnotations: SentenceAnnotationRead[];
   onAnnotationClick: (event: React.MouseEvent<HTMLDivElement, MouseEvent>, sentAnnoId: number) => void;
   onAnnotationMouseEnter: (sentAnnoId: number) => void;
   onAnnotationMouseLeave: (sentAnnoId: number) => void;
+  onSentenceMouseDown?: (event: React.MouseEvent<HTMLDivElement, MouseEvent>, sentenceId: number) => void;
+  onSentenceMouseEnter?: (event: React.MouseEvent<HTMLDivElement, MouseEvent>, sentenceId: number) => void;
   numPositions: number;
   numSentenceDigits: number;
   annotationPositions: Record<number, number>;
+  codeMap: CodeMap;
 }
 
 function DocumentSentence({
@@ -33,50 +37,51 @@ function DocumentSentence({
   onAnnotationClick,
   onAnnotationMouseEnter,
   onAnnotationMouseLeave,
+  onSentenceMouseEnter,
+  onSentenceMouseDown,
   numPositions,
   annotationPositions,
   numSentenceDigits,
+  codeMap,
   ...props
 }: DocumentSentenceProps & StackProps) {
-  const { codeId2CodeMap, sentAnnoId2sentAnnoMap } = useMemo(() => {
-    const codeId2CodeMap = sentenceAnnotations?.reduce(
-      (acc, anno) => {
-        acc[anno.code.id] = anno.code;
-        return acc;
-      },
-      {} as Record<number, CodeRead>,
-    );
-    const sentAnnoId2sentAnnoMap = sentenceAnnotations?.reduce(
-      (acc, anno) => {
-        acc[anno.id] = anno;
-        return acc;
-      },
-      {} as Record<number, SentenceAnnotationReadResolved>,
-    );
-    return { codeId2CodeMap, sentAnnoId2sentAnnoMap };
-  }, [sentenceAnnotations]);
+  const sentAnnoMap = useMemo(
+    () =>
+      sentenceAnnotations?.reduce(
+        (acc, anno) => {
+          acc[anno.id] = anno;
+          return acc;
+        },
+        {} as Record<number, SentenceAnnotationRead>,
+      ),
+    [sentenceAnnotations],
+  );
+  const sentAnnoCodeIds = useMemo(() => sentenceAnnotations.map((anno) => anno.code_id), [sentenceAnnotations]);
 
   const highlightedColor = useMemo(() => {
     if (isSelected) {
       return selectedCode?.color || "rgb(255, 0, 0)";
     }
     if (hoveredSentAnnoId) {
-      return sentAnnoId2sentAnnoMap[hoveredSentAnnoId]?.code.color;
+      const sa = sentAnnoMap[hoveredSentAnnoId];
+      return codeMap[sa?.code_id]?.color;
     }
-    if (hoveredCodeId) {
-      return codeId2CodeMap[hoveredCodeId]?.color;
+    if (hoveredCodeId && sentAnnoCodeIds.includes(hoveredCodeId)) {
+      return codeMap[hoveredCodeId]?.color;
     }
-    if (selectedSentAnnoId && sentAnnoId2sentAnnoMap[selectedSentAnnoId]) {
-      return sentAnnoId2sentAnnoMap[selectedSentAnnoId].code.color;
+    if (selectedSentAnnoId && sentAnnoMap[selectedSentAnnoId]) {
+      const sa = sentAnnoMap[selectedSentAnnoId];
+      return codeMap[sa?.code_id]?.color;
     }
   }, [
-    codeId2CodeMap,
-    hoveredCodeId,
-    hoveredSentAnnoId,
-    selectedSentAnnoId,
     isSelected,
-    selectedCode,
-    sentAnnoId2sentAnnoMap,
+    hoveredSentAnnoId,
+    hoveredCodeId,
+    sentAnnoCodeIds,
+    selectedSentAnnoId,
+    sentAnnoMap,
+    selectedCode?.color,
+    codeMap,
   ]);
 
   return (
@@ -106,6 +111,8 @@ function DocumentSentence({
         }}
       />
       <ListItemButton
+        onMouseDown={onSentenceMouseDown ? (event) => onSentenceMouseDown(event, sentenceId) : undefined}
+        onMouseEnter={onSentenceMouseEnter ? (event) => onSentenceMouseEnter(event, sentenceId) : undefined}
         style={{ ...props.style, flexGrow: 1 }}
         data-sent-id={sentenceId}
         onFocus={(event) => {
@@ -143,11 +150,12 @@ function DocumentSentence({
         const annoId = annotationPositions[annoPosition] || null;
         const key = `${sentenceId}-${annoPosition}`;
         if (annoId) {
-          const annotation = sentAnnoId2sentAnnoMap[annoId];
+          const annotation = sentAnnoMap[annoId];
+          const code = codeMap[annotation.code_id];
           const isStartOfAnnotation = sentenceId === annotation.sentence_id_start;
           const isEndOfAnnotation = sentenceId === annotation.sentence_id_end;
           return (
-            <Tooltip key={key} title={annotation.code.name} placement="top">
+            <Tooltip key={key} title={code.name} placement="top">
               <div
                 onClick={(event) => onAnnotationClick(event, annoId)}
                 onMouseEnter={() => onAnnotationMouseEnter(annoId)}
@@ -165,9 +173,9 @@ function DocumentSentence({
                     height: "100%",
                     borderTopRightRadius: isStartOfAnnotation ? "8px" : undefined,
                     borderBottomRightRadius: isEndOfAnnotation ? "8px" : undefined,
-                    borderTop: isStartOfAnnotation ? `4px solid ${annotation.code.color}` : undefined,
-                    borderBottom: isEndOfAnnotation ? `4px solid ${annotation.code.color}` : undefined,
-                    borderRight: `4px solid ${annotation.code.color}`,
+                    borderTop: isStartOfAnnotation ? `4px solid ${code.color}` : undefined,
+                    borderBottom: isEndOfAnnotation ? `4px solid ${code.color}` : undefined,
+                    borderRight: `4px solid ${code.color}`,
                     paddingLeft: "8px",
                   }}
                 />

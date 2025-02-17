@@ -10,7 +10,7 @@ import {
   useMaterialReactTable,
 } from "material-react-table";
 import React, { useRef } from "react";
-import AnalysisHooks from "../../../api/AnalysisHooks.ts";
+import AnalysisHooks from "../../../api/CodeFrequencyHooks.ts";
 import CodeHooks from "../../../api/CodeHooks.ts";
 import { CodeOccurrence } from "../../../api/openapi/models/CodeOccurrence.ts";
 import SdocRenderer from "../../../components/SourceDocument/SdocRenderer.tsx";

@@ -5,7 +5,6 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, St
 import { useMemo } from "react";
 import { SubmitErrorHandler, SubmitHandler, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
-import ProjectHooks from "../../api/ProjectHooks.ts";
 import TagHooks from "../../api/TagHooks.ts";
 import { DocumentTagCreate } from "../../api/openapi/models/DocumentTagCreate.ts";
 import { DocumentTagRead } from "../../api/openapi/models/DocumentTagRead.ts";
@@ -30,7 +29,7 @@ function TagCreateDialog() {
   const projectId = parseInt((useParams() as { projectId: string }).projectId);
 
   // global state (redux)
-  const tags = ProjectHooks.useGetAllTags(projectId);
+  const tags = TagHooks.useGetAllTags();
 
   // global client state (redux)
   const isTagCreateDialogOpen = useAppSelector((state) => state.dialog.isTagCreateDialogOpen);

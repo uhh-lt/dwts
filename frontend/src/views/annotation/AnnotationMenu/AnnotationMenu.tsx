@@ -17,9 +17,9 @@ import {
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import CodeHooks from "../../../api/CodeHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
-import { BBoxAnnotationReadResolved } from "../../../api/openapi/models/BBoxAnnotationReadResolved.ts";
+import { BBoxAnnotationRead } from "../../../api/openapi/models/BBoxAnnotationRead.ts";
 import { CodeRead } from "../../../api/openapi/models/CodeRead.ts";
-import { SentenceAnnotationReadResolved } from "../../../api/openapi/models/SentenceAnnotationReadResolved.ts";
+import { SentenceAnnotationRead } from "../../../api/openapi/models/SentenceAnnotationRead.ts";
 import { CRUDDialogActions } from "../../../components/dialogSlice.ts";
 import MemoButton from "../../../components/Memo/MemoButton.tsx";
 import { useAppDispatch } from "../../../plugins/ReduxHooks.ts";
@@ -166,7 +166,7 @@ const AnnotationMenu = forwardRef<CodeSelectorHandle, CodeSelectorProps>(
             {annotationsToEdit.map((annotation) => (
               <CodeSelectorListItem
                 key={annotation.id}
-                codeId={annotation.code.id}
+                codeId={annotation.code_id}
                 annotation={annotation}
                 handleDelete={handleDelete}
                 handleEdit={handleEdit}
@@ -242,12 +242,12 @@ interface CodeSelectorListItemProps {
   handleEdit: (annotationToEdit: Annotation, newCode: CodeRead) => void;
 }
 
-const isBboxAnnotation = (annotation: Annotation): annotation is BBoxAnnotationReadResolved => {
-  return (annotation as BBoxAnnotationReadResolved).x_min !== undefined;
+const isBboxAnnotation = (annotation: Annotation): annotation is BBoxAnnotationRead => {
+  return (annotation as BBoxAnnotationRead).x_min !== undefined;
 };
 
-const isSentenceAnnotation = (annotation: Annotation): annotation is SentenceAnnotationReadResolved => {
-  return (annotation as SentenceAnnotationReadResolved).sentence_id_start !== undefined;
+const isSentenceAnnotation = (annotation: Annotation): annotation is SentenceAnnotationRead => {
+  return (annotation as SentenceAnnotationRead).sentence_id_start !== undefined;
 };
 
 function CodeSelectorListItem({

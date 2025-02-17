@@ -1,15 +1,14 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from api.dependencies import get_current_user, get_db_session, resolve_code_param
+from api.dependencies import get_current_user, get_db_session
 from app.core.authorization.authz_user import AuthzUser
 from app.core.data.crud import Crud
 from app.core.data.crud.span_group import crud_span_group
 from app.core.data.dto.span_annotation import (
     SpanAnnotationRead,
-    SpanAnnotationReadResolved,
 )
 from app.core.data.dto.span_group import (
     SpanGroupCreate,
@@ -95,21 +94,17 @@ def delete_by_id(
 
 @router.get(
     "/{span_group_id}/span_annotations",
-    response_model=List[Union[SpanAnnotationRead, SpanAnnotationReadResolved]],
+    response_model=List[SpanAnnotationRead],
     summary="Returns all SpanAnnotations in the SpanGroup with the given ID if it exists",
 )
 def get_all_annotations(
     *,
     db: Session = Depends(get_db_session),
     span_group_id: int,
-    resolve_code: bool = Depends(resolve_code_param),
     authz_user: AuthzUser = Depends(),
-) -> List[SpanAnnotationRead] | List[SpanAnnotationReadResolved]:
+) -> List[SpanAnnotationRead]:
     authz_user.assert_in_same_project_as(Crud.SPAN_GROUP, span_group_id)
 
     span_group_db_obj = crud_span_group.read(db=db, id=span_group_id)
     spans = span_group_db_obj.span_annotations
-    if resolve_code:
-        return [SpanAnnotationReadResolved.model_validate(span) for span in spans]
-    else:
-        return [SpanAnnotationRead.model_validate(span) for span in spans]
+    return [SpanAnnotationRead.model_validate(span) for span in spans]

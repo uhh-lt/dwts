@@ -4,9 +4,8 @@ import { Box, Button, CircularProgress, DialogActions, DialogContent, Tab, Typog
 import { useMemo, useState } from "react";
 import LLMHooks from "../../../../api/LLMHooks.ts";
 import { AnnotationLLMJobResult } from "../../../../api/openapi/models/AnnotationLLMJobResult.ts";
-import { CodeRead } from "../../../../api/openapi/models/CodeRead.ts";
 import { SpanAnnotationCreate } from "../../../../api/openapi/models/SpanAnnotationCreate.ts";
-import { SpanAnnotationReadResolved } from "../../../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../../../api/openapi/models/SpanAnnotationRead.ts";
 import SpanAnnotationHooks from "../../../../api/SpanAnnotationHooks.ts";
 import { useAppDispatch, useAppSelector } from "../../../../plugins/ReduxHooks.ts";
 import { CRUDDialogActions } from "../../../dialogSlice.ts";
@@ -38,19 +37,14 @@ function AnnotationResultStep() {
 
 function AnnotationResultStepContent({ jobResult }: { jobResult: AnnotationLLMJobResult }) {
   // we extract the codes from the job
-  const codesForSelection = useMemo(() => {
-    const annotationResults = jobResult.results;
-    const annotations = annotationResults.reduce<SpanAnnotationReadResolved[]>((acc, r) => {
-      acc.push(...r.suggested_annotations);
+  const codeIdsForSelection = useMemo(() => {
+    const codeIds = jobResult.results.reduce<Set<number>>((acc, r) => {
+      r.suggested_annotations.forEach((annotation) => {
+        acc.add(annotation.code_id);
+      });
       return acc;
-    }, []);
-
-    return Object.values(
-      annotations.reduce<Record<number, CodeRead>>((acc, a) => {
-        acc[a.code.id] = a.code;
-        return acc;
-      }, {}),
-    );
+    }, new Set<number>());
+    return Array.from(codeIds);
   }, [jobResult]);
 
   // local state to manage tabs
@@ -60,13 +54,13 @@ function AnnotationResultStepContent({ jobResult }: { jobResult: AnnotationLLMJo
   };
 
   // local state to manage annotations
-  const [annotations, setAnnotations] = useState<Record<number, SpanAnnotationReadResolved[]>>(() =>
-    jobResult.results.reduce<Record<number, SpanAnnotationReadResolved[]>>((acc, r) => {
+  const [annotations, setAnnotations] = useState<Record<number, SpanAnnotationRead[]>>(() =>
+    jobResult.results.reduce<Record<number, SpanAnnotationRead[]>>((acc, r) => {
       acc[r.sdoc_id] = r.suggested_annotations;
       return acc;
     }, {}),
   );
-  const handleChangeAnnotations = (sdocId: number) => (annotations: SpanAnnotationReadResolved[]) => {
+  const handleChangeAnnotations = (sdocId: number) => (annotations: SpanAnnotationRead[]) => {
     setAnnotations((prev) => {
       return {
         ...prev,
@@ -92,7 +86,7 @@ function AnnotationResultStepContent({ jobResult }: { jobResult: AnnotationLLMJo
           for (const annotation of sdocAnnos) {
             acc.push({
               sdoc_id: sdocIdInt,
-              code_id: annotation.code.id,
+              code_id: annotation.code_id,
               begin: annotation.begin,
               end: annotation.end,
               begin_token: annotation.begin_token,
@@ -139,7 +133,7 @@ function AnnotationResultStepContent({ jobResult }: { jobResult: AnnotationLLMJo
               <TabPanel key={sdocId} value={sdocIdStr} sx={{ px: 0, py: 1 }}>
                 <TextAnnotationValidator
                   sdocId={sdocId}
-                  codesForSelection={codesForSelection}
+                  codeIdsForSelection={codeIdsForSelection}
                   annotations={annotations}
                   handleChangeAnnotations={handleChangeAnnotations(sdocId)}
                 />

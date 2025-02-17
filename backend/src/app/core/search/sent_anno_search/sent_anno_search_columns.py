@@ -106,8 +106,15 @@ class SentAnnoColumns(str, AbstractColumns):
                         label=SentAnnoColumns.DOCUMENT_TAG_ID_LIST.value,
                     )
                 )
-                query_builder._join_subquery(SentenceAnnotationORM.annotation_document)
-                query_builder._join_subquery(AnnotationDocumentORM.source_document)
+                query_builder._join_subquery(
+                    AnnotationDocumentORM,
+                    AnnotationDocumentORM.id
+                    == SentenceAnnotationORM.annotation_document_id,
+                )
+                query_builder._join_subquery(
+                    SourceDocumentORM,
+                    SourceDocumentORM.id == AnnotationDocumentORM.source_document_id,
+                )
                 query_builder._join_subquery(
                     SourceDocumentORM.document_tags, isouter=True
                 )

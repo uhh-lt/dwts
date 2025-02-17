@@ -1,7 +1,7 @@
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 import SentenceAnnotationHooks from "../../api/SentenceAnnotationHooks.ts";
-import { SentenceAnnotationReadResolved } from "../../api/openapi/models/SentenceAnnotationReadResolved.ts";
+import { SentenceAnnotationRead } from "../../api/openapi/models/SentenceAnnotationRead.ts";
 import { useAppDispatch } from "../../plugins/ReduxHooks.ts";
 import { AnnoActions } from "../../views/annotation/annoSlice.ts";
 import CodeRenderer from "../Code/CodeRenderer.tsx";
@@ -20,7 +20,7 @@ interface SentenceAnnotationRendererSharedProps {
 }
 
 interface SentenceAnnotationRendererProps {
-  sentenceAnnotation: number | SentenceAnnotationReadResolved;
+  sentenceAnnotation: number | SentenceAnnotationRead;
 }
 
 function SentenceAnnotationRenderer({
@@ -74,7 +74,7 @@ function SentenceAnnotationRendererWithData({
   showSdocProjectMetadataId,
   sdocRendererProps,
   link,
-}: { sentenceAnnotation: SentenceAnnotationReadResolved } & SentenceAnnotationRendererSharedProps) {
+}: { sentenceAnnotation: SentenceAnnotationRead } & SentenceAnnotationRendererSharedProps) {
   const dispatch = useAppDispatch();
   const handleClick = () => {
     dispatch(AnnoActions.setSelectedAnnotationId(sentenceAnnotation.id));
@@ -87,7 +87,7 @@ function SentenceAnnotationRendererWithData({
       {showSdocProjectMetadataId && (
         <SdocMetadataRenderer sdocId={sentenceAnnotation.sdoc_id} projectMetadataId={showSdocProjectMetadataId} />
       )}
-      {showCode && <CodeRenderer code={sentenceAnnotation.code} />}
+      {showCode && <CodeRenderer code={sentenceAnnotation.code_id} />}
       {showCode && showSpanText && ": "}
       {showSpanText &&
         `This annotation spans sentences ${sentenceAnnotation.sentence_id_start + 1} to ${

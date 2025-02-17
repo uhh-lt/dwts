@@ -5,7 +5,6 @@
 import type { SourceDocumentMetadataBulkUpdate } from "../models/SourceDocumentMetadataBulkUpdate";
 import type { SourceDocumentMetadataCreate } from "../models/SourceDocumentMetadataCreate";
 import type { SourceDocumentMetadataRead } from "../models/SourceDocumentMetadataRead";
-import type { SourceDocumentMetadataReadResolved } from "../models/SourceDocumentMetadataReadResolved";
 import type { SourceDocumentMetadataUpdate } from "../models/SourceDocumentMetadataUpdate";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
@@ -33,10 +32,10 @@ export class SdocMetadataService {
   }
   /**
    * Returns the Metadata with the given ID.
-   * @returns SourceDocumentMetadataReadResolved Successful Response
+   * @returns SourceDocumentMetadataRead Successful Response
    * @throws ApiError
    */
-  public static getById({ metadataId }: { metadataId: number }): CancelablePromise<SourceDocumentMetadataReadResolved> {
+  public static getById({ metadataId }: { metadataId: number }): CancelablePromise<SourceDocumentMetadataRead> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/sdocmeta/{metadata_id}",

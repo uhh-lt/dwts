@@ -15,8 +15,9 @@ import {
   UseAutocompleteProps,
 } from "@mui/material";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
+import CodeHooks from "../../../../api/CodeHooks.ts";
 import { CodeRead } from "../../../../api/openapi/models/CodeRead.ts";
-import { SpanAnnotationReadResolved } from "../../../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../../../api/openapi/models/SpanAnnotationRead.ts";
 
 interface ICodeFilter extends CodeRead {
   title: string;
@@ -27,12 +28,12 @@ const filter = createFilterOptions<ICodeFilter>();
 export interface TextAnnotationValidationMenuProps {
   codesForSelection: CodeRead[];
   onClose?: (reason?: "backdropClick" | "escapeKeyDown") => void;
-  onEdit: (annotationToEdit: SpanAnnotationReadResolved, newCode: CodeRead) => void;
-  onDelete: (annotationToDelete: SpanAnnotationReadResolved) => void;
+  onEdit: (annotationToEdit: SpanAnnotationRead, newCode: CodeRead) => void;
+  onDelete: (annotationToDelete: SpanAnnotationRead) => void;
 }
 
 export interface TextAnnotationValidationMenuHandle {
-  open: (position: PopoverPosition, annotations?: SpanAnnotationReadResolved[] | undefined) => void;
+  open: (position: PopoverPosition, annotations?: SpanAnnotationRead[] | undefined) => void;
 }
 
 const TextAnnotationValidationMenu = forwardRef<TextAnnotationValidationMenuHandle, TextAnnotationValidationMenuProps>(
@@ -42,8 +43,8 @@ const TextAnnotationValidationMenu = forwardRef<TextAnnotationValidationMenuHand
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const [showCodeSelection, setShowCodeSelection] = useState(false);
     const [isAutoCompleteOpen, setIsAutoCompleteOpen] = useState(false);
-    const [annotationsToEdit, setAnnotationsToEdit] = useState<SpanAnnotationReadResolved[] | undefined>(undefined);
-    const [editingAnnotation, setEditingAnnotation] = useState<SpanAnnotationReadResolved | undefined>(undefined);
+    const [annotationsToEdit, setAnnotationsToEdit] = useState<SpanAnnotationRead[] | undefined>(undefined);
+    const [editingAnnotation, setEditingAnnotation] = useState<SpanAnnotationRead | undefined>(undefined);
     const [autoCompleteValue, setAutoCompleteValue] = useState<ICodeFilter | null>(null);
 
     // computed
@@ -62,10 +63,7 @@ const TextAnnotationValidationMenu = forwardRef<TextAnnotationValidationMenuHand
     }));
 
     // methods
-    const openCodeSelector = (
-      position: PopoverPosition,
-      annotations: SpanAnnotationReadResolved[] | undefined = undefined,
-    ) => {
+    const openCodeSelector = (position: PopoverPosition, annotations: SpanAnnotationRead[] | undefined = undefined) => {
       setEditingAnnotation(undefined);
       setAnnotationsToEdit(annotations);
       setShowCodeSelection(annotations === undefined);
@@ -106,13 +104,13 @@ const TextAnnotationValidationMenu = forwardRef<TextAnnotationValidationMenuHand
       closeCodeSelector();
     };
 
-    const handleEdit = (annotationToEdit: SpanAnnotationReadResolved, code: CodeRead) => {
+    const handleEdit = (annotationToEdit: SpanAnnotationRead, code: CodeRead) => {
       setEditingAnnotation(annotationToEdit);
       setAutoCompleteValue({ ...code, title: code.name });
       setShowCodeSelection(true);
     };
 
-    const handleDelete = (annotation: SpanAnnotationReadResolved) => {
+    const handleDelete = (annotation: SpanAnnotationRead) => {
       onDelete(annotation);
       closeCodeSelector();
     };
@@ -137,7 +135,6 @@ const TextAnnotationValidationMenu = forwardRef<TextAnnotationValidationMenuHand
             {annotationsToEdit.map((annotation) => (
               <AnnotationMenuListItem
                 key={annotation.id}
-                code={annotation.code}
                 annotation={annotation}
                 handleDelete={handleDelete}
                 handleEdit={handleEdit}
@@ -185,27 +182,30 @@ const TextAnnotationValidationMenu = forwardRef<TextAnnotationValidationMenuHand
 export default TextAnnotationValidationMenu;
 
 interface AnnotationMenuListItemProps {
-  code: CodeRead;
-  annotation: SpanAnnotationReadResolved;
-  handleDelete: (annotationToDelete: SpanAnnotationReadResolved) => void;
-  handleEdit: (annotationToEdit: SpanAnnotationReadResolved, newCode: CodeRead) => void;
+  annotation: SpanAnnotationRead;
+  handleDelete: (annotationToDelete: SpanAnnotationRead) => void;
+  handleEdit: (annotationToEdit: SpanAnnotationRead, newCode: CodeRead) => void;
 }
 
-function AnnotationMenuListItem({ code, annotation, handleEdit, handleDelete }: AnnotationMenuListItemProps) {
-  return (
-    <ListItem>
-      <Box style={{ width: 20, height: 20, backgroundColor: code.color, marginRight: 8 }} />
-      <ListItemText primary={code.name} />
-      <Tooltip title="Delete">
-        <IconButton onClick={() => handleDelete(annotation)}>
-          <DeleteIcon />
-        </IconButton>
-      </Tooltip>
-      <Tooltip title="Edit">
-        <IconButton edge="end" onClick={() => handleEdit(annotation, code)}>
-          <EditIcon />
-        </IconButton>
-      </Tooltip>
-    </ListItem>
-  );
+function AnnotationMenuListItem({ annotation, handleEdit, handleDelete }: AnnotationMenuListItemProps) {
+  const code = CodeHooks.useGetCode(annotation.code_id);
+  if (code.isSuccess) {
+    return (
+      <ListItem>
+        <Box style={{ width: 20, height: 20, backgroundColor: code.data.color, marginRight: 8 }} />
+        <ListItemText primary={code.data.name} />
+        <Tooltip title="Delete">
+          <IconButton onClick={() => handleDelete(annotation)}>
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Edit">
+          <IconButton edge="end" onClick={() => handleEdit(annotation, code.data)}>
+            <EditIcon />
+          </IconButton>
+        </Tooltip>
+      </ListItem>
+    );
+  }
+  return null;
 }

@@ -7,10 +7,10 @@ import {
   useMaterialReactTable,
 } from "material-react-table";
 import { useMemo } from "react";
-import ProjectHooks from "../../api/ProjectHooks.ts";
 import { CodeRead } from "../../api/openapi/models/CodeRead.ts";
 
 import SquareIcon from "@mui/icons-material/Square";
+import CodeHooks from "../../api/CodeHooks.ts";
 
 const createDataTree = (dataset: CodeRead[]): CodeTableRow[] => {
   const hashTable: Record<number, CodeTableRow> = Object.create(null);
@@ -69,7 +69,6 @@ export interface CodeTableProps {
 }
 
 function CodeTable({
-  projectId,
   enableMultiRowSelection = true,
   rowSelectionModel,
   onRowSelectionChange,
@@ -78,7 +77,7 @@ function CodeTable({
   renderBottomToolbarCustomActions,
 }: CodeTableProps) {
   // global server state
-  const projectCodes = ProjectHooks.useGetAllCodes(projectId);
+  const projectCodes = CodeHooks.useGetEnabledCodes();
 
   // computed
   const { projectCodesMap, projectCodesRows } = useMemo(() => {

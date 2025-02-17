@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { BackgroundJobStatus } from "./BackgroundJobStatus";
-import type { SentenceAnnotationReadResolved } from "./SentenceAnnotationReadResolved";
+import type { SentenceAnnotationRead } from "./SentenceAnnotationRead";
 export type SentenceAnnotationResult = {
   /**
    * Status of the Result
@@ -20,5 +20,5 @@ export type SentenceAnnotationResult = {
   /**
    * Suggested annotations
    */
-  suggested_annotations: Array<SentenceAnnotationReadResolved>;
+  suggested_annotations: Array<SentenceAnnotationRead>;
 };

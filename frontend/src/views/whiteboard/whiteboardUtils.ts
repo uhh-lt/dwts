@@ -1,13 +1,12 @@
 import { DefaultEdgeOptions, Edge, MarkerType, Node, XYPosition, getRectOfNodes } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
 import { BBoxAnnotationRead } from "../../api/openapi/models/BBoxAnnotationRead.ts";
-import { BBoxAnnotationReadResolved } from "../../api/openapi/models/BBoxAnnotationReadResolved.ts";
 import { CodeRead } from "../../api/openapi/models/CodeRead.ts";
 import { DocumentTagRead } from "../../api/openapi/models/DocumentTagRead.ts";
 import { MemoRead } from "../../api/openapi/models/MemoRead.ts";
-import { SentenceAnnotationReadResolved } from "../../api/openapi/models/SentenceAnnotationReadResolved.ts";
+import { SentenceAnnotationRead } from "../../api/openapi/models/SentenceAnnotationRead.ts";
 import { SourceDocumentRead } from "../../api/openapi/models/SourceDocumentRead.ts";
-import { SpanAnnotationReadResolved } from "../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../api/openapi/models/SpanAnnotationRead.ts";
 import { theme } from "../../plugins/ReactMUI.ts";
 import { BackgroundColorData } from "./types/base/BackgroundColorData.ts";
 import { BorderNodeData } from "./types/customnodes/BorderNodeData.ts";
@@ -225,7 +224,7 @@ export const createSpanAnnotationNodes = ({
   spanAnnotations,
   position,
 }: {
-  spanAnnotations: number[] | SpanAnnotationReadResolved[];
+  spanAnnotations: number[] | SpanAnnotationRead[];
   position?: XYPosition;
 }): Node<SpanAnnotationNodeData>[] => {
   const spanAnnotationIds = spanAnnotations.map((span) => (typeof span === "number" ? span : span.id));
@@ -241,7 +240,7 @@ export const createSentenceAnnotationNodes = ({
   sentenceAnnotations,
   position,
 }: {
-  sentenceAnnotations: number[] | SentenceAnnotationReadResolved[];
+  sentenceAnnotations: number[] | SentenceAnnotationRead[];
   position?: XYPosition;
 }): Node<SentenceAnnotationNodeData>[] => {
   const sentenceAnnotationIds = sentenceAnnotations.map((span) => (typeof span === "number" ? span : span.id));
@@ -257,7 +256,7 @@ export const createBBoxAnnotationNodes = ({
   bboxAnnotations,
   position,
 }: {
-  bboxAnnotations: number[] | BBoxAnnotationReadResolved[] | BBoxAnnotationRead[];
+  bboxAnnotations: number[] | BBoxAnnotationRead[] | BBoxAnnotationRead[];
   position?: XYPosition;
 }): Node<BBoxAnnotationNodeData>[] => {
   const bboxAnnotationIds = bboxAnnotations.map((bbox) => (typeof bbox === "number" ? bbox : bbox.id));

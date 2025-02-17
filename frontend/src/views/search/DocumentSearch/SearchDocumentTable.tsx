@@ -46,9 +46,10 @@ const flatMapData = (page: PaginatedElasticSearchDocumentHits) => page.hits;
 
 interface DocumentTableProps {
   projectId: number;
+  onSearchResultsChange?: (sdocIds: number[]) => void;
 }
 
-function SearchDocumentTable({ projectId }: DocumentTableProps) {
+function SearchDocumentTable({ projectId, onSearchResultsChange }: DocumentTableProps) {
   const navigate = useNavigate();
 
   // global client state (react router)
@@ -188,6 +189,10 @@ function SearchDocumentTable({ projectId }: DocumentTableProps) {
     data,
     flatMapData,
   });
+
+  useEffect(() => {
+    onSearchResultsChange?.(flatData.map((sdoc) => sdoc.document_id));
+  }, [onSearchResultsChange, flatData]);
 
   // table
   const table = useMaterialReactTable<ElasticSearchDocumentHit>({

@@ -28,7 +28,6 @@ export const USER_GUIDE_ROUTE_MAP = {
   },
   logbook: { route: "logbook", description: "This page provides tools to create, edit and manage your logs" },
   user: { route: "user-profile", description: "This page provides tools to manage and view your profile" },
-  feedback: { route: "feedback", description: "This page displays all feedbacks submitted by the user" },
   about: {
     route: "project-description",
     description: "This page provides details about the Discourse Analysis project and toolsuite",

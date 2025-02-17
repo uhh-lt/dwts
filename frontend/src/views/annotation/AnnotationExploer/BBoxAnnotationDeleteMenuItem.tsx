@@ -3,7 +3,6 @@ import { ListItemIcon, ListItemText, MenuItem, MenuItemProps } from "@mui/materi
 import React from "react";
 import BboxAnnotationHooks from "../../../api/BboxAnnotationHooks.ts";
 import ConfirmationAPI from "../../../components/ConfirmationDialog/ConfirmationAPI.ts";
-import { useOpenSnackbar } from "../../../components/SnackbarDialog/useOpenSnackbar.ts";
 
 interface BBoxAnnotationDeleteMenuItemProps {
   annotationId: number;
@@ -15,10 +14,7 @@ function BBoxAnnotationDeleteMenuItem({
   onClick,
   ...props
 }: BBoxAnnotationDeleteMenuItemProps & MenuItemProps) {
-  const deleteMutation = BboxAnnotationHooks.useDeleteBBox();
-
-  // snackbar
-  const openSnackbar = useOpenSnackbar();
+  const deleteMutation = BboxAnnotationHooks.useDeleteBBoxAnnotation();
 
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -26,17 +22,7 @@ function BBoxAnnotationDeleteMenuItem({
     ConfirmationAPI.openConfirmationDialog({
       text: `Do you really want to remove the BBoxAnnotation ${annotationId}? You can reassign it later!`,
       onAccept: () => {
-        deleteMutation.mutate(
-          { bboxId: annotationId },
-          {
-            onSuccess: (bboxAnnotation) => {
-              openSnackbar({
-                text: `Deleted BBox Annotation ${bboxAnnotation.id}`,
-                severity: "success",
-              });
-            },
-          },
-        );
+        deleteMutation.mutate({ bboxToDelete: annotationId });
       },
     });
 

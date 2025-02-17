@@ -19,10 +19,6 @@ from app.core.data.dto.crawler_job import (
     CrawlerJobUpdate,
 )
 from app.core.data.dto.export_job import ExportJobCreate, ExportJobRead, ExportJobUpdate
-from app.core.data.dto.feedback import (
-    FeedbackCreateIntern,
-    FeedbackRead,
-)
 from app.core.data.dto.import_job import ImportJobCreate, ImportJobRead, ImportJobUpdate
 from app.core.data.dto.llm_job import LLMJobCreate, LLMJobRead, LLMJobUpdate
 from app.core.data.dto.trainer_job import (
@@ -439,43 +435,6 @@ class RedisService(metaclass=SingletonMeta):
             return None
         else:
             return sorted(all_cota_jobs_by_cota_id, key=lambda x: x.updated)[-1]
-
-    def store_feedback(self, feedback: FeedbackCreateIntern) -> FeedbackRead:
-        client = self._get_client("feedback")
-        key = self._generate_random_key()
-        fb = FeedbackRead(
-            id=key,
-            user_content=feedback.user_content,
-            user_id=feedback.user_id,
-            created=datetime.now(),
-        )
-        if client.set(key.encode("utf-8"), fb.model_dump_json()) != 1:
-            msg = "Cannot store Feedback!"
-            logger.error(msg)
-            raise RuntimeError(msg)
-
-        logger.debug("Successfully stored Feedback!")
-
-        return fb
-
-    def load_feedback(self, key: str) -> FeedbackRead:
-        client = self._get_client("feedback")
-        fb = client.get(key.encode("utf-8"))
-        if fb is None:
-            msg = f"Feedback with ID {key} does not exist!"
-            logger.error(msg)
-            raise KeyError(msg)
-
-        logger.debug(f"Successfully loaded Feedback {key}")
-        return FeedbackRead.model_validate_json(fb)
-
-    def get_all_feedbacks(self) -> List[FeedbackRead]:
-        client = self._get_client("feedback")
-        return [self.load_feedback(str(key, "utf-8")) for key in client.keys()]
-
-    def get_all_feedbacks_of_user(self, user_id: int) -> List[FeedbackRead]:
-        fbs = self.get_all_feedbacks()
-        return [fb for fb in fbs if fb.user_id == user_id]
 
     def store_llm_job(self, llm_job: Union[LLMJobCreate, LLMJobRead]) -> LLMJobRead:
         client = self._get_client("llm")

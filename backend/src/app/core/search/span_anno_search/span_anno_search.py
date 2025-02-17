@@ -7,7 +7,6 @@ from app.core.data.dto.analysis import (
     SpanAnnotationSearchResult,
 )
 from app.core.data.dto.code import CodeRead
-from app.core.data.dto.document_tag import DocumentTagRead
 from app.core.data.dto.project_metadata import ProjectMetadataRead
 from app.core.data.dto.source_document import SourceDocumentRead
 from app.core.data.orm.annotation_document import AnnotationDocumentORM
@@ -97,10 +96,7 @@ def find_span_annotations(
                     user_id=row[2],
                     code=CodeRead.model_validate(row[3]),
                     sdoc=SourceDocumentRead.model_validate(sdoc_orm),
-                    tags=[
-                        DocumentTagRead.model_validate(tag)
-                        for tag in sdoc_orm.document_tags
-                    ],
+                    tag_ids=[tag.id for tag in sdoc_orm.document_tags],
                     memo=None,
                 )
             )

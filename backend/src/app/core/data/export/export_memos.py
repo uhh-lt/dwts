@@ -5,14 +5,11 @@ from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.core.data.crud.memo import crud_memo
-from app.core.data.dto.bbox_annotation import (
-    BBoxAnnotationReadResolved,
-)
 from app.core.data.dto.code import CodeRead
 from app.core.data.dto.document_tag import DocumentTagRead
 from app.core.data.dto.source_document import SourceDocumentRead
 from app.core.data.dto.span_annotation import (
-    SpanAnnotationReadResolved,
+    SpanAnnotationRead,
 )
 from app.core.data.dto.span_group import SpanGroupRead
 from app.core.data.dto.user import UserRead
@@ -85,15 +82,13 @@ def generate_export_df_for_memo(
         data["tag_name"] = [dto.name]
 
     elif isinstance(attached_to, SpanAnnotationORM):
-        span_read_resolved_dto = SpanAnnotationReadResolved.model_validate(attached_to)
+        span_read_resolved_dto = SpanAnnotationRead.model_validate(attached_to)
 
         data["span_anno_text"] = [span_read_resolved_dto.text]
-        data["code_name"] = [span_read_resolved_dto.code.name]
+        data["code_name"] = [attached_to.code.name]
 
     elif isinstance(attached_to, BBoxAnnotationORM):
-        bbox_read_resolved_dto = BBoxAnnotationReadResolved.model_validate(attached_to)
-
-        data["code_name"] = [bbox_read_resolved_dto.code.name]
+        data["code_name"] = [attached_to.code.name]
 
     elif isinstance(attached_to, ProjectORM):
         logger.warning("LogBook Export still todo!")

@@ -81,8 +81,15 @@ class BBoxColumns(str, AbstractColumns):
                         label=BBoxColumns.DOCUMENT_TAG_ID_LIST.value,
                     )
                 )
-                query_builder._join_subquery(BBoxAnnotationORM.annotation_document)
-                query_builder._join_subquery(AnnotationDocumentORM.source_document)
+                query_builder._join_subquery(
+                    AnnotationDocumentORM,
+                    AnnotationDocumentORM.id
+                    == BBoxAnnotationORM.annotation_document_id,
+                )
+                query_builder._join_subquery(
+                    SourceDocumentORM,
+                    SourceDocumentORM.id == AnnotationDocumentORM.source_document_id,
+                )
                 query_builder._join_subquery(
                     SourceDocumentORM.document_tags, isouter=True
                 )

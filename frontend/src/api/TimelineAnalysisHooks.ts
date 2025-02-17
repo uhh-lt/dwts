@@ -1,115 +1,92 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import queryClient from "../plugins/ReactQueryClient.ts";
+import { useAppSelector } from "../plugins/ReduxHooks.ts";
+import { RootState } from "../store/store.ts";
 import { QueryKey } from "./QueryKey.ts";
 import { TimelineAnalysisRead } from "./openapi/models/TimelineAnalysisRead.ts";
 import { TimelineAnalysisService } from "./openapi/services/TimelineAnalysisService.ts";
 
+// TIMELINE QUERIES
+
+export type TimelineMap = Record<number, TimelineAnalysisRead>;
+
+interface UseTimelineAnalysisQueryParams<T> {
+  select?: (data: TimelineMap) => T;
+  enabled?: boolean;
+}
+
+const useUserTimelinesQuery = <T = TimelineMap>({ select, enabled }: UseTimelineAnalysisQueryParams<T>) => {
+  const projectId = useAppSelector((state: RootState) => state.project.projectId);
+  return useQuery({
+    queryKey: [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, projectId],
+    queryFn: async () => {
+      const data = await TimelineAnalysisService.getByProjectAndUser({ projectId: projectId! });
+      return data.reduce((acc, timeline) => {
+        acc[timeline.id] = timeline;
+        return acc;
+      }, {} as TimelineMap);
+    },
+    staleTime: 1000 * 60 * 5,
+    select,
+    enabled: !!projectId && enabled,
+  });
+};
+
 const useGetTimelineAnalysis = (timelineAnalysisId: number | null | undefined) =>
-  useQuery<TimelineAnalysisRead, Error>({
-    queryKey: [QueryKey.TIMELINE_ANALYSIS, timelineAnalysisId],
-    queryFn: () => TimelineAnalysisService.getById({ timelineAnalysisId: timelineAnalysisId! }),
-    retry: false,
+  useUserTimelinesQuery({
+    select: (data) => data[timelineAnalysisId!],
     enabled: !!timelineAnalysisId,
   });
 
-const useGetUserTimelineAnalysis = (projectId: number | null | undefined) =>
-  useQuery<TimelineAnalysisRead[], Error>({
-    queryKey: [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, projectId],
-    queryFn: () => TimelineAnalysisService.getByProjectAndUser({ projectId: projectId! }),
-    retry: false,
-    enabled: !!projectId,
-  });
+const useGetUserTimelineAnalysisList = () => useUserTimelinesQuery({ select: (data) => Object.values(data) });
 
+// TIMELINE MUTATIONS
 const useCreateTimelineAnalysis = () =>
   useMutation({
     mutationFn: TimelineAnalysisService.create,
     onSuccess(data) {
-      if (data) {
-        queryClient.setQueryData<TimelineAnalysisRead[]>(
-          [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-          (prevTimelineAnalysis) => {
-            if (!prevTimelineAnalysis) return [data];
-            return [...prevTimelineAnalysis, data];
-          },
-        );
-        queryClient.invalidateQueries({ queryKey: [QueryKey.TIMELINE_ANALYSIS, data.id] });
-        queryClient.invalidateQueries({
-          queryKey: [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-        });
-      }
+      queryClient.setQueryData<TimelineMap>([QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id], (prev) =>
+        prev ? { ...prev, [data.id]: data } : { [data.id]: data },
+      );
     },
   });
 
 const useUpdateTimelineAnalysis = () =>
   useMutation({
     mutationFn: TimelineAnalysisService.updateById,
-    onSettled(data, _error, variables) {
-      if (data) {
-        // optimistic update of TIMELINE_ANALYSIS_PROJECT_USER
-        queryClient.setQueryData<TimelineAnalysisRead[]>(
-          [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-          (prevTimelineAnalysis) => {
-            if (!prevTimelineAnalysis) return [data];
-            const index = prevTimelineAnalysis.findIndex((timelineAnalysis) => timelineAnalysis.id === data.id);
-            if (index === -1) {
-              return prevTimelineAnalysis;
-            }
-            return [...prevTimelineAnalysis.slice(0, index), data, ...prevTimelineAnalysis.slice(index + 1)];
-          },
-        );
-        queryClient.invalidateQueries({
-          queryKey: [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-        });
-
-        // optimistic update of TIMELINE_ANALYSIS
-        queryClient.setQueryData<TimelineAnalysisRead>([QueryKey.TIMELINE_ANALYSIS, data.id], data);
-      }
-      queryClient.invalidateQueries({ queryKey: [QueryKey.TIMELINE_ANALYSIS, variables.timelineAnalysisId] });
+    onSuccess(data) {
+      queryClient.setQueryData<TimelineMap>([QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id], (prev) =>
+        prev ? { ...prev, [data.id]: data } : { [data.id]: data },
+      );
     },
   });
 
 const useDuplicateTimelineAnalysis = () =>
   useMutation({
     mutationFn: TimelineAnalysisService.duplicateById,
-    onSettled(data) {
-      if (data) {
-        queryClient.setQueryData<TimelineAnalysisRead[]>(
-          [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-          (prevTimelineAnalysis) => {
-            if (!prevTimelineAnalysis) return [data];
-            return [...prevTimelineAnalysis, data];
-          },
-        );
-        queryClient.invalidateQueries({
-          queryKey: [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-        });
-      }
+    onSuccess(data) {
+      queryClient.setQueryData<TimelineMap>([QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id], (prev) =>
+        prev ? { ...prev, [data.id]: data } : { [data.id]: data },
+      );
     },
   });
 
 const useDeleteTimelineAnalysis = () =>
   useMutation({
     mutationFn: TimelineAnalysisService.deleteById,
-    onSettled(data, _error, variables) {
-      if (data) {
-        queryClient.setQueryData<TimelineAnalysisRead[]>(
-          [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-          (prevTimelineAnalysis) => {
-            if (!prevTimelineAnalysis) return [];
-            return prevTimelineAnalysis.filter((timelineAnalysis) => timelineAnalysis.id !== data.id);
-          },
-        );
-        queryClient.invalidateQueries({
-          queryKey: [QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id],
-        });
-      }
-      queryClient.invalidateQueries({ queryKey: [QueryKey.TIMELINE_ANALYSIS, variables.timelineAnalysisId] });
+    onSuccess(data) {
+      queryClient.setQueryData<TimelineMap>([QueryKey.TIMELINE_ANALYSIS_PROJECT_USER, data.project_id], (prev) => {
+        if (!prev) return prev;
+        const newData = { ...prev };
+        delete newData[data.id];
+        return newData;
+      });
     },
   });
 
 const TimelineAnalysisHooks = {
+  useGetUserTimelineAnalysisList,
   useGetTimelineAnalysis,
-  useGetUserTimelineAnalysiss: useGetUserTimelineAnalysis,
   useCreateTimelineAnalysis,
   useUpdateTimelineAnalysis,
   useDuplicateTimelineAnalysis,

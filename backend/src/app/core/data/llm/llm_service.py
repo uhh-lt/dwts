@@ -15,7 +15,6 @@ from app.core.data.crud.user import (
     SYSTEM_USER_ID,
 )
 from app.core.data.dto.background_job_base import BackgroundJobStatus
-from app.core.data.dto.code import CodeRead
 from app.core.data.dto.llm_job import (
     AnnotationLLMJobResult,
     AnnotationParams,
@@ -46,12 +45,12 @@ from app.core.data.dto.llm_job import (
 )
 from app.core.data.dto.sentence_annotation import (
     SentenceAnnotationCreate,
-    SentenceAnnotationReadResolved,
+    SentenceAnnotationRead,
 )
 from app.core.data.dto.source_document_metadata import (
     SourceDocumentMetadataReadResolved,
 )
-from app.core.data.dto.span_annotation import SpanAnnotationReadResolved
+from app.core.data.dto.span_annotation import SpanAnnotationRead
 from app.core.data.llm.ollama_service import OllamaService
 from app.core.data.llm.prompts.annotation_prompt_builder import (
     AnnotationPromptBuilder,
@@ -448,12 +447,12 @@ class LLMService(metaclass=SingletonMeta):
         approach_parameters: ZeroShotParams,
         task_parameters: DocumentTaggingParams,
     ) -> LLMJobResult:
-        assert isinstance(
-            task_parameters, DocumentTaggingParams
-        ), "Wrong task parameters!"
-        assert isinstance(
-            approach_parameters, ZeroShotParams
-        ), "Wrong approach parameters!"
+        assert isinstance(task_parameters, DocumentTaggingParams), (
+            "Wrong task parameters!"
+        )
+        assert isinstance(approach_parameters, ZeroShotParams), (
+            "Wrong approach parameters!"
+        )
 
         msg = f"Started LLMJob - Document Tagging, num docs: {len(task_parameters.sdoc_ids)}"
         self._update_llm_job_description(
@@ -573,12 +572,12 @@ class LLMService(metaclass=SingletonMeta):
         approach_parameters: ZeroShotParams,
         task_parameters: MetadataExtractionParams,
     ) -> LLMJobResult:
-        assert isinstance(
-            task_parameters, MetadataExtractionParams
-        ), "Wrong task parameters!"
-        assert isinstance(
-            approach_parameters, ZeroShotParams
-        ), "Wrong approach parameters!"
+        assert isinstance(task_parameters, MetadataExtractionParams), (
+            "Wrong task parameters!"
+        )
+        assert isinstance(approach_parameters, ZeroShotParams), (
+            "Wrong approach parameters!"
+        )
 
         msg = f"Started LLMJob - Metadata Extraction, num docs: {len(task_parameters.sdoc_ids)}"
         self._update_llm_job_description(
@@ -721,9 +720,9 @@ class LLMService(metaclass=SingletonMeta):
         task_parameters: AnnotationParams,
     ) -> LLMJobResult:
         assert isinstance(task_parameters, AnnotationParams), "Wrong task parameters!"
-        assert isinstance(
-            approach_parameters, ZeroShotParams
-        ), "Wrong approach parameters!"
+        assert isinstance(approach_parameters, ZeroShotParams), (
+            "Wrong approach parameters!"
+        )
 
         msg = f"Started LLMJob - Annotation, num docs: {len(task_parameters.sdoc_ids)}"
         self._update_llm_job_description(
@@ -799,7 +798,7 @@ class LLMService(metaclass=SingletonMeta):
                 parsed_response = prompt_builder.parse_result(result=response)
 
                 # validate the response and create the suggested annotation
-                suggested_annotations: List[SpanAnnotationReadResolved] = []
+                suggested_annotations: List[SpanAnnotationRead] = []
                 for x in parsed_response:
                     code_id = x.code_id
                     span_text = x.text
@@ -833,7 +832,7 @@ class LLMService(metaclass=SingletonMeta):
 
                     # create the suggested annotation
                     suggested_annotations.append(
-                        SpanAnnotationReadResolved(
+                        SpanAnnotationRead(
                             id=annotation_id,
                             sdoc_id=sdoc_data.id,
                             user_id=ASSISTANT_ZEROSHOT_ID,
@@ -842,7 +841,7 @@ class LLMService(metaclass=SingletonMeta):
                             begin_token=begin_token,
                             end_token=end_token,
                             text=span_text,
-                            code=CodeRead.model_validate(project_codes.get(code_id)),
+                            code_id=code_id,
                             created=datetime.now(),
                             updated=datetime.now(),
                         )
@@ -887,9 +886,9 @@ class LLMService(metaclass=SingletonMeta):
         approach_parameters: Union[ZeroShotParams, FewShotParams],
         task_parameters: SentenceAnnotationParams,
     ) -> LLMJobResult:
-        assert isinstance(
-            task_parameters, SentenceAnnotationParams
-        ), "Wrong task parameters!"
+        assert isinstance(task_parameters, SentenceAnnotationParams), (
+            "Wrong task parameters!"
+        )
         assert isinstance(approach_parameters, ZeroShotParams) or isinstance(
             approach_parameters, FewShotParams
         ), "Wrong approach parameters!"
@@ -1069,7 +1068,7 @@ class LLMService(metaclass=SingletonMeta):
                         status_message="Sentence annotation successful",
                         sdoc_id=sdoc_data.id,
                         suggested_annotations=[
-                            SentenceAnnotationReadResolved.model_validate(anno)
+                            SentenceAnnotationRead.model_validate(anno)
                             for anno in created_annos
                         ],
                     )
@@ -1101,12 +1100,12 @@ class LLMService(metaclass=SingletonMeta):
         approach_parameters: ModelTrainingParams,
         task_parameters: SentenceAnnotationParams,
     ) -> LLMJobResult:
-        assert isinstance(
-            task_parameters, SentenceAnnotationParams
-        ), "Wrong task parameters!"
-        assert isinstance(
-            approach_parameters, ModelTrainingParams
-        ), "Wrong approach parameters!"
+        assert isinstance(task_parameters, SentenceAnnotationParams), (
+            "Wrong task parameters!"
+        )
+        assert isinstance(approach_parameters, ModelTrainingParams), (
+            "Wrong approach parameters!"
+        )
 
         msg = f"Started LLMJob - Sentence Annotation (RAY), num docs: {len(task_parameters.sdoc_ids)}"
         self._update_llm_job(
@@ -1391,7 +1390,7 @@ class LLMService(metaclass=SingletonMeta):
                         status_message="Sentence annotation successful",
                         sdoc_id=sdoc_data.id,
                         suggested_annotations=[
-                            SentenceAnnotationReadResolved.model_validate(anno)
+                            SentenceAnnotationRead.model_validate(anno)
                             for anno in created_annos
                         ],
                     )

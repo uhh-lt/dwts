@@ -1,89 +1,98 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import queryClient from "../plugins/ReactQueryClient.ts";
+import { useAppSelector } from "../plugins/ReduxHooks.ts";
+import { RootState } from "../store/store.ts";
 import { QueryKey } from "./QueryKey.ts";
 import { BackgroundJobStatus } from "./openapi/models/BackgroundJobStatus.ts";
 import { COTARead } from "./openapi/models/COTARead.ts";
 import { COTARefinementJobRead } from "./openapi/models/COTARefinementJobRead.ts";
 import { ConceptOverTimeAnalysisService } from "./openapi/services/ConceptOverTimeAnalysisService.ts";
 
+// COTA QUERIES
+
+export type CotaMap = Record<number, COTARead>;
+
+interface UseCotaQueryParams<T> {
+  select?: (data: CotaMap) => T;
+  enabled?: boolean;
+}
+
+const useUserCotasQuery = <T = CotaMap>({ select, enabled }: UseCotaQueryParams<T>) => {
+  const projectId = useAppSelector((state: RootState) => state.project.projectId);
+  return useQuery({
+    queryKey: [QueryKey.COTAS_PROJECT_USER, projectId],
+    queryFn: async () => {
+      const data = await ConceptOverTimeAnalysisService.getByProjectAndUser({ projectId: projectId! });
+      return data.reduce((acc, cota) => {
+        acc[cota.id] = cota;
+        return acc;
+      }, {} as CotaMap);
+    },
+    staleTime: 1000 * 60 * 5,
+    select,
+    enabled: !!projectId && enabled,
+  });
+};
+
 const useGetCota = (cotaId: number | null | undefined) =>
-  useQuery<COTARead, Error>({
-    queryKey: [QueryKey.COTA, cotaId],
-    queryFn: () => ConceptOverTimeAnalysisService.getById({ cotaId: cotaId! }),
-    retry: false,
+  useUserCotasQuery({
+    select: (data) => data[cotaId!],
     enabled: !!cotaId,
   });
 
-const useGetUserCotas = (projectId: number | null | undefined) =>
-  useQuery<COTARead[], Error>({
-    queryKey: [QueryKey.COTAS_PROJECT_USER, projectId],
-    queryFn: () => ConceptOverTimeAnalysisService.getByProjectAndUser({ projectId: projectId! }),
-    retry: false,
-    enabled: !!projectId,
-  });
+const useGetUserCotaList = () => useUserCotasQuery({ select: (data) => Object.values(data) });
 
+// COTA MUTATIONS
+
+// create mutations
 const useCreateCota = () =>
   useMutation({
     mutationFn: ConceptOverTimeAnalysisService.create,
     onSuccess: (cota) => {
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTA, cota.id] });
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTAS_PROJECT_USER, cota.project_id] });
-    },
-  });
-
-const useUpdateCota = () =>
-  useMutation({
-    mutationFn: ConceptOverTimeAnalysisService.updateById,
-    onSuccess: (cota) => {
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTA, cota.id] });
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTAS_PROJECT_USER, cota.project_id] });
+      queryClient.setQueryData<CotaMap>([QueryKey.COTAS_PROJECT_USER, cota.project_id], (prev) =>
+        prev ? { ...prev, [cota.id]: cota } : { [cota.id]: cota },
+      );
     },
   });
 
 const useDuplicateCota = () =>
   useMutation({
     mutationFn: ConceptOverTimeAnalysisService.duplicateById,
-    onSettled(data) {
-      if (data) {
-        queryClient.setQueryData<COTARead[]>([QueryKey.COTAS_PROJECT_USER, data.project_id], (prevCota) => {
-          if (prevCota) {
-            return [...prevCota, data];
-          } else {
-            return [data];
-          }
-        });
-        queryClient.invalidateQueries({
-          queryKey: [QueryKey.COTAS_PROJECT_USER, data.project_id],
-        });
-      }
+    onSuccess(cota) {
+      queryClient.setQueryData<CotaMap>([QueryKey.COTAS_PROJECT_USER, cota.project_id], (prev) =>
+        prev ? { ...prev, [cota.id]: cota } : { [cota.id]: cota },
+      );
     },
   });
 
-const useDeleteCota = () =>
+// update mutations
+const useUpdateCota = () =>
   useMutation({
-    mutationFn: ConceptOverTimeAnalysisService.deleteById,
+    mutationFn: ConceptOverTimeAnalysisService.updateById,
     onSuccess: (cota) => {
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTA, cota.id] });
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTAS_PROJECT_USER, cota.project_id] });
+      queryClient.setQueryData<CotaMap>([QueryKey.COTAS_PROJECT_USER, cota.project_id], (prev) =>
+        prev ? { ...prev, [cota.id]: cota } : { [cota.id]: cota },
+      );
     },
   });
 
-const useGetRefinementJob = (refinementJobId: string | null | undefined) =>
-  useQuery<COTARefinementJobRead, Error>({
-    queryKey: [QueryKey.COTA_REFINEMENT_JOB, refinementJobId],
-    queryFn: () => ConceptOverTimeAnalysisService.getCotaJob({ cotaJobId: refinementJobId! }),
-    retry: false,
-    enabled: !!refinementJobId,
+const useAnnotateCotaSentences = () =>
+  useMutation({
+    mutationFn: ConceptOverTimeAnalysisService.annotateCotaSentence,
+    onSuccess: (cota) => {
+      queryClient.setQueryData<CotaMap>([QueryKey.COTAS_PROJECT_USER, cota.project_id], (prev) =>
+        prev ? { ...prev, [cota.id]: cota } : { [cota.id]: cota },
+      );
+    },
   });
 
-const useRefineCota = () =>
+const useRemoveCotaSentences = () =>
   useMutation({
-    mutationFn: ConceptOverTimeAnalysisService.refineCotaById,
-    onSuccess: (cotaRefinementJob) => {
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTA_REFINEMENT_JOB, cotaRefinementJob.id] });
-      queryClient.invalidateQueries({
-        queryKey: [QueryKey.COTA_MOST_RECENT_REFINEMENT_JOB, cotaRefinementJob.cota.id],
-      });
+    mutationFn: ConceptOverTimeAnalysisService.removeCotaSentence,
+    onSuccess: (cota) => {
+      queryClient.setQueryData<CotaMap>([QueryKey.COTAS_PROJECT_USER, cota.project_id], (prev) =>
+        prev ? { ...prev, [cota.id]: cota } : { [cota.id]: cota },
+      );
     },
   });
 
@@ -91,12 +100,28 @@ const useResetCota = () =>
   useMutation({
     mutationFn: ConceptOverTimeAnalysisService.resetCota,
     onSuccess: (cota) => {
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTA, cota.id] });
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTAS_PROJECT_USER, cota.project_id] });
+      queryClient.setQueryData<CotaMap>([QueryKey.COTAS_PROJECT_USER, cota.project_id], (prev) =>
+        prev ? { ...prev, [cota.id]: cota } : { [cota.id]: cota },
+      );
       queryClient.invalidateQueries({ queryKey: [QueryKey.COTA_MOST_RECENT_REFINEMENT_JOB, cota.id] });
     },
   });
 
+// delete mutations
+const useDeleteCota = () =>
+  useMutation({
+    mutationFn: ConceptOverTimeAnalysisService.deleteById,
+    onSuccess: (cota) => {
+      queryClient.setQueryData<CotaMap>([QueryKey.COTAS_PROJECT_USER, cota.project_id], (prev) => {
+        if (!prev) return prev;
+        const newData = { ...prev };
+        delete newData[cota.id];
+        return newData;
+      });
+    },
+  });
+
+// COTA REFINEMENT JOB QUERIES
 const usePollMostRecentRefinementJob = (cotaId: number | undefined) => {
   return useQuery<COTARefinementJobRead | null, Error>({
     queryKey: [QueryKey.COTA_MOST_RECENT_REFINEMENT_JOB, cotaId],
@@ -110,6 +135,7 @@ const usePollMostRecentRefinementJob = (cotaId: number | undefined) => {
         switch (query.state.data.status) {
           case BackgroundJobStatus.ERRORNEOUS:
           case BackgroundJobStatus.FINISHED:
+            // TODO: maybe invalidate the cota query here or set it directly (see CotaControl.tsx)
             return false;
           case BackgroundJobStatus.WAITING:
           case BackgroundJobStatus.RUNNING:
@@ -121,37 +147,29 @@ const usePollMostRecentRefinementJob = (cotaId: number | undefined) => {
   });
 };
 
-const useAnnotateCotaSentences = () =>
+// COTA REFINEMENT JOB MUTATIONS
+const useRefineCota = () =>
   useMutation({
-    mutationFn: ConceptOverTimeAnalysisService.annotateCotaSentence,
-    onSuccess: (cota) => {
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTA, cota.id] });
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTAS_PROJECT_USER, cota.project_id] });
-    },
-  });
-
-const useRemoveCotaSentences = () =>
-  useMutation({
-    mutationFn: ConceptOverTimeAnalysisService.removeCotaSentence,
-    onSuccess: (cota) => {
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTA, cota.id] });
-      queryClient.invalidateQueries({ queryKey: [QueryKey.COTAS_PROJECT_USER, cota.project_id] });
+    mutationFn: ConceptOverTimeAnalysisService.refineCotaById,
+    onSuccess: (cotaRefinementJob) => {
+      queryClient.invalidateQueries({
+        queryKey: [QueryKey.COTA_MOST_RECENT_REFINEMENT_JOB, cotaRefinementJob.cota.id],
+      });
     },
   });
 
 const CotaHooks = {
   useGetCota,
-  useGetUserCotas,
+  useGetUserCotaList,
   useCreateCota,
-  useUpdateCota,
   useDuplicateCota,
-  useDeleteCota,
-  useGetRefinementJob,
-  useRefineCota,
-  useResetCota,
-  usePollMostRecentRefinementJob,
+  useUpdateCota,
   useAnnotateCotaSentences,
   useRemoveCotaSentences,
+  useResetCota,
+  useDeleteCota,
+  usePollMostRecentRefinementJob,
+  useRefineCota,
 };
 
 export default CotaHooks;

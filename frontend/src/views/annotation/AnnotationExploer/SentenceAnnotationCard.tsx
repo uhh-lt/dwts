@@ -1,7 +1,16 @@
-import { Card, CardActionArea, CardContent, CardHeader, Divider, Stack, Typography } from "@mui/material";
+import {
+  Card,
+  CardActionArea,
+  CardContent,
+  CardHeader,
+  CircularProgress,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
+import CodeHooks from "../../../api/CodeHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
-import { SentenceAnnotationReadResolved } from "../../../api/openapi/models/SentenceAnnotationReadResolved.ts";
-import SpanAnnotationHooks from "../../../api/SpanAnnotationHooks.ts";
+import { SentenceAnnotationRead } from "../../../api/openapi/models/SentenceAnnotationRead.ts";
 import CodeRenderer from "../../../components/Code/CodeRenderer.tsx";
 import UserName from "../../../components/User/UserName.tsx";
 import AnnotationCardActionsMenu from "./AnnotationCardActionMenu.tsx";
@@ -13,11 +22,13 @@ function SentenceAnnotationCard({
   annotation,
   onClick,
   cardProps,
-}: AnnotationCardProps<SentenceAnnotationReadResolved>) {
+}: AnnotationCardProps<SentenceAnnotationRead>) {
+  const code = CodeHooks.useGetCode(annotation.code_id);
+
   return (
     <Card {...cardProps}>
       <CardHeader
-        title={<CodeRenderer key={annotation.code.id} code={annotation.code} />}
+        title={<CodeRenderer key={annotation.code_id} code={annotation.code_id} />}
         action={
           <AnnotationCardActionsMenu
             annotationId={annotation.id}
@@ -35,17 +46,21 @@ function SentenceAnnotationCard({
       <Divider />
       <CardActionArea onClick={onClick}>
         <CardContent sx={{ pr: 1, pl: 1.5, pt: 1, pb: "0px !important" }}>
-          <Typography
-            variant="body1"
-            sx={{
-              wordBreak: "break-word",
-              borderLeft: "3px solid",
-              borderColor: annotation.code.color,
-              pl: 1,
-            }}
-          >
-            This annotation spans sentence {annotation.sentence_id_start + 1} - {annotation.sentence_id_end + 1}.
-          </Typography>
+          {code.isSuccess ? (
+            <Typography
+              variant="body1"
+              sx={{
+                wordBreak: "break-word",
+                borderLeft: "3px solid",
+                borderColor: code.data.color,
+                pl: 1,
+              }}
+            >
+              This annotation spans sentence {annotation.sentence_id_start + 1} - {annotation.sentence_id_end + 1}.
+            </Typography>
+          ) : (
+            <CircularProgress />
+          )}
           <Stack direction="row" justifyContent="end" width="100%">
             <Typography variant="subtitle2" color="textDisabled" fontSize={12}>
               <UserName userId={annotation.user_id} />
@@ -53,15 +68,14 @@ function SentenceAnnotationCard({
           </Stack>
         </CardContent>
       </CardActionArea>
-      {isSelected && (
+      {isSelected && code.isSuccess && (
         <>
           <Divider />
           <AnnotationCardMemo
             annotationId={annotation.id}
             annotationType={AttachedObjectType.SPAN_ANNOTATION}
-            codeName={annotation.code.name}
+            codeName={code.data.name}
             annotationText={"Sentence"}
-            useGetAnnotationMemo={SpanAnnotationHooks.useGetUserMemo}
           />
         </>
       )}

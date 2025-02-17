@@ -7,7 +7,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.data.orm.orm_base import ORMBase
 
 if TYPE_CHECKING:
-    from app.core.data.orm.analysis_table import AnalysisTableORM
     from app.core.data.orm.code import CodeORM
     from app.core.data.orm.document_tag import DocumentTagORM
     from app.core.data.orm.memo import MemoORM
@@ -50,10 +49,6 @@ class ProjectORM(ORMBase):
 
     document_tags: Mapped[List["DocumentTagORM"]] = relationship(
         "DocumentTagORM", back_populates="project", passive_deletes=True
-    )
-
-    analysis_tables: Mapped[List["AnalysisTableORM"]] = relationship(
-        "AnalysisTableORM", back_populates="project", passive_deletes=True
     )
 
     whiteboards: Mapped[List["WhiteboardORM"]] = relationship(

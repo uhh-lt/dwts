@@ -26,7 +26,7 @@ export type SpanAnnotationRead = {
   /**
    * The SpanText the SpanAnnotation spans.
    */
-  span_text_id: number;
+  text: string;
   /**
    * Code the SpanAnnotation refers to
    */

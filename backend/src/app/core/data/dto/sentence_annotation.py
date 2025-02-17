@@ -3,7 +3,6 @@ from typing import Dict, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .code import CodeRead
 from .dto_base import UpdateDTOBase
 
 
@@ -51,17 +50,7 @@ class SentenceAnnotationRead(SentenceAnnotationBaseDTO):
     model_config = ConfigDict(from_attributes=True)
 
 
-class SentenceAnnotationReadResolved(SentenceAnnotationBaseDTO):
-    id: int = Field(description="ID of the SentenceAnnotation")
-    code: CodeRead = Field(description="Code the SentenceAnnotation refers to")
-    user_id: int = Field(description="User the SpanAnnotation belongs to")
-    sdoc_id: int = Field(description="SourceDocument the SpanAnnotation refers to")
-    created: datetime = Field(description="Created timestamp of the SentenceAnnotation")
-    updated: datetime = Field(description="Updated timestamp of the SentenceAnnotation")
-    model_config = ConfigDict(from_attributes=True)
-
-
 class SentenceAnnotatorResult(BaseModel):
-    sentence_annotations: Dict[int, List[SentenceAnnotationReadResolved]] = Field(
+    sentence_annotations: Dict[int, List[SentenceAnnotationRead]] = Field(
         description="A mapping of sentence IDs to their annotations"
     )

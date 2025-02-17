@@ -17,6 +17,7 @@ import { BBoxAnnotationSearchResult } from "../../../api/openapi/models/BBoxAnno
 import { BBoxColumns } from "../../../api/openapi/models/BBoxColumns.ts";
 import { SortDirection } from "../../../api/openapi/models/SortDirection.ts";
 import { AnalysisService } from "../../../api/openapi/services/AnalysisService.ts";
+import { QueryKey } from "../../../api/QueryKey.ts";
 import { useAuth } from "../../../auth/useAuth.ts";
 import { useAppSelector } from "../../../plugins/ReduxHooks.ts";
 import { useTableInfiniteScroll } from "../../../utils/useTableInfiniteScroll.ts";
@@ -103,7 +104,7 @@ function BBoxAnnotationTable({
         case BBoxColumns.BB_DOCUMENT_DOCUMENT_TAG_ID_LIST:
           return {
             ...colDef,
-            Cell: ({ row }) => <SdocTagsRenderer sdocId={row.original.sdoc.id} tags={row.original.tags} />,
+            Cell: ({ row }) => <SdocTagsRenderer sdocId={row.original.sdoc.id} tagIds={row.original.tag_ids} />,
           } as MRT_ColumnDef<BBoxAnnotationRow>;
         case BBoxColumns.BB_CODE_ID:
           return {
@@ -169,7 +170,7 @@ function BBoxAnnotationTable({
   // table data
   const { data, fetchNextPage, isError, isFetching, isLoading } = useInfiniteQuery<BBoxAnnotationSearchResult>({
     queryKey: [
-      "bbox-table-data",
+      QueryKey.BBOX_TABLE,
       projectId,
       filter, //refetch when columnFilters changes
       sortingModel, //refetch when sorting changes
@@ -302,14 +303,7 @@ function BBoxAnnotationTable({
     <Card className="myFlexContainer" {...cardProps}>
       <CardHeader
         title={title}
-        action={
-          <UserSelectorSingle
-            title="Annotations"
-            projectId={projectId}
-            userId={selectedUserId}
-            onUserIdChange={setSelectedUserId}
-          />
-        }
+        action={<UserSelectorSingle title="Annotations" userId={selectedUserId} onUserIdChange={setSelectedUserId} />}
       />
       <CardContent className="myFlexFillAllContainer" style={{ padding: 0 }}>
         <MaterialReactTable table={table} />

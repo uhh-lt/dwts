@@ -14,6 +14,7 @@ from app.core.data.orm.project import ProjectORM
 from app.core.data.orm.sentence_annotation import SentenceAnnotationORM
 from app.core.data.orm.source_document import SourceDocumentORM
 from app.core.data.orm.span_annotation import SpanAnnotationORM
+from app.core.data.orm.span_group import SpanGroupORM
 
 credentials_exception = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,
@@ -31,6 +32,7 @@ def get_object_memos(
         BBoxAnnotationORM,
         SentenceAnnotationORM,
         SpanAnnotationORM,
+        SpanGroupORM,
     ],
 ) -> List[MemoRead]:
     if db_obj.object_handle is None:
@@ -49,6 +51,7 @@ def get_object_memos(
         BBoxAnnotationORM: AttachedObjectType.bbox_annotation,
         SpanAnnotationORM: AttachedObjectType.span_annotation,
         SentenceAnnotationORM: AttachedObjectType.sentence_annotation,
+        SpanGroupORM: AttachedObjectType.span_group,
     }
 
     memos = [
@@ -72,6 +75,7 @@ def get_object_memo_for_user(
         BBoxAnnotationORM,
         SentenceAnnotationORM,
         SpanAnnotationORM,
+        SpanGroupORM,
     ],
     user_id: int,
 ) -> MemoRead:
@@ -97,6 +101,7 @@ def get_object_memo_for_user(
         BBoxAnnotationORM: AttachedObjectType.bbox_annotation,
         SpanAnnotationORM: AttachedObjectType.span_annotation,
         SentenceAnnotationORM: AttachedObjectType.sentence_annotation,
+        SpanGroupORM: AttachedObjectType.span_group,
     }
 
     # return only the first memo of a user

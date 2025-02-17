@@ -11,12 +11,11 @@ interface SdocVideoLinkProps {
 
 function SdocVideoLink({ projectId, filename, toPrefix }: SdocVideoLinkProps) {
   const sdocId = SdocHooks.useGetDocumentIdByFilename(filename, projectId);
-  const url = SdocHooks.useGetURL(sdocId.data, false);
   const thumbnailUrl = SdocHooks.useGetThumbnailURL(sdocId.data);
 
   return (
     <>
-      {sdocId.isSuccess && url.isSuccess && thumbnailUrl.isSuccess ? (
+      {thumbnailUrl.isSuccess ? (
         <div>
           <Link component={RouterLink} to={`${toPrefix}${sdocId.data}`}>
             <Box sx={{ position: "relative", height: 200, textAlign: "center" }}>
@@ -33,12 +32,8 @@ function SdocVideoLink({ projectId, filename, toPrefix }: SdocVideoLinkProps) {
             </Box>
           </Link>
         </div>
-      ) : sdocId.isSuccess && !url.isSuccess ? (
-        <img alt={`Could not resolve ${filename} :(`} />
-      ) : sdocId.isError ? (
-        <div>Error: {sdocId.error.message}</div>
-      ) : url.isError ? (
-        <div>Error: {url.error.message}</div>
+      ) : thumbnailUrl.isError ? (
+        <div>Error: {thumbnailUrl.error.message}</div>
       ) : (
         <div>Loading video...</div>
       )}

@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { NodeProps, useReactFlow } from "reactflow";
 import CodeHooks from "../../../api/CodeHooks.ts";
+import MemoHooks from "../../../api/MemoHooks.ts";
 import SentenceAnnotationHooks from "../../../api/SentenceAnnotationHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
 import CodeRenderer from "../../../components/Code/CodeRenderer.tsx";
@@ -42,8 +43,8 @@ function SentenceAnnotationNode(props: NodeProps<SentenceAnnotationNodeData>) {
 
   // global server state (react-query)
   const annotation = SentenceAnnotationHooks.useGetAnnotation(props.data.sentenceAnnotationId);
-  const code = CodeHooks.useGetCode(annotation.data?.code.id);
-  const memo = SentenceAnnotationHooks.useGetUserMemo(props.data.sentenceAnnotationId);
+  const code = CodeHooks.useGetCode(annotation.data?.code_id);
+  const memo = MemoHooks.useGetUserMemo(AttachedObjectType.SENTENCE_ANNOTATION, props.data.sentenceAnnotationId);
 
   // effects
   useEffect(() => {
@@ -202,7 +203,7 @@ function SentenceAnnotationNode(props: NodeProps<SentenceAnnotationNodeData>) {
             <CardHeader
               title={
                 <Stack direction="row" alignItems="center">
-                  <CodeRenderer code={annotation.data.code} />
+                  <CodeRenderer code={annotation.data.code_id} />
                   <Box sx={{ ml: 1 }}>Annotation</Box>
                 </Stack>
               }

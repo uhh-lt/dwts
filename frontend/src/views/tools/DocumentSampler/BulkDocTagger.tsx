@@ -3,22 +3,17 @@ import LabelIcon from "@mui/icons-material/Label";
 import { LoadingButton } from "@mui/lab";
 import { MenuItem, Select, Stack } from "@mui/material";
 import { useState } from "react";
-import { useParams } from "react-router-dom";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
 import TagHooks from "../../../api/TagHooks.ts";
 import { useOpenSnackbar } from "../../../components/SnackbarDialog/useOpenSnackbar.ts";
 import { useAppSelector } from "../../../plugins/ReduxHooks.ts";
 
 function BulkDocTagger() {
-  // global client state (react router)
-  const projectId = parseInt(useParams<{ projectId: string }>().projectId!);
-
   // global client state (redux)
   const isFixedSamplingStrategy = useAppSelector((state) => state.documentSampler.isFixedSamplingStrategy);
   const chartData = useAppSelector((state) => state.documentSampler.chartData);
 
   // global server state (react query)
-  const documentTags = ProjectHooks.useGetAllTags(projectId);
+  const documentTags = TagHooks.useGetAllTags();
 
   // local client state
   const [selectedDocumentTagId, setSelectedDocumentTagId] = useState(-1);

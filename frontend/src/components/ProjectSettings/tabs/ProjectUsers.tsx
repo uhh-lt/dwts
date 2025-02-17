@@ -2,7 +2,6 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { LoadingButton } from "@mui/lab";
 import {
-  Autocomplete,
   Box,
   CardContent,
   Divider,
@@ -12,53 +11,49 @@ import {
   ListItemButton,
   ListItemText,
   Stack,
-  TextField,
   Toolbar,
   Tooltip,
   Typography,
 } from "@mui/material";
-import React, { useMemo, useState } from "react";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
+import { SubmitErrorHandler, SubmitHandler, useForm } from "react-hook-form";
 import UserHooks from "../../../api/UserHooks.ts";
-import { PublicUserRead } from "../../../api/openapi/models/PublicUserRead.ts";
+import { EMAIL_REGEX } from "../../../utils/GlobalConstants.ts";
 import ConfirmationAPI from "../../ConfirmationDialog/ConfirmationAPI.ts";
+import FormEmail from "../../FormInputs/FormEmail.tsx";
 import { ProjectProps } from "../ProjectProps.ts";
 
+interface UserAddFormValues {
+  email: string;
+}
+
 function ProjectUsers({ project }: ProjectProps) {
-  const [selectedUser, setSelectedUser] = useState<PublicUserRead | null>(null);
-
   // query all users that belong to the project
-  const allUsers = UserHooks.useGetAll();
-  const projectUsers = ProjectHooks.useGetAllUsers(project.id);
+  const allUsers = UserHooks.useGetAllUsers();
 
-  // list of users that are not associated with the project
-  const autoCompleteUsers = useMemo(() => {
-    if (!allUsers.data || !projectUsers.data) {
-      return [];
-    }
+  const {
+    handleSubmit,
+    formState: { errors },
+    control,
+  } = useForm<UserAddFormValues>({
+    defaultValues: {
+      email: "",
+    },
+  });
 
-    const projectUserIds = projectUsers.data.map((user) => user.id);
-
-    return allUsers.data.filter((user) => projectUserIds.indexOf(user.id) === -1);
-  }, [projectUsers.data, allUsers.data]);
-
-  // add user
-  const addUserMutation = ProjectHooks.useAddUser();
-  const handleClickAddUser = () => {
-    if (!selectedUser) return;
-    addUserMutation.mutate(
-      {
-        projId: project.id,
-        userId: selectedUser.id,
+  // form handling
+  const addUserMutation = UserHooks.useAddUserToProject();
+  const handleAddUser: SubmitHandler<UserAddFormValues> = (data) => {
+    addUserMutation.mutate({
+      projId: project.id,
+      requestBody: {
+        email: data.email,
       },
-      {
-        onSuccess: () => setSelectedUser(null),
-      },
-    );
+    });
   };
+  const handleError: SubmitErrorHandler<UserAddFormValues> = (data) => console.error(data);
 
   // remove user
-  const removeUserMutation = ProjectHooks.useRemoveUser();
+  const removeUserMutation = UserHooks.useRemoveUserFromProject();
   const handleClickRemoveUser = (userId: number) => {
     ConfirmationAPI.openConfirmationDialog({
       text: `Do you really want to remove the User ${userId} from this project? You can add her again.`,
@@ -71,55 +66,54 @@ function ProjectUsers({ project }: ProjectProps) {
     });
   };
 
-  const handleChangeSelectedUser = (_event: React.SyntheticEvent, value: PublicUserRead | null) => {
-    setSelectedUser(value);
-  };
-
   return (
     <Box display="flex" className="myFlexContainer h100">
-      <Toolbar variant="dense" className="myFlexFitContentContainer">
-        <Stack direction="row" spacing={2} sx={{ width: "100%", alignItems: "center" }}>
-          <Box sx={{ flex: "1 1 0", display: "flex", alignItems: "center" }}>
-            <Typography variant="h6" component="div">
+      <form onSubmit={handleSubmit(handleAddUser, handleError)}>
+        <Toolbar variant="dense" className="myFlexFitContentContainer">
+          <Stack direction="row" spacing={2} sx={{ width: "100%", alignItems: "center" }}>
+            <Typography variant="h6" component="div" flexShrink={0}>
               Add user
             </Typography>
-            {allUsers.isError ? (
-              <Typography>Error: {allUsers.error.message}</Typography>
-            ) : (
-              <Autocomplete
-                value={selectedUser}
-                onChange={handleChangeSelectedUser}
-                sx={{ ml: 1, flexGrow: 1 }}
-                size="small"
-                disablePortal
-                options={autoCompleteUsers}
-                renderInput={(params) => <TextField {...params} label="User" />}
-                disabled={!allUsers.isSuccess}
-                getOptionLabel={(option) => `${option.first_name} ${option.last_name}`}
-              />
-            )}
+            <FormEmail
+              name="email"
+              control={control}
+              rules={{
+                required: "E-Mail is required",
+                validate: (value) => {
+                  return [EMAIL_REGEX].every((pattern) => pattern.test(value)) || "Please enter a valid email address!";
+                },
+              }}
+              textFieldProps={{
+                label: "E-Mail",
+                variant: "outlined",
+                fullWidth: true,
+                error: Boolean(errors.email),
+                size: "small",
+              }}
+            />
             <LoadingButton
               variant="contained"
               startIcon={<AddIcon />}
               sx={{ ml: 1 }}
-              onClick={handleClickAddUser}
-              disabled={selectedUser === null}
+              type="submit"
+              disabled={addUserMutation.isPending}
               loading={addUserMutation.isPending}
               loadingPosition="start"
             >
               Add
             </LoadingButton>
-          </Box>
-        </Stack>
-      </Toolbar>
+          </Stack>
+        </Toolbar>
+      </form>
+
       <Divider />
-      {projectUsers.isLoading && <CardContent>Loading users...</CardContent>}
-      {projectUsers.isError && (
+      {allUsers.isLoading && <CardContent>Loading users...</CardContent>}
+      {allUsers.isError && (
         <CardContent>An error occurred while loading project users for project {project.id}...</CardContent>
       )}
-      {projectUsers.isSuccess && (
+      {allUsers.isSuccess && (
         <List style={{ maxHeight: "100%" }}>
-          {projectUsers.data.map((user) => (
+          {allUsers.data.map((user) => (
             <ListItem
               disablePadding
               key={user.id}
@@ -134,7 +128,7 @@ function ProjectUsers({ project }: ProjectProps) {
               }
             >
               <ListItemButton>
-                <ListItemText primary={user.first_name + " " + user.last_name} />
+                <ListItemText primary={user.first_name + " " + user.last_name + " - " + user.email + ""} />
               </ListItemButton>
             </ListItem>
           ))}

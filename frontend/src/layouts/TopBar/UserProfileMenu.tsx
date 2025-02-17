@@ -1,6 +1,5 @@
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import FeedbackIcon from "@mui/icons-material/Feedback";
 import LogoutIcon from "@mui/icons-material/Logout";
 import {
   Card,
@@ -83,14 +82,6 @@ function UserProfileMenu({ handleLogout, user }: UserProfileMenuProps) {
                   <AccountBoxIcon />
                 </ListItemIcon>
                 <ListItemText primary="View Profile" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton component={RouterLink} to={"/feedback/" + user.id}>
-                <ListItemIcon>
-                  <FeedbackIcon />
-                </ListItemIcon>
-                <ListItemText primary="View my Feedback" />
               </ListItemButton>
             </ListItem>
             <Divider />

@@ -10,6 +10,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import text
 
 from alembic import op
 from app.core.data.crud.source_document import crud_sdoc
@@ -47,18 +48,25 @@ def upgrade() -> None:
         # 3. Use the repo service to get the URL of the Source Document
         urls = []
         for sdoc in sdocs:
-            url = RepoService().get_sdoc_url(
-                sdoc=SourceDocumentRead.model_validate(sdoc),
-                relative=True,
-                webp=sdoc.doctype == DocType.image,
-                thumbnail=False,
-            )
+            try:
+                url = RepoService().get_sdoc_url(
+                    sdoc=SourceDocumentRead.model_validate(sdoc),
+                    relative=True,
+                    webp=sdoc.doctype == DocType.image,
+                    thumbnail=False,
+                )
+            except Exception as e:
+                print(
+                    f"Error getting URL for project {sdoc.project_id} sdoc {sdoc.id}: {e}"
+                )
+                url = ""
             urls.append(url)
 
         # 4. Update the repo_url field in the Source Document Data table
         for sdoc, url in zip(sdocs, urls):
-            op.execute(
-                f"UPDATE sourcedocumentdata SET repo_url = '{url}' WHERE id = {sdoc.id}"
+            conn.execute(
+                text("UPDATE sourcedocumentdata SET repo_url = :url WHERE id = :id"),
+                {"url": url, "id": sdoc.id},
             )
 
     # change the column to non-nullable

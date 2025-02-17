@@ -10,6 +10,7 @@ import {
 } from "material-react-table";
 import { useEffect, useMemo, useRef, type UIEvent } from "react";
 import { useParams } from "react-router-dom";
+import { QueryKey } from "../../../api/QueryKey.ts";
 import { SortDirection } from "../../../api/openapi/models/SortDirection.ts";
 import { WordFrequencyColumns } from "../../../api/openapi/models/WordFrequencyColumns.ts";
 import { WordFrequencyResult } from "../../../api/openapi/models/WordFrequencyResult.ts";
@@ -117,7 +118,7 @@ function WordFrequencyTable() {
   // table data
   const { data, fetchNextPage, isError, isFetching, isLoading } = useInfiniteQuery<WordFrequencyResult>({
     queryKey: [
-      "wordfrequency-table-data",
+      QueryKey.WORD_FREQUENCY_TABLE,
       projectId,
       filter, //refetch when columnFilters changes
       sortingModel, //refetch when sorting changes

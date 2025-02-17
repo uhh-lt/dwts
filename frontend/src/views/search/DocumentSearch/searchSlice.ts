@@ -5,8 +5,9 @@ import { v4 as uuidv4 } from "uuid";
 import { IDListOperator } from "../../../api/openapi/models/IDListOperator.ts";
 import { ListOperator } from "../../../api/openapi/models/ListOperator.ts";
 import { LogicalOperator } from "../../../api/openapi/models/LogicalOperator.ts";
+import { ProjectMetadataRead } from "../../../api/openapi/models/ProjectMetadataRead.ts";
 import { SdocColumns } from "../../../api/openapi/models/SdocColumns.ts";
-import { SourceDocumentMetadataReadResolved } from "../../../api/openapi/models/SourceDocumentMetadataReadResolved.ts";
+import { SourceDocumentMetadataRead } from "../../../api/openapi/models/SourceDocumentMetadataRead.ts";
 import { StringOperator } from "../../../api/openapi/models/StringOperator.ts";
 import {
   FilterState,
@@ -161,10 +162,14 @@ export const searchSlice = createSlice({
     },
     onAddMetadataFilter: (
       state,
-      action: PayloadAction<{ metadata: SourceDocumentMetadataReadResolved; filterName: string }>,
+      action: PayloadAction<{
+        metadata: SourceDocumentMetadataRead;
+        projectMetadata: ProjectMetadataRead;
+        filterName: string;
+      }>,
     ) => {
-      // the column of a metadata filter is the project_metadata.id
-      const filterOperator = state.column2Info[action.payload.metadata.project_metadata.id.toString()].operator;
+      // the column of a metadata filter is the project_metadata_id
+      const filterOperator = state.column2Info[action.payload.metadata.project_metadata_id.toString()].operator;
       const filterOperatorType = filterOperator2FilterOperatorType[filterOperator];
 
       const currentFilter = getOrCreateFilter(state, action.payload.filterName);
@@ -172,9 +177,9 @@ export const searchSlice = createSlice({
         ...currentFilter.items,
         {
           id: uuidv4(),
-          column: action.payload.metadata.project_metadata.id,
+          column: action.payload.metadata.project_metadata_id,
           operator: getDefaultOperator(filterOperatorType),
-          value: getValue(action.payload.metadata)!,
+          value: getValue(action.payload.metadata, action.payload.projectMetadata)!,
         },
       ];
     },

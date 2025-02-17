@@ -2,13 +2,15 @@ from sqlalchemy import String, cast, func
 from sqlalchemy.dialects.postgresql import ARRAY, array, array_agg
 
 from app.core.data.orm.annotation_document import AnnotationDocumentORM
-from app.core.data.orm.code import CodeORM
 from app.core.data.orm.document_tag import DocumentTagORM
+from app.core.data.orm.sentence_annotation import SentenceAnnotationORM
 from app.core.data.orm.source_document import SourceDocumentORM
 from app.core.data.orm.span_annotation import SpanAnnotationORM
 from app.core.data.orm.span_text import SpanTextORM
-from app.core.data.orm.user import UserORM
-from app.core.db.sql_utils import aggregate_ids
+from app.core.db.sql_utils import (
+    aggregate_ids,
+    aggregate_two_ids,
+)
 from app.core.search.column_info import AbstractColumns
 from app.core.search.filtering_operators import FilterOperator, FilterValueType
 from app.core.search.search_builder import SearchBuilder
@@ -111,26 +113,39 @@ class SdocColumns(str, AbstractColumns):
                 )
             case SdocColumns.CODE_ID_LIST:
                 query_builder._add_subquery_column(
-                    aggregate_ids(CodeORM.id, label=SdocColumns.CODE_ID_LIST.value)
+                    aggregate_two_ids(
+                        SpanAnnotationORM.code_id,
+                        SentenceAnnotationORM.code_id,
+                        label=SdocColumns.CODE_ID_LIST.value,
+                    )
                 )
                 query_builder._join_subquery(
-                    SourceDocumentORM.annotation_documents,
+                    AnnotationDocumentORM,
+                    AnnotationDocumentORM.source_document_id == SourceDocumentORM.id,
                     isouter=True,
                 )
                 query_builder._join_subquery(
-                    SpanAnnotationORM.code,
+                    SpanAnnotationORM,
+                    SpanAnnotationORM.annotation_document_id
+                    == AnnotationDocumentORM.id,
                     isouter=True,
                 )
+                query_builder._join_subquery(
+                    SentenceAnnotationORM,
+                    SentenceAnnotationORM.annotation_document_id
+                    == AnnotationDocumentORM.id,
+                    isouter=True,
+                )
+
             case SdocColumns.USER_ID_LIST:
                 query_builder._add_subquery_column(
-                    aggregate_ids(UserORM.id, SdocColumns.USER_ID_LIST.value)
+                    aggregate_ids(
+                        AnnotationDocumentORM.user_id, SdocColumns.USER_ID_LIST.value
+                    )
                 )
                 query_builder._join_subquery(
-                    SourceDocumentORM.annotation_documents,
-                    isouter=True,
-                )
-                query_builder._join_subquery(
-                    AnnotationDocumentORM.user,
+                    AnnotationDocumentORM,
+                    AnnotationDocumentORM.source_document_id == SourceDocumentORM.id,
                     isouter=True,
                 )
             case SdocColumns.SPAN_ANNOTATIONS:
@@ -138,26 +153,31 @@ class SdocColumns(str, AbstractColumns):
                     cast(
                         array_agg(
                             func.distinct(
-                                array([cast(CodeORM.id, String), SpanTextORM.text])
+                                array(
+                                    [
+                                        cast(SpanAnnotationORM.code_id, String),
+                                        SpanTextORM.text,
+                                    ]
+                                )
                             ),
                         ),
                         ARRAY(String, dimensions=2),
                     ).label(SdocColumns.SPAN_ANNOTATIONS.value)
                 )
                 query_builder._join_subquery(
-                    SourceDocumentORM.annotation_documents,
+                    AnnotationDocumentORM,
+                    AnnotationDocumentORM.source_document_id == SourceDocumentORM.id,
                     isouter=True,
                 )
                 query_builder._join_subquery(
-                    AnnotationDocumentORM.span_annotations,
+                    SpanAnnotationORM,
+                    SpanAnnotationORM.annotation_document_id
+                    == AnnotationDocumentORM.id,
                     isouter=True,
                 )
                 query_builder._join_subquery(
-                    SpanAnnotationORM.span_text,
-                    isouter=True,
-                )
-                query_builder._join_subquery(
-                    SpanAnnotationORM.code,
+                    SpanTextORM,
+                    SpanTextORM.id == SpanAnnotationORM.span_text_id,
                     isouter=True,
                 )
 

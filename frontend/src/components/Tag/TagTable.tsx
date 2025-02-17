@@ -8,8 +8,8 @@ import {
   useMaterialReactTable,
 } from "material-react-table";
 import { useMemo } from "react";
-import ProjectHooks from "../../api/ProjectHooks.ts";
 import { DocumentTagRead } from "../../api/openapi/models/DocumentTagRead.ts";
+import TagHooks from "../../api/TagHooks.ts";
 
 const createDataTree = (dataset: DocumentTagRead[]): TagTableRow[] => {
   const hashTable: Record<number, TagTableRow> = Object.create(null);
@@ -68,7 +68,6 @@ interface TagTableProps {
 }
 
 function TagTable({
-  projectId,
   enableMultiRowSelection = true,
   rowSelectionModel,
   onRowSelectionChange,
@@ -77,7 +76,7 @@ function TagTable({
   renderBottomToolbarCustomActions,
 }: TagTableProps) {
   // global server state
-  const projectTags = ProjectHooks.useGetAllTags(projectId);
+  const projectTags = TagHooks.useGetAllTags();
 
   // computed
   const { projectTagsMap, projectTagRows } = useMemo(() => {

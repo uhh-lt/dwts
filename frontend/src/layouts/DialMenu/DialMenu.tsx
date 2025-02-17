@@ -1,25 +1,12 @@
-import FeedbackIcon from "@mui/icons-material/Feedback";
 import HelpIcon from "@mui/icons-material/Help";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
-import { Dialog, SpeedDial, SpeedDialAction } from "@mui/material";
-import { useMemo, useState } from "react";
+import { SpeedDial, SpeedDialAction } from "@mui/material";
+import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { HELP_MESSAGE_SUFFIX, USER_GUIDE_BASE_URL, USER_GUIDE_ROUTE_MAP } from "../../utils/GlobalConstants.ts";
-import FeedbackDialog from "./FeedbackDialog.tsx";
 
 function DialMenu() {
   const location = useLocation();
-
-  // local state
-  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
-
-  // dialog event handlers
-  const openFeedbackDialog = () => {
-    setIsFeedbackDialogOpen(true);
-  };
-  const closeFeedbackDialog = () => {
-    setIsFeedbackDialogOpen(false);
-  };
 
   const wikiTargetRoute = useMemo(() => {
     let route = "";
@@ -57,16 +44,7 @@ function DialMenu() {
           }
           onClick={handleRedirect}
         />
-        <SpeedDialAction
-          key="feedback"
-          icon={<FeedbackIcon />}
-          tooltipTitle={"Send Feedback"}
-          onClick={openFeedbackDialog}
-        />
       </SpeedDial>
-      <Dialog open={isFeedbackDialogOpen} onClose={closeFeedbackDialog} maxWidth="md" fullWidth>
-        <FeedbackDialog setIsFeedbackDialogOpen={setIsFeedbackDialogOpen} locPathName={location.pathname} />
-      </Dialog>
     </>
   );
 }

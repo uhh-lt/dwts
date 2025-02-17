@@ -5,7 +5,6 @@
 import type { CodeCreate } from "../models/CodeCreate";
 import type { CodeRead } from "../models/CodeRead";
 import type { CodeUpdate } from "../models/CodeUpdate";
-import type { MemoRead } from "../models/MemoRead";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request } from "../core/request";
@@ -77,40 +76,6 @@ export class CodeService {
     return __request(OpenAPI, {
       method: "DELETE",
       url: "/code/{code_id}",
-      path: {
-        code_id: codeId,
-      },
-      errors: {
-        422: `Validation Error`,
-      },
-    });
-  }
-  /**
-   * Returns the Memo attached to the Code with the given ID if it exists.
-   * @returns MemoRead Successful Response
-   * @throws ApiError
-   */
-  public static getMemos({ codeId }: { codeId: number }): CancelablePromise<Array<MemoRead>> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/code/{code_id}/memo",
-      path: {
-        code_id: codeId,
-      },
-      errors: {
-        422: `Validation Error`,
-      },
-    });
-  }
-  /**
-   * Returns the Memo attached to the Code with the given ID of the logged-in User if it exists.
-   * @returns MemoRead Successful Response
-   * @throws ApiError
-   */
-  public static getUserMemo({ codeId }: { codeId: number }): CancelablePromise<MemoRead> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/code/{code_id}/memo/user",
       path: {
         code_id: codeId,
       },

@@ -18,7 +18,6 @@ import Tab from "@mui/material/Tab";
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProjectHooks from "../../api/ProjectHooks.ts";
-import { useAuth } from "../../auth/useAuth.ts";
 import { useAppDispatch, useAppSelector } from "../../plugins/ReduxHooks.ts";
 import ConfirmationAPI from "../ConfirmationDialog/ConfirmationAPI.ts";
 import { CRUDDialogActions } from "../dialogSlice.ts";
@@ -30,7 +29,6 @@ import ProjectTags from "./tabs/ProjectTags.tsx";
 import ProjectUsers from "./tabs/ProjectUsers.tsx";
 
 function ProjectSettingsDialog() {
-  const { user } = useAuth();
   const { projectId } = useParams() as { projectId: string };
   const projId = parseInt(projectId);
 
@@ -53,12 +51,12 @@ function ProjectSettingsDialog() {
   const navigate = useNavigate();
   const deleteProjectMutation = ProjectHooks.useDeleteProject();
   const handleClickRemoveProject = () => {
-    if (project.data && user) {
+    if (project.data) {
       ConfirmationAPI.openConfirmationDialog({
         text: `Do you really want to delete the project "${project.data.title}"? This action cannot be undone and  will remove project and all of it's content including documents!`,
         onAccept: () => {
           deleteProjectMutation.mutate(
-            { projId: project.data.id, userId: user.id },
+            { projId: project.data.id },
             {
               onSuccess: () => navigate(`/projects`),
             },

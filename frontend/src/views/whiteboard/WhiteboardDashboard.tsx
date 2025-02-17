@@ -20,7 +20,7 @@ function WhiteboardDashboard() {
     isLoading: isLoadingWhiteboards,
     isFetching: isFetchingWhiteboards,
     isError: isLoadingWhiteboardsError,
-  } = WhiteboardHooks.useGetProjectWhiteboards(projectId);
+  } = WhiteboardHooks.useGetProjectWhiteboardsList();
 
   // mutations
   const { mutate: createWhiteboard, isPending: isCreatingWhiteboard } = WhiteboardHooks.useCreateWhiteboard();

@@ -2,7 +2,7 @@ import { Box, Portal, Stack, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useContext, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
+import TagHooks from "../../../api/TagHooks.ts";
 import { DocumentTagRead } from "../../../api/openapi/models/DocumentTagRead.ts";
 import { SampledSdocsResults } from "../../../api/openapi/models/SampledSdocsResults.ts";
 import { AnalysisService } from "../../../api/openapi/services/AnalysisService.ts";
@@ -28,7 +28,7 @@ function DocumentSampler() {
   const dispatch = useAppDispatch();
 
   // global server state
-  const tags = ProjectHooks.useGetAllTags(projectId);
+  const tags = TagHooks.useGetAllTags();
   const tagsMap = useMemo(() => {
     if (!tags.data) {
       return {};

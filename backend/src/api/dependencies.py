@@ -42,18 +42,6 @@ async def skip_limit_params(
     return result
 
 
-async def resolve_code_param(
-    resolve: bool = Query(
-        title="Resolve Code",
-        description="If true, the code_id of the"
-        " SpanAnnotation gets resolved and replaced"
-        " by the respective Code entity",
-        default=True,
-    ),
-) -> bool:
-    return resolve
-
-
 async def get_db_session() -> AsyncGenerator[Session, None]:
     session = SQLService().session_maker()
     try:

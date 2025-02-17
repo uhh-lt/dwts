@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .code import CodeRead
 from .dto_base import UpdateDTOBase
 
 
@@ -38,16 +37,6 @@ class BBoxAnnotationRead(BBoxAnnotationBaseDTO):
     code_id: int = Field(description="Code the BBoxAnnotation refers to")
     user_id: int = Field(description="User that created the BBoxAnnotation")
     sdoc_id: int = Field(description="SourceDocument the BBoxAnnotation refers to")
-    created: datetime = Field(description="Created timestamp of the BBoxAnnotation")
-    updated: datetime = Field(description="Updated timestamp of the BBoxAnnotation")
-    model_config = ConfigDict(from_attributes=True)
-
-
-class BBoxAnnotationReadResolved(BBoxAnnotationBaseDTO):
-    id: int = Field(description="ID of the BBoxAnnotation")
-    code: CodeRead = Field(description="Code the BBoxAnnotation refers to")
-    user_id: int = Field(description="User the SpanAnnotation belongs to")
-    sdoc_id: int = Field(description="SourceDocument the SpanAnnotation refers to")
     created: datetime = Field(description="Created timestamp of the BBoxAnnotation")
     updated: datetime = Field(description="Updated timestamp of the BBoxAnnotation")
     model_config = ConfigDict(from_attributes=True)

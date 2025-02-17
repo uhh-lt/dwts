@@ -1,5 +1,4 @@
 import { Button, CircularProgress } from "@mui/material";
-import { UseQueryResult } from "@tanstack/react-query";
 import { useCallback } from "react";
 import MemoHooks from "../../../api/MemoHooks.ts";
 import { AttachedObjectType } from "../../../api/openapi/models/AttachedObjectType.ts";
@@ -14,13 +13,8 @@ interface AnnotationCardMemoProps {
   annotationText: string;
 }
 
-function AnnotationCardMemo({
-  useGetAnnotationMemo,
-  ...props
-}: AnnotationCardMemoProps & {
-  useGetAnnotationMemo: (annotationId: number) => UseQueryResult<MemoRead, Error>;
-}) {
-  const memo = useGetAnnotationMemo(props.annotationId);
+function AnnotationCardMemo(props: AnnotationCardMemoProps) {
+  const memo = MemoHooks.useGetUserMemo(props.annotationType, props.annotationId);
   if (memo.isSuccess) {
     return <AnnotationCardMemoEditor key={memo.data?.id} memo={memo.data} />;
   } else if (memo.isError) {

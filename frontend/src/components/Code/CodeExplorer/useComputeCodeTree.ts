@@ -1,16 +1,12 @@
 import { useMemo } from "react";
-import { useParams } from "react-router-dom";
 import Tree, { Node } from "ts-tree-structure";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
+import CodeHooks from "../../../api/CodeHooks.ts";
 import { IDataTree } from "../../TreeExplorer/IDataTree.ts";
 import { dataToTree } from "../../TreeExplorer/TreeUtils.ts";
 
-const useComputeCodeTree = (returnAllCodes: boolean = false) => {
-  const { projectId } = useParams() as { projectId: string };
-  const projId = parseInt(projectId);
-
+const useComputeCodeTree = () => {
   // global server state
-  const allCodes = ProjectHooks.useGetAllCodes(projId, returnAllCodes);
+  const allCodes = CodeHooks.useGetEnabledCodes();
 
   // computed
   const codeTree: Node<IDataTree> | null = useMemo(() => {

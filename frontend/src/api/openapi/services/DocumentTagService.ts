@@ -6,7 +6,6 @@ import type { Body_documentTag_update_document_tags_batch } from "../models/Body
 import type { DocumentTagCreate } from "../models/DocumentTagCreate";
 import type { DocumentTagRead } from "../models/DocumentTagRead";
 import type { DocumentTagUpdate } from "../models/DocumentTagUpdate";
-import type { MemoRead } from "../models/MemoRead";
 import type { SourceDocumentDocumentTagLinks } from "../models/SourceDocumentDocumentTagLinks";
 import type { SourceDocumentDocumentTagMultiLink } from "../models/SourceDocumentDocumentTagMultiLink";
 import type { CancelablePromise } from "../core/CancelablePromise";
@@ -164,40 +163,6 @@ export class DocumentTagService {
     return __request(OpenAPI, {
       method: "DELETE",
       url: "/doctag/{tag_id}",
-      path: {
-        tag_id: tagId,
-      },
-      errors: {
-        422: `Validation Error`,
-      },
-    });
-  }
-  /**
-   * Returns the Memos attached to the DocumentTag with the given ID if it exists.
-   * @returns MemoRead Successful Response
-   * @throws ApiError
-   */
-  public static getMemos({ tagId }: { tagId: number }): CancelablePromise<Array<MemoRead>> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/doctag/{tag_id}/memo",
-      path: {
-        tag_id: tagId,
-      },
-      errors: {
-        422: `Validation Error`,
-      },
-    });
-  }
-  /**
-   * Returns the Memo attached to the document tag with the given ID of the logged-in User if it exists.
-   * @returns MemoRead Successful Response
-   * @throws ApiError
-   */
-  public static getUserMemo({ tagId }: { tagId: number }): CancelablePromise<MemoRead> {
-    return __request(OpenAPI, {
-      method: "GET",
-      url: "/doctag/{tag_id}/memo/user",
       path: {
         tag_id: tagId,
       },

@@ -36,7 +36,6 @@ function CodeFrequencyAnalysis() {
             <Stack spacing={2}>
               <Stack direction="row" gap={2}>
                 <UserSelectorMulti
-                  projectId={projectId}
                   userIds={selectedUserIds}
                   onUserIdChange={setSelectedUserIds}
                   title="User(s)"

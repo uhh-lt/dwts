@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import "./DocumentRenderer.css";
 
 import { DOMNode, Element, HTMLReactParserOptions, domToReact } from "html-react-parser";
-import { SpanAnnotationReadResolved } from "../../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../../api/openapi/models/SpanAnnotationRead.ts";
 import { useAppSelector } from "../../../plugins/ReduxHooks.ts";
 import DocumentPage from "./DocumentPage.tsx";
 import { IToken } from "./IToken.ts";
@@ -17,7 +17,7 @@ interface DocumentRendererProps {
   html: string;
   tokenData: IToken[] | undefined;
   annotationsPerToken: Map<number, number[]> | undefined;
-  annotationMap: Map<number, SpanAnnotationReadResolved> | undefined;
+  annotationMap: Map<number, SpanAnnotationRead> | undefined;
   isViewer: boolean;
   projectId: number;
 }

@@ -23,7 +23,7 @@ function CotaDashboard() {
     isLoading: isLoadingAnalysis,
     isFetching: isFetchingAnalysis,
     isError: isLoadingAnalysisError,
-  } = CotaHooks.useGetUserCotas(projectId);
+  } = CotaHooks.useGetUserCotaList();
   const userAnalysisTableData: AnaylsisDashboardRow[] = useMemo(
     () =>
       userAnalysis?.map((analysis) => ({

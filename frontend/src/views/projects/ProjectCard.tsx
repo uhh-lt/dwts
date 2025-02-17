@@ -9,7 +9,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project }: ProjectCardProps) {
   const preProStatus = PreProHooks.useGetPreProProjectStatus(project.id);
   return (
-    <Grid2 size={{ sm: 4 }}>
+    <Grid2 size={{ sm: 3 }}>
       <Card>
         <CardActionArea component={Link} to={`/project/${project.id}/search`}>
           <CardContent sx={{ padding: "0px !important" }}>

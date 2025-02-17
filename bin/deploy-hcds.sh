@@ -37,7 +37,7 @@ cd ~/demos/dats || exit
 ./bin/setup-envs.sh --project_name hcds --port_prefix 190
 sed -i "s/dats/dwts/g" docker/.env
 sed -i "s/API_WORKERS=10/API_WORKERS=16/" docker/.env
-sed -i "s/CELERY_BACKGROUND_JOBS_WORKER_CONCURRENCY=10/CELERY_BACKGROUND_JOBS_WORKER_CONCURRENCY=16/" docker/.env
+sed -i "s/CELERY_BACKGROUND_JOBS_WORKER_CONCURRENCY=10/CELERY_BACKGROUND_JOBS_WORKER_CONCURRENCY=32/" docker/.env
 
 # pull & start docker containers
 cd ~/demos/dats/docker || exit

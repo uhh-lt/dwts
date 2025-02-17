@@ -1,7 +1,7 @@
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 import SpanAnnotationHooks from "../../api/SpanAnnotationHooks.ts";
-import { SpanAnnotationReadResolved } from "../../api/openapi/models/SpanAnnotationReadResolved.ts";
+import { SpanAnnotationRead } from "../../api/openapi/models/SpanAnnotationRead.ts";
 import { useAppDispatch } from "../../plugins/ReduxHooks.ts";
 import { AnnoActions } from "../../views/annotation/annoSlice.ts";
 import CodeRenderer from "../Code/CodeRenderer.tsx";
@@ -20,7 +20,7 @@ interface SpanAnnotationRendererSharedProps {
 }
 
 interface SpanAnnotationRendererProps {
-  spanAnnotation: number | SpanAnnotationReadResolved;
+  spanAnnotation: number | SpanAnnotationRead;
 }
 
 function SpanAnnotationRenderer({
@@ -74,7 +74,7 @@ function SpanAnnotationRendererWithData({
   showSdocProjectMetadataId,
   sdocRendererProps,
   link,
-}: { spanAnnotation: SpanAnnotationReadResolved } & SpanAnnotationRendererSharedProps) {
+}: { spanAnnotation: SpanAnnotationRead } & SpanAnnotationRendererSharedProps) {
   const dispatch = useAppDispatch();
   const handleClick = () => {
     dispatch(AnnoActions.setSelectedAnnotationId(spanAnnotation.id));
@@ -87,7 +87,7 @@ function SpanAnnotationRendererWithData({
       {showSdocProjectMetadataId && (
         <SdocMetadataRenderer sdocId={spanAnnotation.sdoc_id} projectMetadataId={showSdocProjectMetadataId} />
       )}
-      {showCode && <CodeRenderer code={spanAnnotation.code} />}
+      {showCode && <CodeRenderer code={spanAnnotation.code_id} />}
       {showCode && showSpanText && ": "}
       {showSpanText && spanAnnotation.text}
     </Stack>

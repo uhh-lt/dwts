@@ -30,13 +30,13 @@ else:
 class Blip2Model:
     def __init__(self):
         logger.debug(f"Loading Blip2Processor {MODEL} ...")
-        assert isinstance(
-            MODEL, str
-        ), f"Expected model to be of type string, but got {type(MODEL)} instead."
+        assert isinstance(MODEL, str), (
+            f"Expected model to be of type string, but got {type(MODEL)} instead."
+        )
         image_processor = Blip2Processor.from_pretrained(MODEL, revision=REVISION)
-        assert isinstance(
-            image_processor, Blip2Processor
-        ), f"Expected model to be of type string, but got {type(image_processor)} instead."
+        assert isinstance(image_processor, Blip2Processor), (
+            f"Expected model to be of type string, but got {type(image_processor)} instead."
+        )
 
         device_map = {"": 0}
         load_in_8bit = False
@@ -64,9 +64,9 @@ class Blip2Model:
             device_map=device_map,
             torch_dtype=data_type,
         )
-        assert isinstance(
-            captioning_model, Blip2ForConditionalGeneration
-        ), "Failed to load captioning model"
+        assert isinstance(captioning_model, Blip2ForConditionalGeneration), (
+            "Failed to load captioning model"
+        )
 
         captioning_model.eval()
         self.data_type = data_type

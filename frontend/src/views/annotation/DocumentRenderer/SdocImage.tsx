@@ -9,7 +9,8 @@ interface SdocImageLinkProps {
 
 function SdocImage({ projectId, filename }: SdocImageLinkProps) {
   const sdocId = SdocHooks.useGetDocumentIdByFilename(filename, projectId);
-  const url = SdocHooks.useGetURL(sdocId.data, true);
+  const sdocData = SdocHooks.useGetDocumentData(sdocId.data);
+
   const imageMenuRef = useRef<ImageMenuHandle>(null);
 
   const openMenu = (event: React.MouseEvent) => {
@@ -24,22 +25,17 @@ function SdocImage({ projectId, filename }: SdocImageLinkProps) {
 
   return (
     <>
-      {sdocId.isSuccess && url.isSuccess ? (
+      {sdocData.isSuccess ? (
         <div>
           <img
-            src={url.data}
+            src={encodeURI(import.meta.env.VITE_APP_CONTENT + "/" + sdocData.data.repo_url)}
             alt="resolved"
-            data-sdoc-id={sdocId.data}
             style={{ maxWidth: "640px", maxHeight: "480px", cursor: "pointer" }}
             onClick={openMenu}
           />
         </div>
-      ) : sdocId.isSuccess && !url.isSuccess ? (
-        <img alt={`Could not resolve ${filename} :(`} />
-      ) : sdocId.isError ? (
-        <div>Error: {sdocId.error.message}</div>
-      ) : url.isError ? (
-        <div>Error: {url.error.message}</div>
+      ) : sdocData.isError ? (
+        <div>Error: {sdocData.error.message}</div>
       ) : (
         <div>Loading img...</div>
       )}

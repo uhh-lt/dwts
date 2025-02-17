@@ -14,15 +14,10 @@ import CotaDashboard from "../views/analysis/ConceptsOverTime/CotaDashboard.tsx"
 import CotaView from "../views/analysis/ConceptsOverTime/CotaView.tsx";
 import SentAnnotationAnalysis from "../views/analysis/SentAnnotationAnalysis/SentAnnotationAnalysis.tsx";
 import SpanAnnotationAnalysis from "../views/analysis/SpanAnnotationAnalysis/SpanAnnotationAnalysis.tsx";
-import TableDashboard from "../views/analysis/Table/TableDashboard.tsx";
-import TableView from "../views/analysis/Table/TableView.tsx";
 import TimelineAnalysis from "../views/analysis/TimelineAnalysis/TimelineAnalysis.tsx";
 import TimelineAnalysisDashboard from "../views/analysis/TimelineAnalysis/TimelineAnalysisDashboard.tsx";
 import WordFrequency from "../views/analysis/WordFrequency/WordFrequency.tsx";
 import Annotation from "../views/annotation/Annotation.tsx";
-import Feedback from "../views/feedback/Feedback.tsx";
-import FeedbackAll from "../views/feedback/FeedbackAll.tsx";
-import FeedbackUser from "../views/feedback/FeedbackUser.tsx";
 import Logbook from "../views/logbook/Logbook.tsx";
 import Profile from "../views/profile/Profile.tsx";
 import Projects from "../views/projects/Projects.tsx";
@@ -82,20 +77,6 @@ const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
-      {
-        path: "/feedback",
-        element: <Feedback />,
-        children: [
-          {
-            path: "/feedback",
-            element: <FeedbackAll />,
-          },
-          {
-            path: "/feedback/:userId",
-            element: <FeedbackUser />,
-          },
-        ],
-      },
       { path: "*", element: <NotFound /> },
     ],
   },
@@ -154,14 +135,6 @@ const router = createBrowserRouter([
       {
         path: "/project/:projectId/analysis/word-frequency",
         element: <WordFrequency />,
-      },
-      {
-        path: "/project/:projectId/analysis/table",
-        element: <TableDashboard />,
-      },
-      {
-        path: "/project/:projectId/analysis/table/:tableId",
-        element: <TableView />,
       },
       {
         path: "/project/:projectId/analysis/concepts-over-time-analysis",

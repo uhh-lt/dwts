@@ -393,9 +393,9 @@ def import_project(
             execute_video_preprocessing_pipeline_task,
         )
 
-        assert isinstance(
-            execute_text_preprocessing_pipeline_task, Task
-        ), "Not a Celery Task"
+        assert isinstance(execute_text_preprocessing_pipeline_task, Task), (
+            "Not a Celery Task"
+        )
 
         tasks = [
             execute_text_preprocessing_pipeline_task.s(cargo, is_init=False)
@@ -403,9 +403,9 @@ def import_project(
         ]
 
         # 5. init image pipelines
-        assert isinstance(
-            execute_image_preprocessing_pipeline_task, Task
-        ), "Not a Celery Task"
+        assert isinstance(execute_image_preprocessing_pipeline_task, Task), (
+            "Not a Celery Task"
+        )
         image_tasks = [
             execute_image_preprocessing_pipeline_task.s(cargo, is_init=False)
             for cargo in cargos[DocType.image]
@@ -413,9 +413,9 @@ def import_project(
         tasks.extend(image_tasks)
 
         # 6. init audio pipelines
-        assert isinstance(
-            execute_audio_preprocessing_pipeline_task, Task
-        ), "Not a Celery Task"
+        assert isinstance(execute_audio_preprocessing_pipeline_task, Task), (
+            "Not a Celery Task"
+        )
         audio_tasks = [
             execute_audio_preprocessing_pipeline_task.s(cargo, is_init=False)
             for cargo in cargos[DocType.audio]
@@ -423,9 +423,9 @@ def import_project(
         tasks.extend(audio_tasks)
 
         # 7. init video pipelines
-        assert isinstance(
-            execute_video_preprocessing_pipeline_task, Task
-        ), "Not a Celery Task"
+        assert isinstance(execute_video_preprocessing_pipeline_task, Task), (
+            "Not a Celery Task"
+        )
         video_tasks = [
             execute_video_preprocessing_pipeline_task.s(cargo, is_init=False)
             for cargo in cargos[DocType.video]

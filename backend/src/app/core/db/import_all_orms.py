@@ -2,7 +2,6 @@
 # ruff: noqa: F401
 """we import all ORM here so that SQLAlchemy knows about them to generate the SQL tables"""
 
-from app.core.data.orm.analysis_table import AnalysisTableORM
 from app.core.data.orm.annotation_document import AnnotationDocumentORM
 from app.core.data.orm.bbox_annotation import BBoxAnnotationORM
 from app.core.data.orm.code import CodeORM

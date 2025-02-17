@@ -25,7 +25,7 @@ function TextViewer({ sdocData: sdocData }: TextViewerProps) {
   const sentences = sdocData.sentences;
   const { tokenData, annotationsPerToken, annotationMap } = useComputeTokenData({
     sdocData,
-    userIds: visibleUserId ? [visibleUserId] : [],
+    userId: visibleUserId,
   });
 
   // ui events
@@ -38,20 +38,14 @@ function TextViewer({ sdocData: sdocData }: TextViewerProps) {
     let element: HTMLElement = event.target as HTMLElement;
     let tokenIndex: number = NaN;
     let sentenceIndex: number = NaN;
-    let imageSdocId: number = NaN;
 
     for (let i = 0; i < 3; i++) {
-      if (isNaN(imageSdocId)) {
-        imageSdocId = parseInt(element.getAttribute("data-sdoc-id")!);
-      }
       if (isNaN(sentenceIndex)) {
         sentenceIndex = parseInt(element.getAttribute("data-sentenceid")!);
       }
       if (isNaN(tokenIndex)) {
         tokenIndex = parseInt(element.getAttribute("data-tokenid")!);
       }
-
-      if (!isNaN(imageSdocId)) break;
 
       // traverse up the tree one element
       if (element.parentElement) {
@@ -61,41 +55,32 @@ function TextViewer({ sdocData: sdocData }: TextViewerProps) {
       }
     }
 
-    if (isNaN(tokenIndex) && isNaN(sentenceIndex) && isNaN(imageSdocId)) return;
+    if (isNaN(tokenIndex) && isNaN(sentenceIndex)) return;
 
     event.preventDefault();
 
-    if (!isNaN(imageSdocId)) {
-      // calculate position of the context menu
-      // const position = {
-      //   left: event.clientX,
-      //   top: event.clientY,
-      // };
-      // imageMenuRef.current?.open(position, imageSdocId);
-    } else {
-      // calculate position of the context menu (based on selection end)
-      const boundingBox = (event.target as HTMLElement).getBoundingClientRect();
-      const position = {
-        left: boundingBox.left,
-        top: boundingBox.top + boundingBox.height,
-      };
+    // calculate position of the context menu (based on selection end)
+    const boundingBox = (event.target as HTMLElement).getBoundingClientRect();
+    const position = {
+      left: boundingBox.left,
+      top: boundingBox.top + boundingBox.height,
+    };
 
-      // get the sentence that spans the clicked element
-      let sentence: string | undefined = undefined;
-      if (!isNaN(sentenceIndex)) {
-        sentence = sentences[sentenceIndex];
-      }
+    // get the sentence that spans the clicked element
+    let sentence: string | undefined = undefined;
+    if (!isNaN(sentenceIndex)) {
+      sentence = sentences[sentenceIndex];
+    }
 
-      // get all annotations that span the clicked token
-      let annos: number[] | undefined = undefined;
-      if (!isNaN(tokenIndex)) {
-        annos = annotationsPerToken.get(tokenIndex);
-      }
+    // get all annotations that span the clicked token
+    let annos: number[] | undefined = undefined;
+    if (!isNaN(tokenIndex)) {
+      annos = annotationsPerToken.get(tokenIndex);
+    }
 
-      // open code selector if there are annotations
-      if (annos || sentence) {
-        sentenceMenuRef.current?.open(position, sentence, annos ? annos.map((a) => annotationMap.get(a)!) : undefined);
-      }
+    // open code selector if there are annotations
+    if (annos || sentence) {
+      sentenceMenuRef.current?.open(position, sentence, annos ? annos.map((a) => annotationMap.get(a)!) : undefined);
     }
   };
 

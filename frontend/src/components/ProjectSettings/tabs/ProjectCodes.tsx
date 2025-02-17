@@ -6,14 +6,14 @@ import CodeCreateDialog from "../../Code/CodeCreateDialog.tsx";
 import CodeCreateListItemButton from "../../Code/CodeCreateListItemButton.tsx";
 import CodeEditButton from "../../Code/CodeEditButton.tsx";
 import CodeEditDialog from "../../Code/CodeEditDialog.tsx";
-import useComputeCodeTree from "../../Code/CodeExplorer/useComputeCodeTree.ts";
 import CodeToggleEnabledButton from "../../Code/CodeToggleEnabledButton.tsx";
 import CodeToggleVisibilityButton from "../../Code/CodeToggleVisibilityButton.tsx";
 import TreeExplorer from "../../TreeExplorer/TreeExplorer.tsx";
+import useComputeProjectCodeTree from "./useComputeProjectCodeTree.ts";
 
 function ProjectCodes() {
   // custom hooks
-  const { codeTree, allCodes } = useComputeCodeTree(true);
+  const { codeTree, allCodes } = useComputeProjectCodeTree();
 
   // local state
   const [expandedCodeIds, setExpandedCodeIds] = useState<string[]>([]);

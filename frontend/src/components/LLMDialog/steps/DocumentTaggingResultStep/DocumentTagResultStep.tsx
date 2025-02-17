@@ -5,7 +5,6 @@ import { useState } from "react";
 import LLMHooks from "../../../../api/LLMHooks.ts";
 import { DocumentTaggingLLMJobResult } from "../../../../api/openapi/models/DocumentTaggingLLMJobResult.ts";
 import { DocumentTagRead } from "../../../../api/openapi/models/DocumentTagRead.ts";
-import ProjectHooks from "../../../../api/ProjectHooks.ts";
 import TagHooks from "../../../../api/TagHooks.ts";
 import { useAppDispatch, useAppSelector } from "../../../../plugins/ReduxHooks.ts";
 import { CRUDDialogActions } from "../../../dialogSlice.ts";
@@ -16,10 +15,9 @@ import DocumentTagResultStepTable from "./DocumentTagResultStepTable.tsx";
 function DocumentTagResultStep() {
   // global client state
   const llmJobId = useAppSelector((state) => state.dialog.llmJobId);
-  const projectId = useAppSelector((state) => state.dialog.llmProjectId);
 
   // global server state
-  const documentTags = ProjectHooks.useGetAllTags(projectId);
+  const documentTags = TagHooks.useGetAllTags();
   const llmJob = LLMHooks.usePollLLMJob(llmJobId, undefined);
 
   if (llmJob.isSuccess && llmJob.data.result && documentTags.isSuccess) {

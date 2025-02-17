@@ -35,7 +35,6 @@ if not STARTUP_DONE:
 
 from api.endpoints import (
     analysis,
-    analysis_table,
     annoscaling,
     authentication,
     bbox_annotation,
@@ -44,7 +43,6 @@ from api.endpoints import (
     crawler,
     document_tag,
     export,
-    feedback,
     general,
     import_,
     llm,
@@ -256,12 +254,10 @@ app.include_router(code.router)
 app.include_router(memo.router)
 app.include_router(search.router)
 app.include_router(source_document_metadata.router)
-app.include_router(feedback.router)
 app.include_router(analysis.router)
 app.include_router(prepro.router)
 app.include_router(export.router)
 app.include_router(crawler.router)
-app.include_router(analysis_table.router)
 app.include_router(annoscaling.router)
 app.include_router(whiteboard.router)
 app.include_router(project_metadata.router)
@@ -276,9 +272,9 @@ app.include_router(import_.router)
 def main() -> None:
     # read port from config
     port = int(conf.api.port)
-    assert (
-        port is not None and isinstance(port, int) and port > 0
-    ), "The API port has to be a positive integer! E.g. 8081"
+    assert port is not None and isinstance(port, int) and port > 0, (
+        "The API port has to be a positive integer! E.g. 8081"
+    )
 
     is_debug = conf.api.production_mode == "0"
 

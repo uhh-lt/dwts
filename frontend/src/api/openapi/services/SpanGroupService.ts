@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { SpanAnnotationRead } from "../models/SpanAnnotationRead";
-import type { SpanAnnotationReadResolved } from "../models/SpanAnnotationReadResolved";
 import type { SpanGroupCreate } from "../models/SpanGroupCreate";
 import type { SpanGroupRead } from "../models/SpanGroupRead";
 import type { SpanGroupUpdate } from "../models/SpanGroupUpdate";
@@ -92,27 +91,19 @@ export class SpanGroupService {
   }
   /**
    * Returns all SpanAnnotations in the SpanGroup with the given ID if it exists
-   * @returns any Successful Response
+   * @returns SpanAnnotationRead Successful Response
    * @throws ApiError
    */
   public static getAllAnnotations({
     spanGroupId,
-    resolve = true,
   }: {
     spanGroupId: number;
-    /**
-     * If true, the code_id of the SpanAnnotation gets resolved and replaced by the respective Code entity
-     */
-    resolve?: boolean;
-  }): CancelablePromise<Array<SpanAnnotationRead | SpanAnnotationReadResolved>> {
+  }): CancelablePromise<Array<SpanAnnotationRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/spangroup/{span_group_id}/span_annotations",
       path: {
         span_group_id: spanGroupId,
-      },
-      query: {
-        resolve: resolve,
       },
       errors: {
         422: `Validation Error`,

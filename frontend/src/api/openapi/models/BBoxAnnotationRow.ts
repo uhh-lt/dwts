@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { CodeRead } from "./CodeRead";
-import type { DocumentTagRead } from "./DocumentTagRead";
 import type { MemoRead } from "./MemoRead";
 import type { SourceDocumentRead } from "./SourceDocumentRead";
 export type BBoxAnnotationRow = {
@@ -44,9 +43,9 @@ export type BBoxAnnotationRow = {
    */
   sdoc: SourceDocumentRead;
   /**
-   * The DocumentTags of the SourceDocument.
+   * The DocumentTagIDs of the SourceDocument.
    */
-  tags: Array<DocumentTagRead>;
+  tag_ids: Array<number>;
   /**
    * The Memo of the Annotation.
    */

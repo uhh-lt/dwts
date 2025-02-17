@@ -4,7 +4,7 @@ import { Box, Button, DialogActions, DialogContent, Typography } from "@mui/mate
 import { MRT_RowSelectionState } from "material-react-table";
 import { useMemo, useState } from "react";
 import LLMHooks from "../../../api/LLMHooks.ts";
-import ProjectHooks from "../../../api/ProjectHooks.ts";
+import MetadataHooks from "../../../api/MetadataHooks.ts";
 import { DocType } from "../../../api/openapi/models/DocType.ts";
 import { ProjectMetadataRead } from "../../../api/openapi/models/ProjectMetadataRead.ts";
 import { TaskType } from "../../../api/openapi/models/TaskType.ts";
@@ -23,7 +23,7 @@ function ProjectMetadataSelectionStep() {
   const dispatch = useAppDispatch();
 
   // global server state
-  const projectMetadata = ProjectHooks.useGetMetadata(projectId);
+  const projectMetadata = MetadataHooks.useGetProjectMetadataList();
   const filteredProjectMetadata = useMemo(() => {
     if (!projectMetadata.data) return [];
     return projectMetadata.data.filter((metadata) => metadata.doctype === DocType.TEXT && metadata.read_only === false);
@@ -71,7 +71,6 @@ function ProjectMetadataSelectionStep() {
       </DialogContent>
       <ProjectMetadataTable
         projectMetadata={filteredProjectMetadata}
-        projectId={projectId}
         rowSelectionModel={rowSelectionModel}
         onRowSelectionChange={setRowSelectionModel}
         renderBottomToolbarCustomActions={(props) => (

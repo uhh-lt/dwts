@@ -6,7 +6,6 @@ import { useMemo } from "react";
 import { SubmitErrorHandler, SubmitHandler, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import CodeHooks from "../../api/CodeHooks.ts";
-import ProjectHooks from "../../api/ProjectHooks.ts";
 import { CodeRead } from "../../api/openapi/models/CodeRead.ts";
 import { useOpenSnackbar } from "../../components/SnackbarDialog/useOpenSnackbar.ts";
 import { useAppDispatch, useAppSelector } from "../../plugins/ReduxHooks.ts";
@@ -33,7 +32,7 @@ function CodeCreateDialog() {
   const projectId = parseInt((useParams() as { projectId: string }).projectId);
 
   // global server state (react query)
-  const codes = ProjectHooks.useGetAllCodes(projectId);
+  const codes = CodeHooks.useGetEnabledCodes();
 
   // computed
   const parentCodes = useMemo(() => codes.data?.filter((code) => !code.is_system) || [], [codes.data]);

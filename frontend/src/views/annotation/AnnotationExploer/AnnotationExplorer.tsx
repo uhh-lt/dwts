@@ -3,21 +3,22 @@ import SearchIcon from "@mui/icons-material/Search";
 import { Box, CircularProgress, Divider, Stack, TextField, ToggleButton } from "@mui/material";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef, useState } from "react";
+import CodeHooks from "../../../api/CodeHooks.ts";
 import { CodeRead } from "../../../api/openapi/models/CodeRead.ts";
 import { useAppDispatch, useAppSelector } from "../../../plugins/ReduxHooks.ts";
 import { useDebounce } from "../../../utils/useDebounce.ts";
 import { AnnoActions } from "../annoSlice.ts";
 import { AnnotationCardProps } from "./types/AnnotationCardProps.ts";
-import { AnnotationReadResolved } from "./types/AnnotationReadResolved.ts";
+import { AnnotationRead } from "./types/AnnotationRead.ts";
 
-interface AnnotationExplorerProps<T extends AnnotationReadResolved> {
+interface AnnotationExplorerProps<T extends AnnotationRead> {
   annotations: T[] | undefined;
   filterByText: (text: string) => (annotation: T) => boolean; // this has to be a useCallback / constant function!
   renderAnnotationCard: (props: AnnotationCardProps<T>) => JSX.Element;
   estimateSize?: () => number;
 }
 
-function AnnotationExplorer<T extends AnnotationReadResolved>({
+function AnnotationExplorer<T extends AnnotationRead>({
   annotations,
   filterByText,
   renderAnnotationCard,
@@ -28,18 +29,22 @@ function AnnotationExplorer<T extends AnnotationReadResolved>({
   const filter = useDebounce(filterValue, 300);
 
   // code filtering
-  const codes = useMemo(
-    () =>
-      annotations?.reduce(
-        (acc, annotation) => {
-          acc[annotation.code.id] = annotation.code;
+  const projectCodes = CodeHooks.useGetAllCodesList();
+  const [filterCodeIds, setFilterCodeIds] = useState<number[]>([]);
+  const codes = useMemo(() => {
+    const annotationCodeIds = new Set(annotations?.map((annotation) => annotation.code_id));
+    const relevantCodeIds = new Set([...annotationCodeIds, ...filterCodeIds]);
+    return projectCodes.data
+      ?.filter((code) => relevantCodeIds.has(code.id))
+      ?.reduce(
+        (acc, code) => {
+          acc[code.id] = code;
           return acc;
         },
         {} as Record<number, CodeRead>,
-      ) || {},
-    [annotations],
-  );
-  const [filterCodeIds, setFilterCodeIds] = useState<number[]>([]);
+      );
+  }, [projectCodes.data, annotations, filterCodeIds]);
+
   const toggleFilterCodeId = (codeId: number) => {
     if (filterCodeIds.includes(codeId)) {
       setFilterCodeIds(filterCodeIds.filter((id) => id !== codeId));
@@ -52,7 +57,7 @@ function AnnotationExplorer<T extends AnnotationReadResolved>({
   const filteredAnnotations = useMemo(() => {
     const filteredAnnotations = annotations?.filter(filterByText(filter)) || [];
     if (filterCodeIds.length > 0) {
-      return filteredAnnotations.filter((annotation) => filterCodeIds.includes(annotation.code.id));
+      return filteredAnnotations.filter((annotation) => filterCodeIds.includes(annotation.code_id));
     }
     return filteredAnnotations;
   }, [annotations, filter, filterCodeIds, filterByText]);
@@ -147,23 +152,24 @@ function AnnotationExplorer<T extends AnnotationReadResolved>({
       </Box>
       <Divider />
       <Box alignItems="center" p={1}>
-        {Object.values(codes).map((code) => {
-          const isSelected = filterCodeIds.includes(code.id);
-          return (
-            <ToggleButton
-              color="primary"
-              key={code.id}
-              value={code.id}
-              selected={isSelected}
-              onChange={() => {
-                toggleFilterCodeId(code.id);
-              }}
-              sx={{ p: 0, m: 0.5 }}
-            >
-              <Square style={{ color: code.color }} fontSize={isSelected ? "medium" : "small"} />
-            </ToggleButton>
-          );
-        })}
+        {codes &&
+          Object.values(codes).map((code) => {
+            const isSelected = filterCodeIds.includes(code.id);
+            return (
+              <ToggleButton
+                color="primary"
+                key={code.id}
+                value={code.id}
+                selected={isSelected}
+                onChange={() => {
+                  toggleFilterCodeId(code.id);
+                }}
+                sx={{ p: 0, m: 0.5 }}
+              >
+                <Square style={{ color: code.color }} fontSize={isSelected ? "medium" : "small"} />
+              </ToggleButton>
+            );
+          })}
       </Box>
     </Box>
   );
