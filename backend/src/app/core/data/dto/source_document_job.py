@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.core.data.dto.dto_base import UpdateDTOBase
+from .dto_base import UpdateDTOBase
 
 
 class SourceDocumentJobBaseDTO(BaseModel):
@@ -20,7 +20,6 @@ class SourceDocumentJobRead(SourceDocumentJobBaseDTO):
 
 class SourceDocumentJobCreate(SourceDocumentJobBaseDTO):
     pass
-
 
 class SourceDocumentJobUpdate(SourceDocumentJobBaseDTO, UpdateDTOBase):
     pass

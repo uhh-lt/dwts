@@ -1,16 +1,18 @@
 from datetime import datetime
-from typing import List, NamedTuple, Tuple
+from typing import Dict, List, NamedTuple, Tuple
 
 from app.core.data.crud.annotation_document import crud_adoc
 from app.core.data.crud.code import crud_code
 from app.core.data.crud.source_document_job import crud_sdoc_job
 from app.core.data.crud.span_annotation import crud_span_anno
+from app.core.data.crud.span_group import crud_span_group
 from app.core.data.crud.user import SYSTEM_USER_ID
-from app.core.data.dto.source_document_job import (
-    SourceDocumentJobCreate,
-    SourceDocumentJobUpdate,
-)
+from app.core.data.dto.source_document_job import SourceDocumentJobCreate
 from app.core.data.dto.span_annotation import SpanAnnotationCreateIntern
+from app.core.data.dto.span_group import (
+    SpanAnnotationSpanGroupLink,
+    SpanGroupCreateIntern,
+)
 from app.core.data.orm.source_document_data import SourceDocumentDataORM
 from app.core.data.orm.source_document_job import SourceDocumentJobORM
 from app.core.db.sql_service import SQLService
@@ -22,6 +24,7 @@ from app.preprocessing.ray_model_worker.dto.quote import (
     Token,
 )
 from app.util.singleton_meta import SingletonMeta
+from loguru import logger
 from sqlalchemy import or_
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
@@ -129,7 +132,10 @@ class QuoteService(metaclass=SingletonMeta):
         quote_output = self.rms.quote_prediction(quote_input)
 
         with self.sqls.db_session() as db:
-            dtos: List[SpanAnnotationCreateIntern] = []
+            span_dtos: List[SpanAnnotationCreateIntern] = []
+            group_dtos: List[SpanGroupCreateIntern] = []
+            group2annos: List[Tuple[int, int]] = []
+            last_anno_count = 0
             for doc in quote_output.documents:
                 adoc = crud_adoc.exists_or_create(
                     db, user_id=SYSTEM_USER_ID, sdoc_id=doc.id
@@ -137,16 +143,35 @@ class QuoteService(metaclass=SingletonMeta):
                 sdoc = sdoc_by_id[doc.id]
                 for quote in doc.quotes:
                     qt = self._get_quote_type(quote.typ, code)
-                    self._make_span_anno(qt, quote.quote, adoc.id, sdoc, dtos)
-                    self._make_span_anno(code.frame, quote.frame, adoc.id, sdoc, dtos)
+                    self._make_span_anno(qt, quote.quote, adoc.id, sdoc, span_dtos)
                     self._make_span_anno(
-                        code.addr, quote.addressee, adoc.id, sdoc, dtos
+                        code.frame, quote.frame, adoc.id, sdoc, span_dtos
                     )
-                    self._make_span_anno(code.cue, quote.cue, adoc.id, sdoc, dtos)
                     self._make_span_anno(
-                        code.speaker, quote.speaker, adoc.id, sdoc, dtos
+                        code.addr, quote.addressee, adoc.id, sdoc, span_dtos
                     )
-            crud_span_anno.create_multi(db, create_dtos=dtos)
+                    self._make_span_anno(code.cue, quote.cue, adoc.id, sdoc, span_dtos)
+                    self._make_span_anno(
+                        code.speaker, quote.speaker, adoc.id, sdoc, span_dtos
+                    )
+                    group = SpanGroupCreateIntern(
+                        name="quote", annotation_document_id=adoc.id
+                    )
+                    group_dtos.append(group)
+                    group2annos.append((last_anno_count, len(span_dtos)))
+                    last_anno_count = len(span_dtos)
+            spans = crud_span_anno.create_multi(db, create_dtos=span_dtos)
+            groups = crud_span_group.create_multi(db, create_dtos=group_dtos)
+            # link_dtos: List[SpanAnnotationSpanGroupLink] = []
+            # for g, (s,e) in zip(groups, group2annos):
+            #     for i in range(s,e):
+            #         link_dto = SpanAnnotationSpanGroupLink(span_group_id=g.id, span_annotation_id=spans[i].id)
+            #         link_dtos.append(link_dto)
+            links: Dict[int, List[int]] = {
+                g.id: [spans[i].id for i in range(s, e)]
+                for g, (s, e) in zip(groups, group2annos)
+            }
+            crud_span_group.link_groups_spans_batch(db, links=links)
             crud_sdoc_job.create_multi(
                 db,
                 # ids=[doc.id for doc in quote_output.documents],
@@ -168,12 +193,14 @@ class QuoteService(metaclass=SingletonMeta):
         dtos: List[SpanAnnotationCreateIntern],
     ):
         for start, end in spans:
+            char_begin = sdoc.token_starts[start]
+            char_end = sdoc.token_ends[end - 1]
             dto = SpanAnnotationCreateIntern(
                 begin_token=start,
                 end_token=end,
-                begin=sdoc.token_starts[start],
-                end=sdoc.token_ends[end],
-                span_text=sdoc.content[start:end],
+                begin=char_begin,
+                end=char_end,
+                span_text=sdoc.content[char_begin:char_end],
                 code_id=code_id,
                 annotation_document_id=adoc_id,
             )
@@ -191,7 +218,7 @@ class QuoteService(metaclass=SingletonMeta):
                 return code.frin
             case "IndirectFreeIndirect":
                 return code.infr
-        print(f"cannot find code for quote type {typ}, using fallback")
+        logger.warning(f"Could not find code for quote type {typ}, using fallback")
         return code.quote
 
     def _get_code_id(self, db: Session, name: str, project_id) -> int:
@@ -202,5 +229,4 @@ class QuoteService(metaclass=SingletonMeta):
         )
         if db_code is None:
             raise ValueError(f"Code '{name}' not found for project {project_id}")
-        return db_code.id
         return db_code.id

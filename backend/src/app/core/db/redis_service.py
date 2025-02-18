@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import List, Optional, Union
 
 import redis
+from loguru import logger
+
 from app.core.data.dto.concept_over_time_analysis import (
     COTAConcept,
     COTARead,
@@ -18,7 +20,6 @@ from app.core.data.dto.crawler_job import (
 )
 from app.core.data.dto.export_job import ExportJobCreate, ExportJobRead, ExportJobUpdate
 from app.core.data.dto.import_job import ImportJobCreate, ImportJobRead, ImportJobUpdate
-from app.core.data.dto.feedback import FeedbackCreateIntern, FeedbackRead
 from app.core.data.dto.llm_job import LLMJobCreate, LLMJobRead, LLMJobUpdate
 from app.core.data.dto.ml_job import MLJobCreate, MLJobRead, MLJobUpdate
 from app.core.data.dto.trainer_job import (
@@ -28,7 +29,6 @@ from app.core.data.dto.trainer_job import (
 )
 from app.util.singleton_meta import SingletonMeta
 from config import conf
-from loguru import logger
 
 
 class RedisService(metaclass=SingletonMeta):
