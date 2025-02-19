@@ -18,9 +18,9 @@ from app.core.data.orm.refresh_token import RefreshTokenORM
 from app.core.data.orm.sentence_annotation import SentenceAnnotationORM
 from app.core.data.orm.source_document import SourceDocumentORM
 from app.core.data.orm.source_document_data import SourceDocumentDataORM
+from app.core.data.orm.source_document_job import SourceDocumentJobORM
 from app.core.data.orm.source_document_link import SourceDocumentLinkORM
 from app.core.data.orm.source_document_metadata import SourceDocumentMetadataORM
-from app.core.data.orm.source_document_job import SourceDocumentJobORM
 from app.core.data.orm.span_annotation import SpanAnnotationORM
 from app.core.data.orm.span_group import SpanGroupORM
 from app.core.data.orm.span_text import SpanTextORM

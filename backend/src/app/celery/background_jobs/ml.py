@@ -1,6 +1,7 @@
+from loguru import logger
+
 from app.core.data.dto.ml_job import MLJobRead
 from app.core.ml.ml_service import MLService
-from loguru import logger
 
 mls: MLService = MLService()
 

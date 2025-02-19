@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import List, Optional
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from app.core.data.dto.dto_base import UpdateDTOBase
 from app.core.data.dto.span_annotation import SpanAnnotationRead
-from pydantic import BaseModel, ConfigDict, Field
 
 
 # Properties shared across all DTOs

@@ -21,5 +21,6 @@ class SourceDocumentJobRead(SourceDocumentJobBaseDTO):
 class SourceDocumentJobCreate(SourceDocumentJobBaseDTO):
     pass
 
+
 class SourceDocumentJobUpdate(SourceDocumentJobBaseDTO, UpdateDTOBase):
     pass

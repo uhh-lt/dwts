@@ -18,11 +18,11 @@ from app.preprocessing.ray_model_worker.dto.detr import (
     DETRFilePathInput,
     DETRObjectDetectionOutput,
 )
+from app.preprocessing.ray_model_worker.dto.quote import QuoteJobInput, QuoteJobOutput
 from app.preprocessing.ray_model_worker.dto.seqsenttagger import (
     SeqSentTaggerJobInput,
     SeqSentTaggerJobResponse,
 )
-from app.preprocessing.ray_model_worker.dto.quote import QuoteJobInput, QuoteJobOutput
 from app.preprocessing.ray_model_worker.dto.spacy import SpacyInput, SpacyPipelineOutput
 from app.preprocessing.ray_model_worker.dto.whisper import (
     WhisperFilePathInput,
