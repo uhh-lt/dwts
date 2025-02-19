@@ -70,7 +70,7 @@ class ElasticSearchMemoRead(BaseModel):
         description="The ID of the Object the Memo is attached to"
     )
     attached_object_type: Optional[AttachedObjectType] = Field(
-        description=("The type of the Object the Memo is " "attached to")
+        description=("The type of the Object the Memo is attached to")
     )
     updated: Optional[datetime] = Field(
         description="The created date of the Memo", default=datetime.now()
@@ -111,6 +111,12 @@ class SimSearchHit(BaseModel):
 class SimSearchSentenceHit(SimSearchHit):
     sentence_id: int = Field(
         description="The sentence id with respect to the SourceDocument"
+    )
+
+
+class SimSearchDocumentHit(SimSearchHit):
+    compared_sdoc_id: int = Field(
+        description="The ID of the SourceDocument that was compared."
     )
 
 

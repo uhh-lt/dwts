@@ -9,6 +9,9 @@ from app.core.data.orm.orm_base import ORMBase
 if TYPE_CHECKING:
     from app.core.data.orm.annotation_document import AnnotationDocumentORM
     from app.core.data.orm.document_tag import DocumentTagORM
+    from app.core.data.orm.document_tag_recommendation import (
+        DocumentTagRecommendationLinkORM,
+    )
     from app.core.data.orm.object_handle import ObjectHandleORM
     from app.core.data.orm.project import ProjectORM
     from app.core.data.orm.source_document_data import SourceDocumentDataORM
@@ -83,6 +86,13 @@ class SourceDocumentORM(ORMBase):
         "DocumentTagORM",
         secondary="SourceDocumentDocumentTagLinkTable".lower(),
         back_populates="source_documents",
+        passive_deletes=True,
+    )
+    document_tag_recommendation_link: Mapped[
+        List["DocumentTagRecommendationLinkORM"]
+    ] = relationship(
+        "DocumentTagRecommendationLinkORM",
+        back_populates="source_document",
         passive_deletes=True,
     )
     __table_args__ = (

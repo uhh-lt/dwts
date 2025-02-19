@@ -7,6 +7,10 @@ from app.core.data.orm.bbox_annotation import BBoxAnnotationORM
 from app.core.data.orm.code import CodeORM
 from app.core.data.orm.concept_over_time_analysis import ConceptOverTimeAnalysisORM
 from app.core.data.orm.document_tag import DocumentTagORM
+from app.core.data.orm.document_tag_recommendation import (
+    DocumentTagRecommendationJobORM,
+    DocumentTagRecommendationLinkORM,
+)
 from app.core.data.orm.memo import MemoORM
 from app.core.data.orm.object_handle import ObjectHandleORM
 from app.core.data.orm.orm_base import ORMBase

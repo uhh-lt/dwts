@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Union, overload
 
 import numpy as np
 
-from app.core.data.dto.search import SimSearchSentenceHit
+from app.core.data.dto.search import SimSearchDocumentHit, SimSearchSentenceHit
 from app.core.db.index_type import IndexType
 from app.util.singleton_meta import SingletonMeta
 
@@ -39,14 +39,30 @@ class VectorIndexService(ABC, metaclass=SingletonMeta):
     ) -> List[SimSearchSentenceHit]:
         pass
 
+    @overload
+    def suggest(
+        self,
+        data_ids: List[Tuple[int, int]],
+        proj_id: int,
+        top_k: int,
+        index_type: IndexType = IndexType.SENTENCE,
+    ) -> List[SimSearchSentenceHit]: ...
+    @overload
+    def suggest(
+        self,
+        data_ids: List[int],
+        proj_id: int,
+        top_k: int,
+        index_type: IndexType = IndexType.DOCUMENT,
+    ) -> List[SimSearchDocumentHit]: ...
     @abstractmethod
     def suggest(
         self,
-        index_type: IndexType,
+        data_ids: Union[List[int], List[Tuple[int, int]]],
         proj_id: int,
-        sdoc_sent_ids: List[Tuple[int, int]],
         top_k: int,
-    ) -> List[SimSearchSentenceHit]:
+        index_type: IndexType = IndexType.DOCUMENT,
+    ) -> Union[List[SimSearchDocumentHit], List[SimSearchSentenceHit]]:
         pass
 
     @abstractmethod

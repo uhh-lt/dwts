@@ -4,8 +4,14 @@ from typing import Any, List
 from celery import Task, group
 from celery.result import GroupResult
 
+from app.core.data.classification.document_classification_service import (
+    DocumentClassificationService as DocumentClassificationService,
+)
 from app.core.data.crawler.crawler_service import CrawlerService
 from app.core.data.dto.crawler_job import CrawlerJobParameters, CrawlerJobRead
+from app.core.data.dto.document_tag_recommendation import (
+    DocumentTagRecommendationJobRead as DocumentTagRecommendationJobRead,
+)
 from app.core.data.dto.export_job import ExportJobParameters, ExportJobRead
 from app.core.data.dto.import_job import ImportJobParameters, ImportJobRead
 from app.core.data.dto.llm_job import LLMJobParameters2, LLMJobRead
@@ -172,3 +178,14 @@ def execute_video_preprocessing_pipeline_apply_async(
 
     for cargo in cargos:
         execute_video_preprocessing_pipeline_task.apply_async(kwargs={"cargo": cargo})
+
+
+def prepare_and_start_document_classification_job_async(
+    task_id: int, project_id: int
+) -> None:
+    from app.celery.background_jobs.tasks import (
+        start_document_classification_job,
+    )
+
+    assert isinstance(start_document_classification_job, Task), "Not a Celery Task"
+    start_document_classification_job(task_id=task_id, project_id=project_id)

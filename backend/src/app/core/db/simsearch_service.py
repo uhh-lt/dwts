@@ -5,7 +5,11 @@ from loguru import logger
 
 from app.core.data.crud.source_document import crud_sdoc
 from app.core.data.doc_type import DocType
-from app.core.data.dto.search import SimSearchImageHit, SimSearchSentenceHit
+from app.core.data.dto.search import (
+    SimSearchDocumentHit,
+    SimSearchImageHit,
+    SimSearchSentenceHit,
+)
 from app.core.data.dto.source_document import SourceDocumentRead
 from app.core.data.repo.repo_service import RepoService
 from app.core.db.index_type import IndexType
@@ -49,6 +53,7 @@ class SimSearchService(metaclass=SingletonMeta):
                 )
                 logger.error(msg)
                 raise SystemExit(msg)
+
         cls.rms = RayModelService()
         cls.repo = RepoService()
         cls.sqls = SQLService()
@@ -244,7 +249,7 @@ class SimSearchService(metaclass=SingletonMeta):
         top_k: int,
     ) -> List[SimSearchSentenceHit]:
         hits = self._index.suggest(
-            IndexType.SENTENCE, proj_id, pos_sdoc_sent_ids, top_k
+            pos_sdoc_sent_ids, proj_id, top_k, IndexType.SENTENCE
         )
         marked_sdoc_sent_ids = {
             entry for entry in pos_sdoc_sent_ids + neg_sdoc_sent_ids
@@ -255,13 +260,31 @@ class SimSearchService(metaclass=SingletonMeta):
         hits.sort(key=lambda x: (x.sdoc_id, x.sentence_id))
         hits = self.__unique_consecutive(hits)
         candidates = [(h.sdoc_id, h.sentence_id) for h in hits]
-        nearest = self._index.suggest(IndexType.SENTENCE, proj_id, candidates, 1)
+        nearest = self._index.suggest(
+            candidates,
+            proj_id,
+            1,
+            IndexType.SENTENCE,
+        )
         results = []
         for hit, near in zip(hits, nearest):
             if (near.sdoc_id, near.sentence_id) not in neg_sdoc_sent_ids:
                 results.append(hit)
         results.sort(key=lambda x: x.score, reverse=True)
         return results[0 : min(len(results), top_k)]
+
+    def suggest_similar_documents(
+        # TODO: Extend function with negative examples
+        self,
+        proj_id: int,
+        sdoc_ids: List[int],
+        top_k: int,
+    ) -> List[SimSearchDocumentHit]:
+        hits = self._index.suggest(sdoc_ids, proj_id, top_k, IndexType.DOCUMENT)
+        marked_sdoc_ids = {entry for entry in sdoc_ids}
+        hits = [h for h in hits if h.sdoc_id not in marked_sdoc_ids]
+        hits.sort(key=lambda x: (x.sdoc_id, -x.score))
+        return hits
 
     def __unique_consecutive(
         self, hits: List[SimSearchSentenceHit]

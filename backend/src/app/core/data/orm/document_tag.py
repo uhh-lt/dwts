@@ -7,6 +7,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.data.orm.orm_base import ORMBase
 
 if TYPE_CHECKING:
+    from app.core.data.orm.document_tag_recommendation import (
+        DocumentTagRecommendationLinkORM,
+    )
     from app.core.data.orm.object_handle import ObjectHandleORM
     from app.core.data.orm.project import ProjectORM
     from app.core.data.orm.source_document import SourceDocumentORM
@@ -41,6 +44,14 @@ class DocumentTagORM(ORMBase):
     )
     project: Mapped["ProjectORM"] = relationship(
         "ProjectORM", back_populates="document_tags"
+    )
+    document_tag_recommendation_links: Mapped[
+        List["DocumentTagRecommendationLinkORM"]
+    ] = relationship(
+        "DocumentTagRecommendationLinkORM",
+        back_populates="predicted_tag",
+        foreign_keys="[DocumentTagRecommendationLinkORM.predicted_tag_id]",
+        passive_deletes=True,
     )
 
     # many to many

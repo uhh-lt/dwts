@@ -147,9 +147,9 @@ class QdrantService(VectorIndexService):
 
     def suggest(
         self,
-        index_type: IndexType,
-        proj_id: int,
         sdoc_sent_ids: List[Tuple[int, int]],
+        proj_id: int,
+        index_type: IndexType,
     ) -> List[SimSearchSentenceHit]:
         filter = Filter(
             must=[FieldCondition(key="proj_id", match=MatchValue(value=proj_id))]
