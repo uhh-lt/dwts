@@ -94,3 +94,15 @@ class SourceDocumentDataORM(ORMBase):
             ):
                 result.append(WordLevelTranscription(text=t, start_ms=s, end_ms=e))
             return result
+
+    @property
+    def token_sentence_ids(self):
+        sentence_ids = []
+        current_sent = 0
+        current_sent_end = self.sentence_ends[current_sent]
+        for c in self.token_starts:
+            if c >= current_sent_end:
+                current_sent += 1
+                current_sent_end = self.sentence_ends[current_sent]
+            sentence_ids.append(current_sent)
+        return sentence_ids

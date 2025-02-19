@@ -97,7 +97,7 @@ def delete_by_id(
     response_model=List[SpanAnnotationRead],
     summary="Returns all SpanAnnotations in the SpanGroup with the given ID if it exists",
 )
-def get_all_annotations(
+def get_annotations(
     *,
     db: Session = Depends(get_db_session),
     span_group_id: int,

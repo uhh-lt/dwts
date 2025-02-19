@@ -3,9 +3,9 @@ import { useMemo } from "react";
 import { SpanAnnotationRead } from "../../../api/openapi/models/SpanAnnotationRead.ts";
 import { useAppSelector } from "../../../plugins/ReduxHooks.ts";
 import { TagStyle } from "../annoSlice.ts";
+import CodeIndicator from "./CodeIndicator.tsx";
 import { IToken } from "./IToken.ts";
 import Mark from "./Mark.tsx";
-import Tag from "./Tag.tsx";
 
 interface TokenProps {
   spanAnnotations: SpanAnnotationRead[];
@@ -40,16 +40,18 @@ function Token({ token, spanAnnotations }: TokenProps) {
     ));
   }, [token, spans]);
 
-  const spanGroups = useMemo(() => {
+  const codeIndicator = useMemo(() => {
     const startingSpans = spans.filter((spanAnnotation) => spanAnnotation.begin_token === token.index);
+
     return startingSpans.length > 0 && tagStyle !== TagStyle.None ? (
       <span className={`spangroup ${tagStyle}`}>
         {startingSpans.map((spanAnnotation) => (
-          <Tag
+          <CodeIndicator
             key={spanAnnotation.id}
             codeId={spanAnnotation.code_id}
             annotationId={spanAnnotation.id}
             isSelected={selectedAnnotationId === spanAnnotation.id}
+            groups={spanAnnotation.group_ids}
           />
         ))}{" "}
       </span>
@@ -59,7 +61,7 @@ function Token({ token, spanAnnotations }: TokenProps) {
   return (
     <>
       <span className={`tok ${spans.map((s) => `span-${s.id}`).join(" ")}`} data-tokenid={token.index}>
-        {spanGroups}
+        {codeIndicator}
         <span id={"token" + token.index} className={"text"}>
           {token.text}
         </span>

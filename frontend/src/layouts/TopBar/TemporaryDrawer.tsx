@@ -1,3 +1,4 @@
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import FactCheckIcon from "@mui/icons-material/FactCheck";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
@@ -73,6 +74,15 @@ export default function TemporaryDrawer() {
             sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
             subheader={<ListSubheader>Tools</ListSubheader>}
           >
+            <ListItem disablePadding>
+              <ListItemButton component={RouterLink} to={`/project/${projectId}/tools/ml-automation`}>
+                <ListItemIcon>
+                  <AutoAwesomeIcon />
+                </ListItemIcon>
+                <ListItemText primary="ML Automation" />
+              </ListItemButton>
+            </ListItem>
+
             <ExporterListItemButton />
 
             <ListItem disablePadding>

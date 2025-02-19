@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.data.dto.dto_base import UpdateDTOBase
+from app.core.data.dto.span_annotation import SpanAnnotationRead
 
 
 # Properties shared across all DTOs
@@ -35,6 +36,12 @@ class SpanGroupRead(SpanGroupBaseDTO):
     created: datetime = Field(description="Created timestamp of the SpanGroup")
     updated: datetime = Field(description="Updated timestamp of the SpanGroup")
     model_config = ConfigDict(from_attributes=True)
+
+
+class SpanGroupWithAnnotationsRead(SpanGroupRead):
+    span_annotations: List[SpanAnnotationRead] = Field(
+        description="Annotations of the SpanGroup"
+    )
 
 
 # To link a SpanAnnotation with a SpanGroup

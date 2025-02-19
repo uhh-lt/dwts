@@ -139,13 +139,13 @@ detr:
       - toothbrush
 
 blip2:
-  model: "salesforce/blip2-opt-2.7b"
-  revision: "51572668da0eb669e01a189dc22abe6088589a24"
+  model: "microsoft/git-base"
+  # revision: "51572668da0eb669e01a189dc22abe6088589a24"
   device: cuda
-  precision_bit: 8
+  # precision_bit: 8
   image_captioning:
     max_caption_length: 16
-    num_beams: 4
+    num_beams: 1
   deployment:
     ray_actor_options:
       num_gpus: .15
@@ -186,6 +186,19 @@ seqsenttagger:
   deployment:
     ray_actor_options:
       num_gpus: .15
+    autoscaling_config:
+      min_replicas: 1
+      max_replicas: 1
+
+quote:
+  model: "fynnos/quotect-mt5-base"
+  tmp_dir: "/tmp"
+  max_length: 4096
+  num_beams: 1
+  device: cuda
+  deployment:
+    ray_actor_options:
+      num_gpus: .2
     autoscaling_config:
       min_replicas: 1
       max_replicas: 1

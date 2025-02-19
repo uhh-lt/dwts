@@ -9,9 +9,11 @@ from app.core.data.dto.crawler_job import CrawlerJobParameters, CrawlerJobRead
 from app.core.data.dto.export_job import ExportJobParameters, ExportJobRead
 from app.core.data.dto.import_job import ImportJobParameters, ImportJobRead
 from app.core.data.dto.llm_job import LLMJobParameters2, LLMJobRead
+from app.core.data.dto.ml_job import MLJobParameters, MLJobRead
 from app.core.data.export.export_service import ExportService
 from app.core.data.import_.import_service import ImportService
 from app.core.data.llm.llm_service import LLMService
+from app.core.ml.ml_service import MLService
 from app.preprocessing.pipeline.model.pipeline_cargo import PipelineCargo
 
 
@@ -112,6 +114,19 @@ def prepare_and_start_llm_job_async(
     return llm_job
 
 
+def prepare_and_start_ml_job_async(
+    ml_job_params: MLJobParameters,
+) -> MLJobRead:
+    from app.celery.background_jobs.tasks import start_ml_job
+
+    assert isinstance(start_ml_job, Task), "Not a Celery Task"
+
+    mls: MLService = MLService()
+    ml_job = mls.prepare_ml_job(ml_job_params)
+    start_ml_job.apply_async(kwargs={"ml_job": ml_job})
+    return ml_job
+
+
 def execute_text_preprocessing_pipeline_apply_async(
     cargos: List[PipelineCargo],
 ) -> GroupResult:
@@ -171,4 +186,5 @@ def execute_video_preprocessing_pipeline_apply_async(
     ), "Not a Celery Task"
 
     for cargo in cargos:
+        execute_video_preprocessing_pipeline_task.apply_async(kwargs={"cargo": cargo})
         execute_video_preprocessing_pipeline_task.apply_async(kwargs={"cargo": cargo})

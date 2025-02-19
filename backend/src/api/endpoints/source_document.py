@@ -4,11 +4,7 @@ from fastapi import APIRouter, Depends
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from api.dependencies import (
-    get_current_user,
-    get_db_session,
-    skip_limit_params,
-)
+from api.dependencies import get_current_user, get_db_session, skip_limit_params
 from app.core.authorization.authz_user import AuthzUser
 from app.core.data.crud import Crud
 from app.core.data.crud.bbox_annotation import crud_bbox_anno
@@ -17,25 +13,16 @@ from app.core.data.crud.source_document import crud_sdoc
 from app.core.data.crud.source_document_metadata import crud_sdoc_meta
 from app.core.data.crud.span_annotation import crud_span_anno
 from app.core.data.crud.span_group import crud_span_group
-from app.core.data.dto.bbox_annotation import (
-    BBoxAnnotationRead,
-)
+from app.core.data.dto.bbox_annotation import BBoxAnnotationRead
 from app.core.data.dto.sentence_annotation import (
     SentenceAnnotationRead,
     SentenceAnnotatorResult,
 )
-from app.core.data.dto.source_document import (
-    SourceDocumentRead,
-    SourceDocumentUpdate,
-)
+from app.core.data.dto.source_document import SourceDocumentRead, SourceDocumentUpdate
 from app.core.data.dto.source_document_data import SourceDocumentDataRead
-from app.core.data.dto.source_document_metadata import (
-    SourceDocumentMetadataRead,
-)
-from app.core.data.dto.span_annotation import (
-    SpanAnnotationRead,
-)
-from app.core.data.dto.span_group import SpanGroupRead
+from app.core.data.dto.source_document_metadata import SourceDocumentMetadataRead
+from app.core.data.dto.span_annotation import SpanAnnotationRead
+from app.core.data.dto.span_group import SpanGroupRead, SpanGroupWithAnnotationsRead
 from app.core.data.dto.word_frequency import WordFrequencyRead
 from app.core.data.repo.repo_service import RepoService
 
@@ -272,6 +259,31 @@ def get_all_span_annotations_bulk(
         db=db, user_id=user_id, sdoc_id=sdoc_id
     )
     return [SpanAnnotationRead.model_validate(span) for span in spans]
+
+
+@router.get(
+    "/{sdoc}/span_groups/{user_id}",
+    response_model=List[SpanGroupWithAnnotationsRead],
+    summary="Returns all SpanGroupWithAnnotations of the User in the sDoc",
+)
+def get_sdoc_groups_with_annotations(
+    *,
+    db: Session = Depends(get_db_session),
+    sdoc_id: int,
+    user_id: int,
+    authz_user: AuthzUser = Depends(),
+) -> List[SpanGroupWithAnnotationsRead]:
+    authz_user.assert_in_same_project_as(Crud.SOURCE_DOCUMENT, sdoc_id)
+
+    span_group_db_obj = crud_span_group.read_by_user_and_sdoc(
+        db, user_id=user_id, sdoc_id=sdoc_id
+    )
+    # spans = [group.span_annotations for group in span_group_db_obj]
+    return [
+        SpanGroupWithAnnotationsRead.model_validate(group)
+        for group in span_group_db_obj
+    ]
+    # return [ SpanAnnotationRead.model_validate(span) for span in spans]
 
 
 @router.get(

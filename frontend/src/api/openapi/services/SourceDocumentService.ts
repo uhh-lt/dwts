@@ -10,6 +10,7 @@ import type { SourceDocumentRead } from "../models/SourceDocumentRead";
 import type { SourceDocumentUpdate } from "../models/SourceDocumentUpdate";
 import type { SpanAnnotationRead } from "../models/SpanAnnotationRead";
 import type { SpanGroupRead } from "../models/SpanGroupRead";
+import type { SpanGroupWithAnnotationsRead } from "../models/SpanGroupWithAnnotationsRead";
 import type { WordFrequencyRead } from "../models/WordFrequencyRead";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
@@ -268,6 +269,32 @@ export class SourceDocumentService {
       path: {
         sdoc_id: sdocId,
         user_id: userId,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+  /**
+   * Returns all SpanGroupWithAnnotations of the User in the sDoc
+   * @returns SpanGroupWithAnnotationsRead Successful Response
+   * @throws ApiError
+   */
+  public static getSdocGroupsWithAnnotations({
+    userId,
+    sdocId,
+  }: {
+    userId: number;
+    sdocId: number;
+  }): CancelablePromise<Array<SpanGroupWithAnnotationsRead>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/sdoc/{sdoc}/span_groups/{user_id}",
+      path: {
+        user_id: userId,
+      },
+      query: {
+        sdoc_id: sdocId,
       },
       errors: {
         422: `Validation Error`,
