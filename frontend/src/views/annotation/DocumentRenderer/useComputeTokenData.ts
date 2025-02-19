@@ -49,7 +49,7 @@ function useComputeTokenData({
       annotation.group_ids = annotation.group_ids.map((id) => {
         let mapped = spanGroupIdMapping.get(id);
         if (mapped === undefined) {
-          mapped = spanGroupIdMapping.size;
+          mapped = spanGroupIdMapping.size + 1;
           spanGroupIdMapping.set(id, mapped);
         }
         return mapped;
