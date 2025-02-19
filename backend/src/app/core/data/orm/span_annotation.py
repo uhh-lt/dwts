@@ -82,3 +82,7 @@ class SpanAnnotationORM(ORMBase):
     @property
     def sdoc_id(self):
         return self.annotation_document.source_document_id
+
+    @property
+    def group_ids(self):
+        return [group.id for group in self.span_groups]

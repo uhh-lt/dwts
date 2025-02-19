@@ -94,11 +94,7 @@ export class SpanGroupService {
    * @returns SpanAnnotationRead Successful Response
    * @throws ApiError
    */
-  public static getAllAnnotations({
-    spanGroupId,
-  }: {
-    spanGroupId: number;
-  }): CancelablePromise<Array<SpanAnnotationRead>> {
+  public static getAnnotations({ spanGroupId }: { spanGroupId: number }): CancelablePromise<Array<SpanAnnotationRead>> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/spangroup/{span_group_id}/span_annotations",

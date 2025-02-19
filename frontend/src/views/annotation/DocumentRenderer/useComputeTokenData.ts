@@ -37,7 +37,7 @@ function useComputeTokenData({
   // annotationsPerToken map stores tokenId -> spanAnnotationId[]
   const { annotationMap, annotationsPerToken } = useMemo(() => {
     if (!annotations.data) return { annotationMap: undefined, annotationsPerToken: undefined };
-
+    const spanGroupIdMapping = new Map<number, number>();
     const annotationMap = new Map<number, SpanAnnotationRead>();
     const annotationsPerToken = new Map<number, number[]>();
     annotations.data.forEach((annotation) => {
@@ -46,6 +46,14 @@ function useComputeTokenData({
         tokenAnnotations.push(annotation.id);
         annotationsPerToken.set(i, tokenAnnotations);
       }
+      annotation.group_ids = annotation.group_ids.map((id) => {
+        let mapped = spanGroupIdMapping.get(id);
+        if (mapped === undefined) {
+          mapped = spanGroupIdMapping.size;
+          spanGroupIdMapping.set(id, mapped);
+        }
+        return mapped;
+      });
       annotationMap.set(annotation.id, annotation);
     });
     return { annotationMap, annotationsPerToken };

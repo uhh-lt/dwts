@@ -2,8 +2,9 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Literal, Optional
 
-from app.core.data.dto.background_job_base import BackgroundJobStatus
 from pydantic import BaseModel, Field
+
+from app.core.data.dto.background_job_base import BackgroundJobStatus
 
 
 class MLJobType(StrEnum):
@@ -12,7 +13,9 @@ class MLJobType(StrEnum):
 
 class QuotationAttributionLMJobParams(BaseModel):
     llm_job_type: Literal[MLJobType.QUOTATION_ATTRIBUTION]
-    model: Optional[str] = Field(description="Which model to use")
+    recompute: bool = Field(
+        default=False, description="Whether to recompute already processed documents"
+    )
 
 
 class MLJobParameters(BaseModel):

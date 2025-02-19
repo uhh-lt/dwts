@@ -106,4 +106,7 @@ class CRUDBase(Generic[ORMModelType, CreateDTOType, UpdateDTOType]):
         db.commit()
         return db_obj
 
-    # TODO: remove_multi ?
+    def remove_multi(self, db: Session, *, ids: List[int]) -> int:
+        count = db.query(self.model).filter(self.model.id.in_(ids)).delete()
+        db.commit()
+        return count

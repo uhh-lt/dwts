@@ -1,4 +1,7 @@
+from datetime import datetime
 from typing import List, Union
+
+from sqlalchemy import or_
 
 from app.core.data.dto.background_job_base import BackgroundJobStatus
 from app.core.data.dto.ml_job import (
@@ -54,9 +57,10 @@ class MLService(metaclass=SingletonMeta):
         return self.redis.get_all_ml_jobs(project_id=project_id)
 
     def start_ml_job_sync(self, ml_job_id: str) -> MLJobRead:
+        start_time = datetime.now()
         mlj = self.get_ml_job(ml_job_id)
-        # if mlj.status == BackgroundJobStatus.RUNNING:
-        #     raise MLJobAlreadyStartedOrDoneError(ml_job_id)
+        if mlj.status == BackgroundJobStatus.RUNNING:
+            raise MLJobAlreadyStartedOrDoneError(ml_job_id)
         mlj = self._update_ml_job(
             ml_job_id, MLJobUpdate(status=BackgroundJobStatus.RUNNING)
         )
@@ -65,9 +69,15 @@ class MLService(metaclass=SingletonMeta):
             filter_column = None
             match mlj.parameters.ml_job_type:
                 case MLJobType.QUOTATION_ATTRIBUTION:
+                    recompute = mlj.parameters.specific_llm_job_parameters.recompute
                     filter_column = SourceDocumentJobORM.quotation_attribution_at
+                    filter_criterion = (
+                        or_(filter_column < start_time, filter_column == None)
+                        if recompute
+                        else filter_column == None
+                    )
                     QuoteService().perform_quotation_detection(
-                        mlj.parameters.project_id, filter_column
+                        mlj.parameters.project_id, filter_criterion, recompute
                     )
             mlj = self._update_ml_job(
                 ml_job_id, MLJobUpdate(status=BackgroundJobStatus.FINISHED)

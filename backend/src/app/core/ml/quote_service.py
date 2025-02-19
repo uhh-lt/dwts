@@ -1,6 +1,10 @@
 from datetime import datetime
 from typing import Dict, List, NamedTuple, Tuple
 
+from loguru import logger
+from sqlalchemy import ColumnElement
+from sqlalchemy.orm import Session
+
 from app.core.data.crud.annotation_document import crud_adoc
 from app.core.data.crud.code import crud_code
 from app.core.data.crud.source_document_job import crud_sdoc_job
@@ -9,12 +13,11 @@ from app.core.data.crud.span_group import crud_span_group
 from app.core.data.crud.user import SYSTEM_USER_ID
 from app.core.data.dto.source_document_job import SourceDocumentJobCreate
 from app.core.data.dto.span_annotation import SpanAnnotationCreateIntern
-from app.core.data.dto.span_group import (
-    SpanAnnotationSpanGroupLink,
-    SpanGroupCreateIntern,
-)
+from app.core.data.dto.span_group import SpanGroupCreateIntern
+from app.core.data.orm.annotation_document import AnnotationDocumentORM
 from app.core.data.orm.source_document_data import SourceDocumentDataORM
 from app.core.data.orm.source_document_job import SourceDocumentJobORM
+from app.core.data.orm.span_annotation import SpanAnnotationORM
 from app.core.db.sql_service import SQLService
 from app.preprocessing.ray_model_service import RayModelService
 from app.preprocessing.ray_model_worker.dto.quote import (
@@ -24,9 +27,6 @@ from app.preprocessing.ray_model_worker.dto.quote import (
     Token,
 )
 from app.util.singleton_meta import SingletonMeta
-from loguru import logger
-from sqlalchemy import or_
-from sqlalchemy.orm import InstrumentedAttribute, Session
 
 
 class _CodeQuoteId(NamedTuple):
@@ -49,7 +49,7 @@ class QuoteService(metaclass=SingletonMeta):
         return super(QuoteService, cls).__new__(cls)
 
     def perform_quotation_detection(
-        self, project_id: int, filter_column: InstrumentedAttribute
+        self, project_id: int, filter_criterion: ColumnElement, recompute=False
     ):
         with self.sqls.db_session() as db:
             codes = _CodeQuoteId(
@@ -65,19 +65,18 @@ class QuoteService(metaclass=SingletonMeta):
                 cue=self._get_code_id(db, "CUE", project_id),
             )
 
-        start_time = datetime.now()
         num_processed = -1
         while num_processed != 0:
             num_processed = self._process_batch(
-                filter_column, start_time, project_id, codes
+                filter_criterion, project_id, codes, recompute
             )
 
     def _process_batch(
         self,
-        filter_column: InstrumentedAttribute,
-        start_time: datetime,
+        filter_criterion: ColumnElement,
         project_id: int,
         code: _CodeQuoteId,
+        recompute: bool = False,
     ):
         with self.sqls.db_session() as db:
             query = (
@@ -87,9 +86,7 @@ class QuoteService(metaclass=SingletonMeta):
                     SourceDocumentJobORM.id == SourceDocumentDataORM.id,
                     isouter=True,
                 )
-                # TODO remove OR, only filter for null
-                .filter(or_(filter_column < start_time, filter_column == None))
-                # .filter(filter_column == None)
+                .filter(filter_criterion)
                 .limit(10)
             )
             sdoc_data = query.all()
@@ -132,6 +129,26 @@ class QuoteService(metaclass=SingletonMeta):
         quote_output = self.rms.quote_prediction(quote_input)
 
         with self.sqls.db_session() as db:
+            if recompute:
+                subquery = (
+                    db.query(SpanAnnotationORM.id)
+                    .join(SpanAnnotationORM.annotation_document)
+                    .filter(
+                        AnnotationDocumentORM.user_id == SYSTEM_USER_ID,
+                        AnnotationDocumentORM.source_document_id.in_(
+                            [sdoc.id for sdoc in sdoc_data]
+                        ),
+                        SpanAnnotationORM.code_id.in_(list(code)),
+                    )
+                    .scalar_subquery()
+                )
+                deleted = (
+                    db.query(SpanAnnotationORM)
+                    .where(SpanAnnotationORM.id.in_(subquery))
+                    .delete()
+                )
+
+                print("removed existing quote annotations:", deleted)
             span_dtos: List[SpanAnnotationCreateIntern] = []
             group_dtos: List[SpanGroupCreateIntern] = []
             group2annos: List[Tuple[int, int]] = []
@@ -162,11 +179,6 @@ class QuoteService(metaclass=SingletonMeta):
                     last_anno_count = len(span_dtos)
             spans = crud_span_anno.create_multi(db, create_dtos=span_dtos)
             groups = crud_span_group.create_multi(db, create_dtos=group_dtos)
-            # link_dtos: List[SpanAnnotationSpanGroupLink] = []
-            # for g, (s,e) in zip(groups, group2annos):
-            #     for i in range(s,e):
-            #         link_dto = SpanAnnotationSpanGroupLink(span_group_id=g.id, span_annotation_id=spans[i].id)
-            #         link_dtos.append(link_dto)
             links: Dict[int, List[int]] = {
                 g.id: [spans[i].id for i in range(s, e)]
                 for g, (s, e) in zip(groups, group2annos)
@@ -174,7 +186,6 @@ class QuoteService(metaclass=SingletonMeta):
             crud_span_group.link_groups_spans_batch(db, links=links)
             crud_sdoc_job.create_multi(
                 db,
-                # ids=[doc.id for doc in quote_output.documents],
                 create_dtos=[
                     SourceDocumentJobCreate(
                         id=doc.id, quotation_attribution_at=datetime.now()

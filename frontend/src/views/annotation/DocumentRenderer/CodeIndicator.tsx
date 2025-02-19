@@ -1,12 +1,13 @@
 import CodeHooks from "../../../api/CodeHooks.ts";
 
-interface TagProps {
+interface CodeIndicatorProps {
   codeId: number;
   annotationId: number;
   isSelected?: boolean;
+  groups?: number[];
 }
 
-function Tag({ codeId, annotationId, isSelected }: TagProps) {
+function CodeIndicator({ codeId, annotationId, isSelected, groups }: CodeIndicatorProps) {
   const code = CodeHooks.useGetCode(codeId);
 
   if (code.isSuccess) {
@@ -21,8 +22,8 @@ function Tag({ codeId, annotationId, isSelected }: TagProps) {
           }),
         }}
       >
-        {" "}
         {code.data.name}
+        {groups && groups.length ? ": " + groups.join(",") : ""}
       </span>
     );
   }
@@ -34,4 +35,4 @@ function Tag({ codeId, annotationId, isSelected }: TagProps) {
   );
 }
 
-export default Tag;
+export default CodeIndicator;

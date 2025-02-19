@@ -47,4 +47,8 @@ export type SpanAnnotationRead = {
    * Updated timestamp of the SpanAnnotation
    */
   updated: string;
+  /**
+   * The group ids this span annotations belongs to
+   */
+  group_ids: Array<number>;
 };

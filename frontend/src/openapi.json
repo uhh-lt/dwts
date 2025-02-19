@@ -1104,6 +1104,36 @@
         }
       }
     },
+    "/sdoc/{sdoc}/span_groups/{user_id}": {
+      "get": {
+        "tags": ["sourceDocument"],
+        "summary": "Returns all SpanGroupWithAnnotations of the User in the sDoc",
+        "operationId": "get_sdoc_groups_with_annotations",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "integer", "title": "User Id" } },
+          { "name": "sdoc_id", "in": "query", "required": true, "schema": { "type": "integer", "title": "Sdoc Id" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SpanGroupWithAnnotationsRead" },
+                  "title": "Response Sourcedocument-Get Sdoc Groups With Annotations"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        }
+      }
+    },
     "/sdoc/{sdoc_id}/bbox_annotations/{user_id}": {
       "get": {
         "tags": ["sourceDocument"],
@@ -1950,7 +1980,7 @@
       "get": {
         "tags": ["spanGroup"],
         "summary": "Returns all SpanAnnotations in the SpanGroup with the given ID if it exists",
-        "operationId": "get_all_annotations",
+        "operationId": "get_annotations",
         "security": [{ "OAuth2PasswordBearer": [] }],
         "parameters": [
           {
@@ -1968,7 +1998,7 @@
                 "schema": {
                   "type": "array",
                   "items": { "$ref": "#/components/schemas/SpanAnnotationRead" },
-                  "title": "Response Spangroup-Get All Annotations"
+                  "title": "Response Spangroup-Get Annotations"
                 }
               }
             }
@@ -5191,6 +5221,83 @@
         },
         "security": [{ "OAuth2PasswordBearer": [] }]
       }
+    },
+    "/ml": {
+      "post": {
+        "tags": ["ml"],
+        "summary": "Returns the MLJob for the given Parameters",
+        "operationId": "start_ml_job",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MLJobParameters" } } },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MLJobRead" } } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/ml/{ml_job_id}": {
+      "get": {
+        "tags": ["ml"],
+        "summary": "Returns the MLJob for the given ID if it exists",
+        "operationId": "get_ml_job",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          { "name": "ml_job_id", "in": "path", "required": true, "schema": { "type": "string", "title": "Ml Job Id" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MLJobRead" } } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        }
+      }
+    },
+    "/ml/project/{project_id}": {
+      "get": {
+        "tags": ["ml"],
+        "summary": "Returns all MLJobRead for the given project ID if it exists",
+        "operationId": "get_all_lm_jobs",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MLJobRead" },
+                  "title": "Response Ml-Get All Lm Jobs"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7265,6 +7372,56 @@
         "title": "LogicalOperator",
         "description": "This tells our filter how to combine multiple column expressions."
       },
+      "MLJobParameters": {
+        "properties": {
+          "ml_job_type": { "$ref": "#/components/schemas/MLJobType", "description": "The type of the MLJob" },
+          "project_id": { "type": "integer", "title": "Project Id", "description": "The ID of the Project to analyse" },
+          "specific_llm_job_parameters": {
+            "oneOf": [{ "$ref": "#/components/schemas/QuotationAttributionLMJobParams" }],
+            "title": "Specific Llm Job Parameters",
+            "description": "Specific parameters for the LLMJob w.r.t it's type",
+            "discriminator": {
+              "propertyName": "llm_job_type",
+              "mapping": { "QUOTATION_ATTRIBUTION": "#/components/schemas/QuotationAttributionLMJobParams" }
+            }
+          }
+        },
+        "type": "object",
+        "required": ["ml_job_type", "project_id", "specific_llm_job_parameters"],
+        "title": "MLJobParameters"
+      },
+      "MLJobRead": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/BackgroundJobStatus",
+            "description": "Status of the LLMJob",
+            "default": "Waiting"
+          },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error",
+            "description": "Error message (if any)"
+          },
+          "id": { "type": "string", "title": "Id", "description": "ID of the MLJob" },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created",
+            "description": "Created timestamp of the LLMJob"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated",
+            "description": "Updated timestamp of the LLMJob"
+          },
+          "parameters": { "$ref": "#/components/schemas/MLJobParameters" }
+        },
+        "type": "object",
+        "required": ["id", "created", "updated", "parameters"],
+        "title": "MLJobRead"
+      },
+      "MLJobType": { "type": "string", "enum": ["QUOTATION_ATTRIBUTION"], "title": "MLJobType" },
       "MemoColumns": {
         "type": "string",
         "enum": ["M_TITLE", "M_CONTENT", "M_STARRED", "M_USER_ID"],
@@ -7720,6 +7877,20 @@
         "required": ["id", "first_name", "last_name"],
         "title": "PublicUserRead",
         "description": "A user object with information that everybody may see."
+      },
+      "QuotationAttributionLMJobParams": {
+        "properties": {
+          "llm_job_type": { "type": "string", "const": "QUOTATION_ATTRIBUTION", "title": "Llm Job Type" },
+          "recompute": {
+            "type": "boolean",
+            "title": "Recompute",
+            "description": "Whether to recompute already processed documents",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": ["llm_job_type"],
+        "title": "QuotationAttributionLMJobParams"
       },
       "SDocStatus": { "type": "string", "enum": ["unfinished_or_erroneous", "finished"], "title": "SDocStatus" },
       "SampledSdocsResults": {
@@ -8793,6 +8964,12 @@
             "format": "date-time",
             "title": "Updated",
             "description": "Updated timestamp of the SpanAnnotation"
+          },
+          "group_ids": {
+            "items": { "type": "integer" },
+            "type": "array",
+            "title": "Group Ids",
+            "description": "The group ids this span annotations belongs to"
           }
         },
         "type": "object",
@@ -8807,7 +8984,8 @@
           "user_id",
           "sdoc_id",
           "created",
-          "updated"
+          "updated",
+          "group_ids"
         ],
         "title": "SpanAnnotationRead"
       },
@@ -8960,6 +9138,35 @@
         },
         "type": "object",
         "title": "SpanGroupUpdate"
+      },
+      "SpanGroupWithAnnotationsRead": {
+        "properties": {
+          "name": { "type": "string", "title": "Name", "description": "Name of the SpanGroup" },
+          "id": { "type": "integer", "title": "Id", "description": "ID of the SpanGroup" },
+          "user_id": { "type": "integer", "title": "User Id", "description": "User that created the SpanGroup" },
+          "sdoc_id": { "type": "integer", "title": "Sdoc Id", "description": "SourceDocument the SpanGroup refers to" },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created",
+            "description": "Created timestamp of the SpanGroup"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated",
+            "description": "Updated timestamp of the SpanGroup"
+          },
+          "span_annotations": {
+            "items": { "$ref": "#/components/schemas/SpanAnnotationRead" },
+            "type": "array",
+            "title": "Span Annotations",
+            "description": "Annotations of the SpanGroup"
+          }
+        },
+        "type": "object",
+        "required": ["name", "id", "user_id", "sdoc_id", "created", "updated", "span_annotations"],
+        "title": "SpanGroupWithAnnotationsRead"
       },
       "StringOperator": {
         "type": "string",
