@@ -2,25 +2,33 @@ import { Box, Divider, List, Toolbar, Typography } from "@mui/material";
 import { useMemo } from "react";
 import CrawlerHooks from "../../../api/CrawlerHooks.ts";
 import LLMHooks from "../../../api/LLMHooks.ts";
+import MLHooks from "../../../api/MLHooks.ts";
 import PreProHooks from "../../../api/PreProHooks.ts";
 import { BackgroundJobStatus } from "../../../api/openapi/models/BackgroundJobStatus.ts";
 import { CrawlerJobRead } from "../../../api/openapi/models/CrawlerJobRead.ts";
 import { LLMJobRead } from "../../../api/openapi/models/LLMJobRead.ts";
+import { MLJobRead } from "../../../api/openapi/models/MLJobRead.ts";
 import { PreprocessingJobRead } from "../../../api/openapi/models/PreprocessingJobRead.ts";
 import { ProjectRead } from "../../../api/openapi/models/ProjectRead.ts";
 import CrawlerJobListItem from "./CrawlerJobListItem.tsx";
 import LLMJobListItem from "./LLMJobListItem.tsx";
+import MLJobListItem from "./MLJobListItem.tsx";
 import PreProJobListItem from "./PreProJobListItem.tsx";
 
 // type guards
-const isCrawlerJob = (job: CrawlerJobRead | PreprocessingJobRead | LLMJobRead): job is CrawlerJobRead => {
+const isCrawlerJob = (job: CrawlerJobRead | PreprocessingJobRead | LLMJobRead | MLJobRead): job is CrawlerJobRead => {
   return "output_dir" in job;
 };
-const isPreProJob = (job: CrawlerJobRead | PreprocessingJobRead | LLMJobRead): job is PreprocessingJobRead => {
+const isPreProJob = (
+  job: CrawlerJobRead | PreprocessingJobRead | LLMJobRead | MLJobRead,
+): job is PreprocessingJobRead => {
   return "payloads" in job;
 };
-const isLLMJob = (job: CrawlerJobRead | PreprocessingJobRead | LLMJobRead): job is LLMJobRead => {
+const isLLMJob = (job: CrawlerJobRead | PreprocessingJobRead | LLMJobRead | MLJobRead): job is LLMJobRead => {
   return "num_steps_total" in job;
+};
+const isMLJob = (job: CrawlerJobRead | PreprocessingJobRead | LLMJobRead | MLJobRead): job is MLJobRead => {
+  return "parameters" in job && "ml_job_type" in job.parameters;
 };
 
 interface ProjectBackgroundTasksProps {
@@ -32,11 +40,10 @@ function ProjectBackgroundTasks({ project }: ProjectBackgroundTasksProps) {
   const crawlerJobs = CrawlerHooks.useGetAllCrawlerJobs(project.id);
   const preProJobs = PreProHooks.useGetAllPreProJobs(project.id);
   const llmJobs = LLMHooks.useGetAllLLMJobs(project.id);
-
-  console.log(llmJobs);
+  const mlJobs = MLHooks.useGetAllMLJobs(project.id);
 
   const backgroundJobsByStatus = useMemo(() => {
-    const result: Record<BackgroundJobStatus, (CrawlerJobRead | PreprocessingJobRead | LLMJobRead)[]> = {
+    const result: Record<BackgroundJobStatus, (CrawlerJobRead | PreprocessingJobRead | LLMJobRead | MLJobRead)[]> = {
       [BackgroundJobStatus.WAITING]: [],
       [BackgroundJobStatus.RUNNING]: [],
       [BackgroundJobStatus.FINISHED]: [],
@@ -44,7 +51,7 @@ function ProjectBackgroundTasks({ project }: ProjectBackgroundTasksProps) {
       [BackgroundJobStatus.ABORTED]: [],
     };
 
-    if (!crawlerJobs.data && !preProJobs.data && !llmJobs.data) {
+    if (!crawlerJobs.data && !preProJobs.data && !llmJobs.data && !mlJobs.data) {
       return result;
     }
 
@@ -66,6 +73,12 @@ function ProjectBackgroundTasks({ project }: ProjectBackgroundTasksProps) {
         result[job.status].push(job);
       }
     }
+    if (mlJobs.data) {
+      for (const job of mlJobs.data) {
+        if (!job.status) continue;
+        result[job.status].push(job);
+      }
+    }
 
     return result;
   }, [crawlerJobs.data, preProJobs.data, llmJobs.data]);
@@ -81,6 +94,8 @@ function ProjectBackgroundTasks({ project }: ProjectBackgroundTasksProps) {
             return <PreProJobListItem key={job.id} initialPreProJob={job} />;
           } else if (isLLMJob(job)) {
             return <LLMJobListItem key={job.id} initialLLMJob={job} />;
+          } else if (isMLJob(job)) {
+            return <MLJobListItem key={job.id} initialMLJob={job} />;
           } else {
             return null;
           }
