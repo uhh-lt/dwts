@@ -27,6 +27,7 @@ import ImageSimilaritySearch from "../views/search/ImageSearch/ImageSimilaritySe
 import SentenceSimilaritySearch from "../views/search/SentenceSearch/SentenceSimilaritySearch.tsx";
 import DocumentSampler from "../views/tools/DocumentSampler/DocumentSampler.tsx";
 import DuplicateFinder from "../views/tools/DuplicateFinder/DuplicateFinder.tsx";
+import MlAutomation from "../views/tools/MlAutomation/MlAutomation.tsx";
 import Whiteboard from "../views/whiteboard/Whiteboard.tsx";
 import WhiteboardDashboard from "../views/whiteboard/WhiteboardDashboard.tsx";
 
@@ -171,6 +172,10 @@ const router = createBrowserRouter([
       {
         path: "/project/:projectId/tools/document-sampler",
         element: <DocumentSampler />,
+      },
+      {
+        path: "/project/:projectId/tools/ml-automation",
+        element: <MlAutomation />,
       },
     ],
   },

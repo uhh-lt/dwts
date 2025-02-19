@@ -23,7 +23,7 @@
     "@emotion/styled": "^11.13.0",
     "@fontsource/roboto": "^5.1.0",
     "@hookform/error-message": "^2.0.1",
-    "@mui/icons-material": "^6.1.2",
+    "@mui/icons-material": "^6.4.5",
     "@mui/lab": "^6.0.0-beta.10",
     "@mui/material": "^6.1.2",
     "@mui/x-date-pickers": "^7.19.0",

@@ -10,6 +10,7 @@ from app.core.data.dto.ml_job import (
     MLJobRead,
     MLJobType,
     MLJobUpdate,
+    QuotationAttributionParams,
 )
 from app.core.data.orm.source_document_job import SourceDocumentJobORM
 from app.core.db.redis_service import RedisService
@@ -69,16 +70,20 @@ class MLService(metaclass=SingletonMeta):
             filter_column = None
             match mlj.parameters.ml_job_type:
                 case MLJobType.QUOTATION_ATTRIBUTION:
-                    recompute = mlj.parameters.specific_llm_job_parameters.recompute
-                    filter_column = SourceDocumentJobORM.quotation_attribution_at
-                    filter_criterion = (
-                        or_(filter_column < start_time, filter_column == None)
-                        if recompute
-                        else filter_column == None
-                    )
-                    QuoteService().perform_quotation_detection(
-                        mlj.parameters.project_id, filter_criterion, recompute
-                    )
+                    if isinstance(
+                        mlj.parameters.specific_ml_job_parameters,
+                        QuotationAttributionParams,
+                    ):
+                        recompute = mlj.parameters.specific_ml_job_parameters.recompute
+                        filter_column = SourceDocumentJobORM.quotation_attribution_at
+                        filter_criterion = (
+                            or_(filter_column < start_time, filter_column == None)  # noqa: E711
+                            if recompute
+                            else filter_column == None  # noqa: E711
+                        )
+                        QuoteService().perform_quotation_detection(
+                            mlj.parameters.project_id, filter_criterion, recompute
+                        )
             mlj = self._update_ml_job(
                 ml_job_id, MLJobUpdate(status=BackgroundJobStatus.FINISHED)
             )

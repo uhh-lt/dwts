@@ -146,4 +146,9 @@ export const QueryKey = {
   LLM_JOB: "llmJob",
   // all llm jobs of a Project (by project id)
   PROJECT_LLM_JOBS: "projectLLMJobs",
+
+  // managed by MLHooks:
+  ML_JOB: "mlJob",
+  // all ML jobs of a proect (by project id)
+  PROJECT_ML_JOBS: "projectMLJobs",
 };

@@ -2,8 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type QuotationAttributionLMJobParams = {
-  llm_job_type: string;
+export type QuotationAttributionParams = {
+  ml_job_type: string;
   /**
    * Whether to recompute already processed documents
    */

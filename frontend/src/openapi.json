@@ -7376,18 +7376,23 @@
         "properties": {
           "ml_job_type": { "$ref": "#/components/schemas/MLJobType", "description": "The type of the MLJob" },
           "project_id": { "type": "integer", "title": "Project Id", "description": "The ID of the Project to analyse" },
-          "specific_llm_job_parameters": {
-            "oneOf": [{ "$ref": "#/components/schemas/QuotationAttributionLMJobParams" }],
-            "title": "Specific Llm Job Parameters",
-            "description": "Specific parameters for the LLMJob w.r.t it's type",
-            "discriminator": {
-              "propertyName": "llm_job_type",
-              "mapping": { "QUOTATION_ATTRIBUTION": "#/components/schemas/QuotationAttributionLMJobParams" }
-            }
+          "specific_ml_job_parameters": {
+            "anyOf": [
+              {
+                "oneOf": [{ "$ref": "#/components/schemas/QuotationAttributionParams" }],
+                "discriminator": {
+                  "propertyName": "ml_job_type",
+                  "mapping": { "QUOTATION_ATTRIBUTION": "#/components/schemas/QuotationAttributionParams" }
+                }
+              },
+              { "type": "null" }
+            ],
+            "title": "Specific Ml Job Parameters",
+            "description": "Specific parameters for the LLMJob w.r.t it's type"
           }
         },
         "type": "object",
-        "required": ["ml_job_type", "project_id", "specific_llm_job_parameters"],
+        "required": ["ml_job_type", "project_id", "specific_ml_job_parameters"],
         "title": "MLJobParameters"
       },
       "MLJobRead": {
@@ -7878,9 +7883,9 @@
         "title": "PublicUserRead",
         "description": "A user object with information that everybody may see."
       },
-      "QuotationAttributionLMJobParams": {
+      "QuotationAttributionParams": {
         "properties": {
-          "llm_job_type": { "type": "string", "const": "QUOTATION_ATTRIBUTION", "title": "Llm Job Type" },
+          "ml_job_type": { "type": "string", "const": "QUOTATION_ATTRIBUTION", "title": "Ml Job Type" },
           "recompute": {
             "type": "boolean",
             "title": "Recompute",
@@ -7889,8 +7894,8 @@
           }
         },
         "type": "object",
-        "required": ["llm_job_type"],
-        "title": "QuotationAttributionLMJobParams"
+        "required": ["ml_job_type"],
+        "title": "QuotationAttributionParams"
       },
       "SDocStatus": { "type": "string", "enum": ["unfinished_or_erroneous", "finished"], "title": "SDocStatus" },
       "SampledSdocsResults": {

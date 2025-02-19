@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -11,8 +11,8 @@ class MLJobType(StrEnum):
     QUOTATION_ATTRIBUTION = "QUOTATION_ATTRIBUTION"
 
 
-class QuotationAttributionLMJobParams(BaseModel):
-    llm_job_type: Literal[MLJobType.QUOTATION_ATTRIBUTION]
+class QuotationAttributionParams(BaseModel):
+    ml_job_type: Literal[MLJobType.QUOTATION_ATTRIBUTION]
     recompute: bool = Field(
         default=False, description="Whether to recompute already processed documents"
     )
@@ -21,9 +21,9 @@ class QuotationAttributionLMJobParams(BaseModel):
 class MLJobParameters(BaseModel):
     ml_job_type: MLJobType = Field(description="The type of the MLJob")
     project_id: int = Field(description="The ID of the Project to analyse")
-    specific_llm_job_parameters: QuotationAttributionLMJobParams = Field(
+    specific_ml_job_parameters: Union[QuotationAttributionParams, None] = Field(
         description="Specific parameters for the LLMJob w.r.t it's type",
-        discriminator="llm_job_type",
+        discriminator="ml_job_type",
     )
 
 
